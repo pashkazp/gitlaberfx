@@ -6,6 +6,9 @@ module com.depavlo.gitlaberfx {
     requires net.synedra.validatorfx;
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.bootstrapfx.core;
+    requires org.slf4j;
+    requires com.fasterxml.jackson.databind;
+    requires okhttp3;
 
     opens com.depavlo.gitlaberfx to javafx.fxml;
     exports com.depavlo.gitlaberfx;

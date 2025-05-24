@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.depavlo.gitlaberfx.controller.SettingsController"
+      spacing="10"
+      padding="10">
+    
+    <GridPane vgap="10" hgap="10">
+        <Label text="GitLab URL:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="gitlabUrlField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        
+        <Label text="API Key:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <PasswordField fx:id="apiKeyField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        
+        <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+    </GridPane>
+    
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Тестувати з'єднання" onAction="#testConnection"/>
+        <Button text="Зберегти" onAction="#save" defaultButton="true"/>
+        <Button text="Скасувати" onAction="#cancel" cancelButton="true"/>
+    </HBox>
+    
+</VBox> 

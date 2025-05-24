@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.depavlo.gitlaberfx.controller.MainController"
+      spacing="10"
+      padding="10">
+    
+    <MenuBar>
+        <Menu text="Файл">
+            <MenuItem text="Налаштування" onAction="#showSettings"/>
+            <SeparatorMenuItem/>
+            <MenuItem text="Вихід" onAction="#exit"/>
+        </Menu>
+        <Menu text="Допомога">
+            <MenuItem text="Про програму" onAction="#showAbout"/>
+        </Menu>
+    </MenuBar>
+
+    <HBox spacing="10">
+        <VBox spacing="5" HBox.hgrow="ALWAYS">
+            <Label text="Проєкт:"/>
+            <ComboBox fx:id="projectComboBox" HBox.hgrow="ALWAYS"/>
+        </VBox>
+        <VBox spacing="5">
+            <Label text="Головна гілка:"/>
+            <ComboBox fx:id="mainBranchComboBox"/>
+        </VBox>
+    </HBox>
+
+    <HBox spacing="10">
+        <Button text="Оновити список" onAction="#refreshBranches"/>
+        <Button text="Вибрати всі" onAction="#selectAll"/>
+        <Button text="Скасувати вибір" onAction="#deselectAll"/>
+        <Button text="Інвертувати вибір" onAction="#invertSelection"/>
+    </HBox>
+
+    <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="selectedColumn" text="Вибрати" prefWidth="50"/>
+            <TableColumn fx:id="nameColumn" text="Назва гілки" prefWidth="200"/>
+            <TableColumn fx:id="lastCommitColumn" text="Останній коміт" prefWidth="150"/>
+            <TableColumn fx:id="mergedColumn" text="Змерджена" prefWidth="100"/>
+        </columns>
+    </TableView>
+
+    <HBox spacing="10">
+        <Button text="Видалити вибрані" onAction="#deleteSelected" style="-fx-base: #ff0000;"/>
+        <Button text="Перевірити змерджені" onAction="#checkMerged"/>
+        <Button text="Додати до виключень" onAction="#addToExclusions"/>
+    </HBox>
+
+</VBox> 

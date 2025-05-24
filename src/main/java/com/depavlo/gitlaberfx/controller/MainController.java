@@ -1,14 +1,280 @@
 package com.depavlo.gitlaberfx.controller;
 
+import com.depavlo.gitlaberfx.config.AppConfig;
+import com.depavlo.gitlaberfx.model.BranchModel;
+import com.depavlo.gitlaberfx.service.GitLabService;
+import com.depavlo.gitlaberfx.util.DialogHelper;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxTableCell;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.stage.Stage;
+import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class MainController {
-    @FXML
-    private Label welcomeText;
+    private static final Logger logger = LoggerFactory.getLogger(MainController.class);
 
     @FXML
-    protected void onHelloButtonClick() {
-        welcomeText.setText("Welcome to Gitlaber Application!");
+    private ComboBox<String> projectComboBox;
+    
+    @FXML
+    private ComboBox<String> mainBranchComboBox;
+    
+    @FXML
+    private TableView<BranchModel> branchesTableView;
+    
+    @FXML
+    private TableColumn<BranchModel, Boolean> selectedColumn;
+    
+    @FXML
+    private TableColumn<BranchModel, String> nameColumn;
+    
+    @FXML
+    private TableColumn<BranchModel, String> lastCommitColumn;
+    
+    @FXML
+    private TableColumn<BranchModel, Boolean> mergedColumn;
+
+    private AppConfig config;
+    private GitLabService gitLabService;
+    private Stage stage;
+    private String currentProjectId;
+
+    public void initialize(AppConfig config, Stage stage) {
+        this.config = config;
+        this.stage = stage;
+        
+        // Налаштування колонок таблиці
+        selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
+        selectedColumn.setCellFactory(CheckBoxTableCell.forTableColumn(selectedColumn));
+        
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
+        mergedColumn.setCellValueFactory(new PropertyValueFactory<>("merged"));
+        
+        // Налаштування комбобоксів
+        projectComboBox.setOnAction(e -> onProjectSelected());
+        mainBranchComboBox.setOnAction(e -> onMainBranchSelected());
+        
+        // Завантаження налаштувань
+        loadConfig();
+    }
+
+    private void loadConfig() {
+        try {
+            gitLabService = new GitLabService(config);
+            gitLabService.connect();
+            
+            List<GitLabService.Project> projects = gitLabService.getProjects();
+            projectComboBox.setItems(FXCollections.observableArrayList(
+                    projects.stream()
+                            .map(GitLabService.Project::getName)
+                            .collect(Collectors.toList())
+            ));
+            
+            if (config.getLastProject() != null) {
+                projectComboBox.setValue(config.getLastProject());
+            }
+        } catch (IOException e) {
+            logger.error("Error loading configuration", e);
+            showError("Помилка завантаження", "Не вдалося завантажити налаштування: " + e.getMessage());
+        }
+    }
+
+    private void onProjectSelected() {
+        String projectName = projectComboBox.getValue();
+        if (projectName != null) {
+            try {
+                List<GitLabService.Project> projects = null;
+                try {
+                    projects = gitLabService.getProjects();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                GitLabService.Project selectedProject = projects.stream()
+                        .filter(p -> p.getName().equals(projectName))
+                        .findFirst()
+                        .orElse(null);
+                
+                if (selectedProject != null) {
+                    currentProjectId = String.valueOf(selectedProject.getId());
+                    config.setLastProject(projectName);
+                    config.save();
+                    
+                    List<BranchModel> branches = gitLabService.getBranches(currentProjectId);
+                    branchesTableView.setItems(FXCollections.observableArrayList(branches));
+                    
+                    mainBranchComboBox.setItems(FXCollections.observableArrayList(
+                            branches.stream()
+                                    .map(BranchModel::getName)
+                                    .collect(Collectors.toList())
+                    ));
+                    
+                    if (config.getMainBranch() != null) {
+                        mainBranchComboBox.setValue(config.getMainBranch());
+                    }
+                }
+            } catch (IOException e) {
+                logger.error("Error loading project branches", e);
+                showError("Помилка завантаження", "Не вдалося завантажити гілки: " + e.getMessage());
+            }
+        }
+    }
+
+    private void onMainBranchSelected() {
+        String mainBranch = mainBranchComboBox.getValue();
+        if (mainBranch != null) {
+            config.setMainBranch(mainBranch);
+            config.save();
+        }
+    }
+
+    @FXML
+    private void showSettings() {
+        logger.debug("Showing settings dialog");
+        if (DialogHelper.showSettingsDialog(stage, config)) {
+            loadConfig();
+        }
+    }
+
+    @FXML
+    private void exit() {
+        logger.info("Exiting application");
+        System.exit(0);
+    }
+
+    @FXML
+    private void showAbout() {
+        logger.debug("Showing about dialog");
+        DialogHelper.showAboutDialog(stage);
+    }
+
+    @FXML
+    private void refreshBranches() {
+        logger.debug("Refreshing branches list");
+        onProjectSelected();
+    }
+
+    @FXML
+    private void selectAll() {
+        logger.debug("Selecting all branches");
+        branchesTableView.getItems().forEach(branch -> branch.setSelected(true));
+    }
+
+    @FXML
+    private void deselectAll() {
+        logger.debug("Deselecting all branches");
+        branchesTableView.getItems().forEach(branch -> branch.setSelected(false));
+    }
+
+    @FXML
+    private void invertSelection() {
+        logger.debug("Inverting selection");
+        branchesTableView.getItems().forEach(branch -> branch.setSelected(!branch.isSelected()));
+    }
+
+    @FXML
+    private void deleteSelected() {
+        logger.debug("Deleting selected branches");
+        List<BranchModel> selectedBranches = branchesTableView.getItems().stream()
+                .filter(BranchModel::isSelected)
+                .collect(Collectors.toList());
+        
+        if (!selectedBranches.isEmpty()) {
+            List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, selectedBranches);
+            if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
+                try {
+                    for (BranchModel branch : confirmedBranches) {
+                        gitLabService.deleteBranch(currentProjectId, branch.getName());
+                    }
+                    refreshBranches();
+                } catch (IOException e) {
+                    logger.error("Error deleting branches", e);
+                    showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    @FXML
+    private void checkMerged() {
+        logger.debug("Checking merged branches");
+        if (config.getMainBranch() == null) {
+            showError("Помилка", "Не вибрано головну гілку");
+            return;
+        }
+        
+        LocalDate date = DialogHelper.showDatePickerDialog(stage);
+        if (date != null) {
+            try {
+                List<BranchModel> mergedBranches = branchesTableView.getItems().stream()
+                        .filter(branch -> {
+                            try {
+                                return gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), config.getMainBranch());
+                            } catch (IOException e) {
+                                logger.error("Error checking if branch is merged", e);
+                                return false;
+                            }
+                        })
+                        .collect(Collectors.toList());
+                
+                if (!mergedBranches.isEmpty()) {
+                    List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, mergedBranches);
+                    if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
+                        for (BranchModel branch : confirmedBranches) {
+                            gitLabService.deleteBranch(currentProjectId, branch.getName());
+                        }
+                        refreshBranches();
+                    }
+                } else {
+                    showInfo("Інформація", "Не знайдено змерджених гілок");
+                }
+            } catch (IOException e) {
+                logger.error("Error checking merged branches", e);
+                showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
+            }
+        }
+    }
+
+    @FXML
+    private void addToExclusions() {
+        logger.debug("Adding to exclusions");
+        List<BranchModel> selectedBranches = branchesTableView.getItems().stream()
+                .filter(BranchModel::isSelected)
+                .collect(Collectors.toList());
+        
+        if (!selectedBranches.isEmpty()) {
+            config.getExcludedBranches().addAll(
+                    selectedBranches.stream()
+                            .map(BranchModel::getName)
+                            .collect(Collectors.toList())
+            );
+            config.save();
+            showInfo("Інформація", "Гілки додано до виключень");
+        }
+    }
+
+    private void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showInfo(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

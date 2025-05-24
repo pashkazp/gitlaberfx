@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import org.controlsfx.control.*?>
+
+<VBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.depavlo.gitlaberfx.controller.DeleteConfirmationController"
+      spacing="10"
+      padding="10">
+    
+    <Label text="Виберіть гілки для видалення:"/>
+    
+    <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="selectedColumn" text="Вибрати" prefWidth="50"/>
+            <TableColumn fx:id="nameColumn" text="Назва гілки" prefWidth="200"/>
+            <TableColumn fx:id="lastCommitColumn" text="Останній коміт" prefWidth="150"/>
+            <TableColumn fx:id="mergedColumn" text="Змерджена" prefWidth="100"/>
+        </columns>
+    </TableView>
+    
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Вибрати всі" onAction="#selectAll"/>
+        <Button text="Скасувати вибір" onAction="#deselectAll"/>
+        <Button text="Інвертувати вибір" onAction="#invertSelection"/>
+    </HBox>
+    
+    <HBox spacing="10" alignment="CENTER_RIGHT">
+        <Button text="Видалити вибрані" onAction="#confirm" defaultButton="true" style="-fx-base: #ff0000;"/>
+        <Button text="Скасувати" onAction="#cancel" cancelButton="true"/>
+    </HBox>
+    
+</VBox> 
