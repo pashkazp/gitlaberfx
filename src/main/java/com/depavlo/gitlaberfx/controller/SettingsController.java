@@ -7,9 +7,10 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
-import org.gitlab4j.api.GitLabApiException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 public class SettingsController {
     private static final Logger logger = LoggerFactory.getLogger(SettingsController.class);
@@ -52,7 +53,7 @@ public class SettingsController {
             alert.setHeaderText(null);
             alert.setContentText("З'єднання успішно встановлено!");
             alert.showAndWait();
-        } catch (GitLabApiException e) {
+        } catch (IOException e) {
             logger.error("Connection test failed", e);
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Помилка");
