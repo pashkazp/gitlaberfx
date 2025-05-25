@@ -118,7 +118,7 @@ GitLab Branch Manager (gitlaberfxc)
 - Можливість перемикання мови в налаштуваннях
 
 ### 3.5 Запуск та відлагодження
-- Команда запуску: `mvn clean compile antrun:run@run-with-debug`
+- Команда запуску: `mvn clean package antrun:run@run-with-debug`
 - Підтримка remote debugging через JVM Debug Port
 
 ## 4. Нефункціональні вимоги

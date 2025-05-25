@@ -16,7 +16,7 @@
 2. Перейдіть до директорії проекту
 3. Виконайте команду:
    ```
-   mvn clean compile antrun:run@run-with-debug
+   mvn clean package antrun:run@run-with-debug
    ```
 
 Або використовуйте готовий скрипт:
@@ -39,7 +39,7 @@ run.bat
 
 Або виконайте команду напряму:
 ```
-mvn clean compile antrun:run@run-with-debug
+mvn clean package antrun:run@run-with-debug
 ```
 
 ## Відлагодження
