@@ -16,11 +16,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class MainController {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
+    private static final String NOT_SELECTED_ITEM = "не обрано";
 
     @FXML
     private ComboBox<String> projectComboBox;
@@ -63,6 +65,12 @@ public class MainController {
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
         mergedColumn.setCellValueFactory(new PropertyValueFactory<>("merged"));
+
+        // Initialize mainBranchComboBox with "not selected" item
+        List<String> initialItems = new ArrayList<>();
+        initialItems.add(NOT_SELECTED_ITEM);
+        mainBranchComboBox.setItems(FXCollections.observableArrayList(initialItems));
+        mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
         // Налаштування комбобоксів
         projectComboBox.setOnAction(e -> onProjectSelected());
@@ -120,7 +128,12 @@ public class MainController {
         String projectName = projectComboBox.getValue();
         // Clear mainBranchComboBox when a project is selected
         mainBranchComboBox.getItems().clear();
-        mainBranchComboBox.setValue(null);
+
+        // Always add "not selected" item as the first option
+        List<String> branchNames = new ArrayList<>();
+        branchNames.add(NOT_SELECTED_ITEM);
+        mainBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
+        mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
         if (projectName != null) {
             try {
@@ -145,15 +158,19 @@ public class MainController {
                     branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
                     branchesTableView.setItems(FXCollections.observableArrayList(branches));
 
-                    mainBranchComboBox.setItems(FXCollections.observableArrayList(
+                    // Add branch names to the list that already contains "not selected" item
+                    branchNames.addAll(
                             branches.stream()
                                     .map(BranchModel::getName)
                                     .sorted(String.CASE_INSENSITIVE_ORDER)
                                     .collect(Collectors.toList())
-                    ));
+                    );
+                    mainBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
 
                     if (config.getMainBranch() != null) {
                         mainBranchComboBox.setValue(config.getMainBranch());
+                    } else {
+                        mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
                     }
                 }
             } catch (IOException e) {
@@ -166,7 +183,18 @@ public class MainController {
     private void onMainBranchSelected() {
         String mainBranch = mainBranchComboBox.getValue();
         if (mainBranch != null) {
-            config.setMainBranch(mainBranch);
+            // If "not selected" item is selected, reset the "Merged" flag for all branches
+            if (NOT_SELECTED_ITEM.equals(mainBranch)) {
+                ObservableList<BranchModel> branches = branchesTableView.getItems();
+                if (branches != null) {
+                    for (BranchModel branch : branches) {
+                        branch.setMerged(false);
+                    }
+                }
+                config.setMainBranch(null);
+            } else {
+                config.setMainBranch(mainBranch);
+            }
             config.save();
         }
     }
