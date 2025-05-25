@@ -192,30 +192,83 @@ public class GitLabService {
 
     public boolean isCommitInMainBranch(String projectId, String branchName, String mainBranch) throws IOException {
         logger.debug("Checking if branch {} is merged into {}", branchName, mainBranch);
-        int page = 1;
-        int perPage = 100;
-        while (true) {
-            String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId +
-                    "/merge_requests?state=merged&source_branch=" + branchName +
-                    "&target_branch=" + mainBranch +
-                    "&per_page=" + perPage + "&page=" + page;
-            Request request = new Request.Builder()
-                    .url(url)
-                    .header(PRIVATE_TOKEN, config.getApiKey())
-                    .build();
 
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (!response.isSuccessful()) {
-                    throw new IOException("Failed to check merged status: " + response);
-                }
-                JsonNode jsonArray = objectMapper.readTree(response.body().string());
-                if (!jsonArray.isArray() || jsonArray.size() == 0) break;
-                if (jsonArray.size() > 0) return true;
-                if (jsonArray.size() < perPage) break;
-                page++;
-            }
+        // Step 1: Get the SHA of the last commit of the source branch
+        String sourceBranchSha = getBranchLastCommitSha(projectId, branchName);
+        if (sourceBranchSha == null) {
+            logger.error("Failed to get SHA for branch {}", branchName);
+            return false;
         }
-        return false;
+
+        // Step 2: Get the SHA of the merge base between source and target branches
+        String mergeBaseSha = getMergeBaseSha(projectId, branchName, mainBranch);
+        if (mergeBaseSha == null) {
+            logger.error("Failed to get merge base SHA between {} and {}", branchName, mainBranch);
+            return false;
+        }
+
+        // Step 3: Compare the SHAs - if they're identical, the source branch is merged into the target branch
+        boolean isMerged = sourceBranchSha.equals(mergeBaseSha);
+        logger.debug("Branch {} is {} into {}", branchName, isMerged ? "merged" : "not merged", mainBranch);
+        return isMerged;
+    }
+
+    /**
+     * Get the SHA of the last commit of a branch
+     * 
+     * @param projectId the project ID
+     * @param branchName the branch name
+     * @return the SHA of the last commit of the branch, or null if an error occurred
+     */
+    private String getBranchLastCommitSha(String projectId, String branchName) {
+        logger.debug("Getting SHA for branch {}", branchName);
+        String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches/" + branchName;
+        Request request = new Request.Builder()
+                .url(url)
+                .header(PRIVATE_TOKEN, config.getApiKey())
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                logger.error("Failed to get branch {}: {}", branchName, response);
+                return null;
+            }
+            JsonNode branchNode = objectMapper.readTree(response.body().string());
+            return branchNode.get("commit").get("id").asText();
+        } catch (IOException e) {
+            logger.error("Error getting SHA for branch {}", branchName, e);
+            return null;
+        }
+    }
+
+    /**
+     * Get the SHA of the merge base between two branches
+     * 
+     * @param projectId the project ID
+     * @param sourceBranch the source branch
+     * @param targetBranch the target branch
+     * @return the SHA of the merge base, or null if an error occurred
+     */
+    private String getMergeBaseSha(String projectId, String sourceBranch, String targetBranch) {
+        logger.debug("Getting merge base SHA between {} and {}", sourceBranch, targetBranch);
+        String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/merge_base?refs[]=" + 
+                     sourceBranch + "&refs[]=" + targetBranch;
+        Request request = new Request.Builder()
+                .url(url)
+                .header(PRIVATE_TOKEN, config.getApiKey())
+                .build();
+
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                logger.error("Failed to get merge base: {}", response);
+                return null;
+            }
+            JsonNode mergeBaseNode = objectMapper.readTree(response.body().string());
+            return mergeBaseNode.get("id").asText();
+        } catch (IOException e) {
+            logger.error("Error getting merge base SHA", e);
+            return null;
+        }
     }
 
     // Простий клас Project
