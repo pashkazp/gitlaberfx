@@ -121,6 +121,7 @@ public class MainController {
 
                         progressCallback.updateProgress(0.3);
                         progressCallback.updateMessage("Завантаження проєктів...");
+                        // Get projects directly
                         List<GitLabService.Project> projects = gitLabService.getProjects();
 
                         progressCallback.updateProgress(1.0);
@@ -155,6 +156,9 @@ public class MainController {
         mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
         if (projectName != null) {
+            // Create the list for branches in the main thread
+            List<BranchModel> branchesList = new ArrayList<>();
+
             // Run the project selection and branch loading in a background task
             TaskRunner.runWithProgress(
                     stage,
@@ -164,6 +168,7 @@ public class MainController {
                         try {
                             progressCallback.updateProgress(0.1);
                             progressCallback.updateMessage("Отримання списку проєктів...");
+                            // Get projects directly without using the list created in the main thread
                             List<GitLabService.Project> projects = gitLabService.getProjects();
 
                             progressCallback.updateProgress(0.3);
@@ -184,16 +189,17 @@ public class MainController {
 
                             progressCallback.updateProgress(0.6);
                             progressCallback.updateMessage("Завантаження гілок...");
-                            List<BranchModel> branches = gitLabService.getBranches(currentProjectId);
+                            // Get branches and add them to the list created in the main thread
+                            branchesList.addAll(gitLabService.getBranches(currentProjectId));
 
                             // Сортування гілок за назвою (не чутливо до регістру)
                             progressCallback.updateProgress(0.9);
                             progressCallback.updateMessage("Сортування гілок...");
-                            branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
+                            branchesList.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
 
                             progressCallback.updateProgress(1.0);
                             progressCallback.updateMessage("Завантаження завершено");
-                            return branches;
+                            return branchesList;
                         } catch (IOException e) {
                             logger.error("Error loading project branches", e);
                             throw new RuntimeException(e);
