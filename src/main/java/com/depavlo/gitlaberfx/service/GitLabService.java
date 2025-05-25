@@ -271,6 +271,9 @@ public class GitLabService {
         if (branchName == null) {
             return null;
         }
-        return URLEncoder.encode(branchName, StandardCharsets.UTF_8);
+        // Replace commas with URL-encoded representation before encoding the entire string
+        // This ensures commas are properly handled in GitLab API requests
+        String preprocessed = branchName.replace(",", "%2C");
+        return URLEncoder.encode(preprocessed, StandardCharsets.UTF_8);
     }
 }

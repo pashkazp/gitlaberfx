@@ -5,6 +5,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -51,5 +53,25 @@ class GitLabServiceTest {
 
         assertThrows(Exception.class, () -> service.connect());
         logger.info("[DEBUG_LOG] Connect with empty API key test completed");
+    }
+
+    @Test
+    void testEncodeBranchNameWithComma() throws Exception {
+        logger.debug("[DEBUG_LOG] Testing encodeBranchName with comma in branch name");
+
+        // Get access to the private encodeBranchName method using reflection
+        Method encodeBranchNameMethod = GitLabService.class.getDeclaredMethod("encodeBranchName", String.class);
+        encodeBranchNameMethod.setAccessible(true);
+
+        // Test branch name with comma
+        String branchNameWithComma = "review/PLD-1173-fix_tests,_skip_dto_generation_from_WSDL";
+        String encodedName = (String) encodeBranchNameMethod.invoke(gitLabService, branchNameWithComma);
+
+        // Verify that the comma is properly encoded
+        // The comma should be double-encoded: first replaced with %2C, then that %2C is encoded
+        assertTrue(encodedName.contains("%252C"), 
+                "Encoded branch name should contain properly encoded comma: " + encodedName);
+
+        logger.info("[DEBUG_LOG] encodeBranchName with comma test completed");
     }
 } 
