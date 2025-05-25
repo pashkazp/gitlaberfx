@@ -141,11 +141,14 @@ public class MainController {
                     config.save();
 
                     List<BranchModel> branches = gitLabService.getBranches(currentProjectId);
+                    // Сортування гілок за назвою (не чутливо до регістру)
+                    branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
                     branchesTableView.setItems(FXCollections.observableArrayList(branches));
 
                     mainBranchComboBox.setItems(FXCollections.observableArrayList(
                             branches.stream()
                                     .map(BranchModel::getName)
+                                    .sorted(String.CASE_INSENSITIVE_ORDER)
                                     .collect(Collectors.toList())
                     ));
 

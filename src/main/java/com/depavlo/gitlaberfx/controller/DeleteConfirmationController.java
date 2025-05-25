@@ -19,16 +19,16 @@ public class DeleteConfirmationController {
 
     @FXML
     private TableView<BranchModel> branchesTableView;
-    
+
     @FXML
     private TableColumn<BranchModel, Boolean> selectedColumn;
-    
+
     @FXML
     private TableColumn<BranchModel, String> nameColumn;
-    
+
     @FXML
     private TableColumn<BranchModel, String> lastCommitColumn;
-    
+
     @FXML
     private TableColumn<BranchModel, Boolean> mergedColumn;
 
@@ -37,16 +37,36 @@ public class DeleteConfirmationController {
 
     public void initialize(List<BranchModel> branches, Stage stage) {
         this.stage = stage;
-        
+
         // Налаштування колонок таблиці
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
-        selectedColumn.setCellFactory(CheckBoxTableCell.forTableColumn(selectedColumn));
-        
+        selectedColumn.setCellFactory(column -> {
+            CheckBoxTableCell<BranchModel, Boolean> cell = new CheckBoxTableCell<>();
+            cell.setEditable(true);
+            return cell;
+        });
+
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
         mergedColumn.setCellValueFactory(new PropertyValueFactory<>("merged"));
-        
+
+        // Налаштування TableView для редагування
+        branchesTableView.setEditable(true);
+
+        // Додавання обробника клавіш для перемикання чекбоксів пробілом
+        branchesTableView.setOnKeyPressed(event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.SPACE) {
+                BranchModel selectedBranch = branchesTableView.getSelectionModel().getSelectedItem();
+                if (selectedBranch != null) {
+                    selectedBranch.setSelected(!selectedBranch.isSelected());
+                    event.consume();
+                }
+            }
+        });
+
         // Встановлення даних
+        // Сортування гілок за назвою (не чутливо до регістру)
+        branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
         ObservableList<BranchModel> data = FXCollections.observableArrayList(branches);
         branchesTableView.setItems(data);
     }
