@@ -5,18 +5,20 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
+import java.util.stream.Collectors;
 
 public class AppConfig {
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
     private static String CONFIG_DIR = System.getProperty("user.home") + "/.config/gitlaberfx";
-    private static String CONFIG_FILE = CONFIG_DIR + "/config.json";
+    private static String CONFIG_FILE = CONFIG_DIR + "/config.properties";
     private static String OLD_CONFIG_DIR = System.getProperty("user.home") + "/.gitlaberfx";
     private static String OLD_CONFIG_FILE = OLD_CONFIG_DIR + "/config.json";
 
@@ -31,7 +33,7 @@ public class AppConfig {
     // For testing purposes only
     static void resetConfigPaths() {
         CONFIG_DIR = System.getProperty("user.home") + "/.config/gitlaberfx";
-        CONFIG_FILE = CONFIG_DIR + "/config.json";
+        CONFIG_FILE = CONFIG_DIR + "/config.properties";
         OLD_CONFIG_DIR = System.getProperty("user.home") + "/.gitlaberfx";
         OLD_CONFIG_FILE = OLD_CONFIG_DIR + "/config.json";
     }
@@ -51,19 +53,37 @@ public class AppConfig {
         try {
             createConfigDirIfNotExists();
             File configFile = new File(CONFIG_FILE);
+            AppConfig config = new AppConfig();
 
             // Check if config file exists in the new location
             if (configFile.exists()) {
-                return objectMapper.readValue(configFile, AppConfig.class);
+                Properties properties = new Properties();
+                try (FileInputStream fis = new FileInputStream(configFile)) {
+                    properties.load(fis);
+                }
+
+                config.setGitlabUrl(properties.getProperty("gitlabUrl"));
+                config.setApiKey(properties.getProperty("apiKey"));
+                config.setUsername(properties.getProperty("username"));
+
+                // Load excluded branches
+                String excludedBranchesStr = properties.getProperty("excludedBranches");
+                if (excludedBranchesStr != null && !excludedBranchesStr.isEmpty()) {
+                    List<String> excludedBranches = Arrays.asList(excludedBranchesStr.split(","));
+                    config.setExcludedBranches(excludedBranches);
+                }
+
+                return config;
             }
 
             // Check if config file exists in the old location
             File oldConfigFile = new File(OLD_CONFIG_FILE);
             if (oldConfigFile.exists()) {
                 logger.info("Found configuration in old location. Migrating to new location.");
-                AppConfig config = objectMapper.readValue(oldConfigFile, AppConfig.class);
-                // Save to new location
-                objectMapper.writeValue(configFile, config);
+                // Load from JSON format
+                config = objectMapper.readValue(oldConfigFile, AppConfig.class);
+                // Save to new location in properties format
+                config.save();
                 return config;
             }
         } catch (IOException e) {
@@ -75,7 +95,24 @@ public class AppConfig {
     public void save() {
         try {
             createConfigDirIfNotExists();
-            objectMapper.writeValue(new File(CONFIG_FILE), this);
+
+            Properties properties = new Properties();
+
+            // Save basic properties
+            if (gitlabUrl != null) properties.setProperty("gitlabUrl", gitlabUrl);
+            if (apiKey != null) properties.setProperty("apiKey", apiKey);
+            if (username != null) properties.setProperty("username", username);
+
+            // Save excluded branches as comma-separated string
+            if (excludedBranches != null && !excludedBranches.isEmpty()) {
+                String excludedBranchesStr = String.join(",", excludedBranches);
+                properties.setProperty("excludedBranches", excludedBranchesStr);
+            }
+
+            // Write properties to file
+            try (FileOutputStream fos = new FileOutputStream(new File(CONFIG_FILE))) {
+                properties.store(fos, "GitLaberFX Configuration");
+            }
         } catch (IOException e) {
             logger.error("Error saving configuration", e);
         }

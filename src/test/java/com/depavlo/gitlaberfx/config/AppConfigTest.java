@@ -25,7 +25,7 @@ class AppConfigTest {
     void setUp() {
         // Set test values
         String testConfigDir = tempDir.toString() + "/.config/gitlaberfx";
-        String testConfigFile = testConfigDir + "/config.json";
+        String testConfigFile = testConfigDir + "/config.properties";
         String testOldConfigDir = tempDir.toString() + "/.gitlaberfx";
         String testOldConfigFile = testOldConfigDir + "/config.json";
 
@@ -48,7 +48,6 @@ class AppConfigTest {
         config.setExcludedBranches(Arrays.asList("branch1", "branch2"));
 
         // Зберігаємо конфіг
-        File configFile = tempDir.resolve("config.json").toFile();
         config.save();
 
         // Завантажуємо конфіг
@@ -95,7 +94,8 @@ class AppConfigTest {
         assertEquals("old-user", loadedConfig.getUsername());
 
         // Verify config was saved to new location
-        File newConfigFile = new File(tempDir.toString() + "/.config/gitlaberfx/config.json");
+        File newConfigFile = new File(tempDir.toString() + "/.config/gitlaberfx/config.properties");
         assertTrue(newConfigFile.exists());
     }
-} 
+
+}
