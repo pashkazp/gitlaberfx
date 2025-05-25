@@ -14,4 +14,6 @@ module com.depavlo.gitlaberfx {
     exports com.depavlo.gitlaberfx;
     opens com.depavlo.gitlaberfx.controller to javafx.fxml;
     exports com.depavlo.gitlaberfx.controller;
+    opens com.depavlo.gitlaberfx.config to com.fasterxml.jackson.databind;
+    exports com.depavlo.gitlaberfx.config;
 }

@@ -2,9 +2,14 @@ package com.depavlo.gitlaberfx.config;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -15,6 +20,23 @@ class AppConfigTest {
 
     @TempDir
     Path tempDir;
+
+    @BeforeEach
+    void setUp() {
+        // Set test values
+        String testConfigDir = tempDir.toString() + "/.config/gitlaberfx";
+        String testConfigFile = testConfigDir + "/config.json";
+        String testOldConfigDir = tempDir.toString() + "/.gitlaberfx";
+        String testOldConfigFile = testOldConfigDir + "/config.json";
+
+        AppConfig.setConfigPaths(testConfigDir, testConfigFile, testOldConfigDir, testOldConfigFile);
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Restore original values
+        AppConfig.resetConfigPaths();
+    }
 
     @Test
     void testSaveAndLoad() throws IOException {
@@ -52,5 +74,34 @@ class AppConfigTest {
         assertNull(config.getLastProject());
         assertNull(config.getMainBranch());
         assertTrue(config.getExcludedBranches().isEmpty());
+    }
+
+    @Test
+    void testMigrationFromOldLocation() throws Exception {
+        // Create a config in the old location
+        AppConfig oldConfig = new AppConfig();
+        oldConfig.setGitlabUrl("https://old-gitlab.com");
+        oldConfig.setApiKey("old-api-key");
+        oldConfig.setUsername("old-user");
+
+        // Ensure old config directory exists
+        String oldConfigDir = tempDir.toString() + "/.gitlaberfx";
+        new File(oldConfigDir).mkdirs();
+
+        // Save to old location
+        File oldConfigFile = new File(oldConfigDir + "/config.json");
+        new ObjectMapper().writeValue(oldConfigFile, oldConfig);
+
+        // Load config (should migrate from old to new location)
+        AppConfig loadedConfig = AppConfig.load();
+
+        // Verify migration
+        assertEquals("https://old-gitlab.com", loadedConfig.getGitlabUrl());
+        assertEquals("old-api-key", loadedConfig.getApiKey());
+        assertEquals("old-user", loadedConfig.getUsername());
+
+        // Verify config was saved to new location
+        File newConfigFile = new File(tempDir.toString() + "/.config/gitlaberfx/config.json");
+        assertTrue(newConfigFile.exists());
     }
 } 

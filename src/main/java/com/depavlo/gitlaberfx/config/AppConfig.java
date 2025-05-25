@@ -15,8 +15,26 @@ import java.util.List;
 
 public class AppConfig {
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
-    private static final String CONFIG_DIR = System.getProperty("user.home") + "/.gitlaberfx";
-    private static final String CONFIG_FILE = CONFIG_DIR + "/config.json";
+    private static String CONFIG_DIR = System.getProperty("user.home") + "/.config/gitlaberfx";
+    private static String CONFIG_FILE = CONFIG_DIR + "/config.json";
+    private static String OLD_CONFIG_DIR = System.getProperty("user.home") + "/.gitlaberfx";
+    private static String OLD_CONFIG_FILE = OLD_CONFIG_DIR + "/config.json";
+
+    // For testing purposes only
+    static void setConfigPaths(String configDir, String configFile, String oldConfigDir, String oldConfigFile) {
+        CONFIG_DIR = configDir;
+        CONFIG_FILE = configFile;
+        OLD_CONFIG_DIR = oldConfigDir;
+        OLD_CONFIG_FILE = oldConfigFile;
+    }
+
+    // For testing purposes only
+    static void resetConfigPaths() {
+        CONFIG_DIR = System.getProperty("user.home") + "/.config/gitlaberfx";
+        CONFIG_FILE = CONFIG_DIR + "/config.json";
+        OLD_CONFIG_DIR = System.getProperty("user.home") + "/.gitlaberfx";
+        OLD_CONFIG_FILE = OLD_CONFIG_DIR + "/config.json";
+    }
     private static final ObjectMapper objectMapper = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
@@ -35,8 +53,20 @@ public class AppConfig {
         try {
             createConfigDirIfNotExists();
             File configFile = new File(CONFIG_FILE);
+
+            // Check if config file exists in the new location
             if (configFile.exists()) {
                 return objectMapper.readValue(configFile, AppConfig.class);
+            }
+
+            // Check if config file exists in the old location
+            File oldConfigFile = new File(OLD_CONFIG_FILE);
+            if (oldConfigFile.exists()) {
+                logger.info("Found configuration in old location. Migrating to new location.");
+                AppConfig config = objectMapper.readValue(oldConfigFile, AppConfig.class);
+                // Save to new location
+                objectMapper.writeValue(configFile, config);
+                return config;
             }
         } catch (IOException e) {
             logger.error("Error loading configuration", e);
