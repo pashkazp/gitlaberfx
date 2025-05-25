@@ -16,6 +16,8 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 public class GitLabService {
     private static final Logger logger = LoggerFactory.getLogger(GitLabService.class);
@@ -146,7 +148,7 @@ public class GitLabService {
 
     public void deleteBranch(String projectId, String branchName) throws IOException {
         logger.info("Deleting branch {} from project {}", branchName, projectId);
-        String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches/" + branchName;
+        String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches/" + encodeBranchName(branchName);
         Request request = new Request.Builder()
                 .url(url)
                 .delete()
@@ -193,7 +195,7 @@ public class GitLabService {
      */
     private String getBranchLastCommitSha(String projectId, String branchName) {
         logger.debug("Getting SHA for branch {}", branchName);
-        String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches/" + branchName;
+        String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches/" + encodeBranchName(branchName);
         Request request = new Request.Builder()
                 .url(url)
                 .header(PRIVATE_TOKEN, config.getApiKey())
@@ -223,7 +225,7 @@ public class GitLabService {
     private String getMergeBaseSha(String projectId, String sourceBranch, String targetBranch) {
         logger.debug("Getting merge base SHA between {} and {}", sourceBranch, targetBranch);
         String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/merge_base?refs[]=" +
-                     sourceBranch + "&refs[]=" + targetBranch;
+                     encodeBranchName(sourceBranch) + "&refs[]=" + encodeBranchName(targetBranch);
         Request request = new Request.Builder()
                 .url(url)
                 .header(PRIVATE_TOKEN, config.getApiKey())
@@ -257,4 +259,18 @@ public class GitLabService {
         public String getPath() { return path; }
         public void setPath(String path) { this.path = path; }
     }
-} 
+
+    /**
+     * Encodes a branch name for use in GitLab API URLs.
+     * This method handles special characters like slashes that need to be properly encoded.
+     *
+     * @param branchName the branch name to encode
+     * @return the encoded branch name
+     */
+    private String encodeBranchName(String branchName) {
+        if (branchName == null) {
+            return null;
+        }
+        return URLEncoder.encode(branchName, StandardCharsets.UTF_8);
+    }
+}
