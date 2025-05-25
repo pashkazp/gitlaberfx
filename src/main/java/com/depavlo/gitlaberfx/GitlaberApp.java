@@ -2,6 +2,7 @@ package com.depavlo.gitlaberfx;
 
 import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.controller.MainController;
+import com.depavlo.gitlaberfx.util.TaskRunner;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
@@ -17,26 +18,33 @@ public class GitlaberApp extends Application {
     @Override
     public void start(Stage stage) throws IOException {
         logger.info("Starting application");
-        
+
         // Завантаження налаштувань
         AppConfig config = AppConfig.load();
-        
+
         // Завантаження головного вікна
         FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));
         Scene scene = new Scene(fxmlLoader.load(), 800, 600);
-        
+
         // Налаштування головного вікна
         stage.setTitle("GitLaberFX");
         stage.setScene(scene);
-        
+
         // Ініціалізація контролера
         MainController controller = fxmlLoader.getController();
         controller.initialize(config, stage);
-        
+
         stage.show();
     }
 
     public static void main(String[] args) {
         launch();
+    }
+
+    @Override
+    public void stop() throws Exception {
+        logger.info("Shutting down application");
+        TaskRunner.shutdown();
+        super.stop();
     }
 }
