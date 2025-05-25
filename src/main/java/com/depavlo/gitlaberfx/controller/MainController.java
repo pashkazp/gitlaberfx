@@ -280,8 +280,8 @@ public class MainController {
             return;
         }
 
-        LocalDate date = DialogHelper.showDatePickerDialog(stage);
-        if (date != null) {
+        LocalDate cutoffDate = DialogHelper.showDatePickerDialog(stage);
+        if (cutoffDate != null) {
             try {
                 List<BranchModel> mergedBranches = branchesTableView.getItems().stream()
                         .filter(branch -> {
@@ -289,6 +289,22 @@ public class MainController {
                                 return gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), mainBranch);
                             } catch (IOException e) {
                                 logger.error("Error checking if branch is merged", e);
+                                return false;
+                            }
+                        })
+                        .filter(branch -> {
+                            // Parse the last commit date and compare it with the cutoff date
+                            String lastCommitDateStr = branch.getLastCommit();
+                            if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
+                                return false;
+                            }
+                            try {
+                                // The lastCommit is in ISO 8601 format, e.g. "2023-01-01T12:00:00Z"
+                                // We need to parse it to a LocalDate for comparison
+                                LocalDate lastCommitDate = LocalDate.parse(lastCommitDateStr.substring(0, 10));
+                                return lastCommitDate.isBefore(cutoffDate) || lastCommitDate.isEqual(cutoffDate);
+                            } catch (Exception e) {
+                                logger.error("Error parsing last commit date: {}", lastCommitDateStr, e);
                                 return false;
                             }
                         })
@@ -303,7 +319,7 @@ public class MainController {
                         refreshBranches();
                     }
                 } else {
-                    showInfo("Інформація", "Не знайдено змерджених гілок");
+                    showInfo("Інформація", "Не знайдено змерджених гілок, які старіші за вказану дату");
                 }
             } catch (IOException e) {
                 logger.error("Error checking merged branches", e);
