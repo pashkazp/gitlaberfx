@@ -19,11 +19,15 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class MainController {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
     private static final String NOT_SELECTED_ITEM = "не обрано";
+
+    private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     @FXML
     public Button mainDelMergedButton;
@@ -142,44 +146,60 @@ public class MainController {
             // Update status bar
             updateStatus("Завантаження гілок проєкту...");
 
-            try {
-                List<GitLabService.Project> projects = null;
+            executorService.submit(() -> {
                 try {
-                    projects = gitLabService.getProjects();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    // Виконання довготривалих операцій у фоновому потоці
+                    List<GitLabService.Project> projects = null;
+                    try {
+                        projects = gitLabService.getProjects();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    GitLabService.Project selectedProject = projects.stream()
+                            .filter(p -> p.getName().equals(projectName))
+                            .findFirst()
+                            .orElse(null);
+
+                    if (selectedProject != null) {
+                        String projectId = String.valueOf(selectedProject.getId());
+
+                        List<BranchModel> branches = gitLabService.getBranches(projectId);
+                        // Сортування гілок за назвою (не чутливо до регістру)
+                        branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
+
+                        // Create a copy of branchNames for thread safety
+                        List<String> updatedBranchNames = new ArrayList<>(branchNames);
+                        updatedBranchNames.addAll(
+                                branches.stream()
+                                        .map(BranchModel::getName)
+                                        .sorted(String.CASE_INSENSITIVE_ORDER)
+                                        .collect(Collectors.toList())
+                        );
+
+                        // Оновлення UI в потоці JavaFX
+                        Platform.runLater(() -> {
+                            currentProjectId = projectId;
+                            config.save();
+
+                            branchesTableView.setItems(FXCollections.observableArrayList(branches));
+                            mainBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranchNames));
+                            mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
+
+                            updateStatus("Готово");
+                        });
+                    } else {
+                        Platform.runLater(() -> {
+                            updateStatus("Готово");
+                        });
+                    }
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        logger.error("Error loading project branches", e);
+                        showError("Помилка завантаження", "Не вдалося завантажити гілки: " + e.getMessage());
+                        updateStatus("Помилка завантаження");
+                    });
                 }
-                GitLabService.Project selectedProject = projects.stream()
-                        .filter(p -> p.getName().equals(projectName))
-                        .findFirst()
-                        .orElse(null);
-
-                if (selectedProject != null) {
-                    currentProjectId = String.valueOf(selectedProject.getId());
-                    config.save();
-
-                    List<BranchModel> branches = gitLabService.getBranches(currentProjectId);
-                    // Сортування гілок за назвою (не чутливо до регістру)
-                    branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
-                    branchesTableView.setItems(FXCollections.observableArrayList(branches));
-
-                    // Add branch names to the list that already contains "not selected" item
-                    branchNames.addAll(
-                            branches.stream()
-                                    .map(BranchModel::getName)
-                                    .sorted(String.CASE_INSENSITIVE_ORDER)
-                                    .collect(Collectors.toList())
-                    );
-                    mainBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
-                    mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
-                }
-            } catch (IOException e) {
-                logger.error("Error loading project branches", e);
-                showError("Помилка завантаження", "Не вдалося завантажити гілки: " + e.getMessage());
-            } finally {
-                // Update status bar
-                updateStatus("Готово");
-            }
+            });
         }
     }
 
@@ -197,27 +217,42 @@ public class MainController {
                     // Update status bar
                     updateStatus("Перевірка злиття гілок...");
 
-                    try {
-                        // Check if branches have been merged into the selected main branch
-                        for (BranchModel branch : branches) {
-                            try {
-                                // Skip checking the main branch itself
-                                if (branch.getName().equals(mainBranch)) {
-                                    branch.setMerged(false);
-                                    continue;
+                    // Create a copy of the branches list for thread safety
+                    List<BranchModel> branchesCopy = new ArrayList<>(branches);
+                    String finalMainBranch = mainBranch;
+
+                    executorService.submit(() -> {
+                        try {
+                            // Check if branches have been merged into the selected main branch
+                            for (BranchModel branch : branchesCopy) {
+                                try {
+                                    // Skip checking the main branch itself
+                                    if (branch.getName().equals(finalMainBranch)) {
+                                        Platform.runLater(() -> branch.setMerged(false));
+                                        continue;
+                                    }
+                                    updateStatus("Перевірка гілки: " + branch.getName());
+                                    boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+
+                                    // Update UI in JavaFX thread
+                                    final boolean finalIsMerged = isMerged;
+                                    Platform.runLater(() -> branch.setMerged(finalIsMerged));
+                                } catch (IOException e) {
+                                    logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalMainBranch, e);
+                                    Platform.runLater(() -> branch.setMerged(false));
                                 }
-                                updateStatus("Перевірка гілки: " + branch.getName());
-                                boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), mainBranch);
-                                branch.setMerged(isMerged);
-                            } catch (IOException e) {
-                                logger.error("Error checking if branch {} is merged into {}", branch.getName(), mainBranch, e);
-                                branch.setMerged(false);
                             }
+
+                            // Update status bar in JavaFX thread
+                            Platform.runLater(() -> updateStatus("Готово"));
+                        } catch (Exception e) {
+                            Platform.runLater(() -> {
+                                logger.error("Error checking branch merges", e);
+                                showError("Помилка перевірки", "Не вдалося перевірити злиття гілок: " + e.getMessage());
+                                updateStatus("Помилка перевірки");
+                            });
                         }
-                    } finally {
-                        // Update status bar
-                        updateStatus("Готово");
-                    }
+                    });
                 }
             }
         }
@@ -234,6 +269,8 @@ public class MainController {
     @FXML
     private void exit() {
         logger.info("Exiting application");
+        // Shutdown the executor service to prevent resource leaks
+        executorService.shutdown();
         System.exit(0);
     }
 
@@ -281,22 +318,31 @@ public class MainController {
                 // Update status bar
                 updateStatus("Видалення вибраних гілок...");
 
-                try {
-                    for (BranchModel branch : confirmedBranches) {
-                        updateStatus("Видалення гілки: " + branch.getName());
-                        gitLabService.deleteBranch(currentProjectId, branch.getName());
-                    }
-                    // Update status bar before refreshing branches
-                    updateStatus("Оновлення списку гілок...");
+                // Create a copy of the confirmed branches list for thread safety
+                List<BranchModel> branchesToDelete = new ArrayList<>(confirmedBranches);
 
-                    // refreshBranches() will update the status bar
-                    refreshBranches();
-                } catch (IOException e) {
-                    logger.error("Error deleting branches", e);
-                    // Update status bar in case of error
-                    updateStatus("Помилка видалення гілок");
-                    showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
-                }
+                executorService.submit(() -> {
+                    try {
+                        for (BranchModel branch : branchesToDelete) {
+                            updateStatus("Видалення гілки: " + branch.getName());
+                            gitLabService.deleteBranch(currentProjectId, branch.getName());
+                        }
+
+                        // Update status bar before refreshing branches
+                        Platform.runLater(() -> {
+                            updateStatus("Оновлення списку гілок...");
+                            // refreshBranches() will update the status bar
+                            refreshBranches();
+                        });
+                    } catch (IOException e) {
+                        Platform.runLater(() -> {
+                            logger.error("Error deleting branches", e);
+                            // Update status bar in case of error
+                            updateStatus("Помилка видалення гілок");
+                            showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                        });
+                    }
+                });
             }
         }
     }
@@ -315,71 +361,96 @@ public class MainController {
             // Update status bar
             updateStatus("Перевірка змерджених гілок...");
 
-            try {
-                List<BranchModel> mergedBranches = branchesTableView.getItems().stream()
-                        .filter(branch -> {
-                            try {
-                                updateStatus("Перевірка гілки: " + branch.getName());
-                                return gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), mainBranch);
-                            } catch (IOException e) {
-                                logger.error("Error checking if branch is merged", e);
-                                return false;
-                            }
-                        })
-                        .filter(branch -> {
-                            // Parse the last commit date and compare it with the cutoff date
-                            String lastCommitDateStr = branch.getLastCommit();
-                            if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
-                                return false;
-                            }
-                            try {
-                                // The lastCommit is in ISO 8601 format, e.g. "2023-01-01T12:00:00Z"
-                                // We need to parse it to a LocalDate for comparison
-                                LocalDate lastCommitDate = LocalDate.parse(lastCommitDateStr.substring(0, 10));
-                                return lastCommitDate.isBefore(cutoffDate) || lastCommitDate.isEqual(cutoffDate);
-                            } catch (Exception e) {
-                                logger.error("Error parsing last commit date: {}", lastCommitDateStr, e);
-                                return false;
-                            }
-                        })
-                        .collect(Collectors.toList());
+            // Store final values for use in lambda
+            final String finalMainBranch = mainBranch;
+            final LocalDate finalCutoffDate = cutoffDate;
 
-                // Update status bar before showing confirmation dialog
-                updateStatus("Готово");
+            executorService.submit(() -> {
+                try {
+                    // Create a copy of the branches list for thread safety
+                    List<BranchModel> branchesCopy = new ArrayList<>(branchesTableView.getItems());
 
-                if (!mergedBranches.isEmpty()) {
-                    List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, mergedBranches);
-                    if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
-                        // Update status bar for deletion
-                        updateStatus("Видалення змерджених гілок...");
+                    List<BranchModel> mergedBranches = branchesCopy.stream()
+                            .filter(branch -> {
+                                try {
+                                    updateStatus("Перевірка гілки: " + branch.getName());
+                                    return gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+                                } catch (IOException e) {
+                                    logger.error("Error checking if branch is merged", e);
+                                    return false;
+                                }
+                            })
+                            .filter(branch -> {
+                                // Parse the last commit date and compare it with the cutoff date
+                                String lastCommitDateStr = branch.getLastCommit();
+                                if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
+                                    return false;
+                                }
+                                try {
+                                    // The lastCommit is in ISO 8601 format, e.g. "2023-01-01T12:00:00Z"
+                                    // We need to parse it to a LocalDate for comparison
+                                    LocalDate lastCommitDate = LocalDate.parse(lastCommitDateStr.substring(0, 10));
+                                    return lastCommitDate.isBefore(finalCutoffDate) || lastCommitDate.isEqual(finalCutoffDate);
+                                } catch (Exception e) {
+                                    logger.error("Error parsing last commit date: {}", lastCommitDateStr, e);
+                                    return false;
+                                }
+                            })
+                            .collect(Collectors.toList());
 
-                        try {
-                            for (BranchModel branch : confirmedBranches) {
-                                updateStatus("Видалення гілки: " + branch.getName());
-                                gitLabService.deleteBranch(currentProjectId, branch.getName());
+                    // Update UI in JavaFX thread
+                    Platform.runLater(() -> {
+                        // Update status bar before showing confirmation dialog
+                        updateStatus("Готово");
+
+                        if (!mergedBranches.isEmpty()) {
+                            List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, mergedBranches);
+                            if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
+                                // Update status bar for deletion
+                                updateStatus("Видалення змерджених гілок...");
+
+                                // Create a copy of the confirmed branches list for thread safety
+                                List<BranchModel> branchesToDelete = new ArrayList<>(confirmedBranches);
+
+                                // Submit a new task for deletion
+                                executorService.submit(() -> {
+                                    try {
+                                        for (BranchModel branch : branchesToDelete) {
+                                            updateStatus("Видалення гілки: " + branch.getName());
+                                            gitLabService.deleteBranch(currentProjectId, branch.getName());
+                                        }
+
+                                        // Update UI in JavaFX thread
+                                        Platform.runLater(() -> {
+                                            // Update status bar before refreshing branches
+                                            updateStatus("Оновлення списку гілок...");
+                                            // refreshBranches() will update the status bar
+                                            refreshBranches();
+                                        });
+                                    } catch (IOException e) {
+                                        Platform.runLater(() -> {
+                                            logger.error("Error deleting merged branches", e);
+                                            // Update status bar in case of error
+                                            updateStatus("Помилка видалення гілок");
+                                            showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                                        });
+                                    }
+                                });
                             }
-                            // Update status bar before refreshing branches
-                            updateStatus("Оновлення списку гілок...");
-
-                            // refreshBranches() will update the status bar
-                            refreshBranches();
-                        } catch (IOException e) {
-                            logger.error("Error deleting merged branches", e);
-                            // Update status bar in case of error
-                            updateStatus("Помилка видалення гілок");
-                            showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                        } else {
+                            updateStatus("Готово");
+                            showInfo("Інформація", "Не знайдено змерджених гілок, які старіші за вказану дату");
                         }
-                    }
-                } else {
-                    updateStatus("Готово");
-                    showInfo("Інформація", "Не знайдено змерджених гілок, які старіші за вказану дату");
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        logger.error("Error checking merged branches", e);
+                        // Update status bar in case of error
+                        updateStatus("Помилка перевірки гілок");
+                        showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
+                    });
                 }
-            } catch (Exception e) {
-                logger.error("Error checking merged branches", e);
-                // Update status bar in case of error
-                updateStatus("Помилка перевірки гілок");
-                showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
-            }
+            });
         }
     }
 
