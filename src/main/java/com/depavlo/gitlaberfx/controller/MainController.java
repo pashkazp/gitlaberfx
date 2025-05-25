@@ -87,8 +87,16 @@ public class MainController {
     }
 
     private void loadConfig() {
+        gitLabService = new GitLabService(config);
+
+        // Check if required configuration is present
+        if (!gitLabService.hasRequiredConfig()) {
+            logger.warn("Missing required GitLab configuration");
+            showWarning("Відсутні налаштування", "Відсутні необхідні налаштування для з'єднання з GitLab. Будь ласка, перевірте URL GitLab та API ключ у налаштуваннях.");
+            return;
+        }
+
         try {
-            gitLabService = new GitLabService(config);
             gitLabService.connect();
 
             List<GitLabService.Project> projects = gitLabService.getProjects();
@@ -295,6 +303,14 @@ public class MainController {
 
     private void showInfo(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showWarning(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);

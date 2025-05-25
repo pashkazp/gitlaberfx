@@ -25,6 +25,15 @@ public class GitLabService {
     private final OkHttpClient httpClient;
     private final ObjectMapper objectMapper;
 
+    /**
+     * Checks if all required configuration fields for GitLab connection are present.
+     * @return true if all required fields are present, false otherwise
+     */
+    public boolean hasRequiredConfig() {
+        return config.getGitlabUrl() != null && !config.getGitlabUrl().isEmpty() &&
+               config.getApiKey() != null && !config.getApiKey().isEmpty();
+    }
+
     public GitLabService(AppConfig config) {
         this.config = config;
 
@@ -42,12 +51,12 @@ public class GitLabService {
                 .hostnameVerifier((hostname, session) -> true)
                 .sslSocketFactory(sslContext.getSocketFactory(), (X509TrustManager) TRUST_ALL_CERTS)
                 .build();
-        
-        
+
+
 //        this.httpClient = new OkHttpClient();
         this.objectMapper = new ObjectMapper();
     }
-    
+
     TrustManager TRUST_ALL_CERTS = new X509TrustManager() {
         @Override
         public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
@@ -62,12 +71,12 @@ public class GitLabService {
             return new java.security.cert.X509Certificate[]{};
         }
     };
-    
+
     public void connect() throws IOException {
-        logger.info("Connecting to GitLab at {}", config.getGitlabUrl());
-        if (config.getApiKey() == null || config.getApiKey().isEmpty()) {
-            throw new IOException("API key is not set");
+        if (!hasRequiredConfig()) {
+            throw new IOException("Required GitLab configuration is missing. Please check GitLab URL and API key in settings.");
         }
+        logger.info("Connecting to GitLab at {}", config.getGitlabUrl());
         // Тест з'єднання - спробуємо отримати список проєктів
         getProjects();
     }
@@ -217,10 +226,10 @@ public class GitLabService {
 
         public int getId() { return id; }
         public void setId(int id) { this.id = id; }
-        
+
         public String getName() { return name; }
         public void setName(String name) { this.name = name; }
-        
+
         public String getPath() { return path; }
         public void setPath(String path) { this.path = path; }
     }
