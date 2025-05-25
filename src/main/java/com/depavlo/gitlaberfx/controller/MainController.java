@@ -4,6 +4,7 @@ import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.model.BranchModel;
 import com.depavlo.gitlaberfx.service.GitLabService;
 import com.depavlo.gitlaberfx.util.DialogHelper;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -47,6 +48,9 @@ public class MainController {
 
     @FXML
     private TableColumn<BranchModel, Boolean> mergedColumn;
+
+    @FXML
+    private Label statusLabel;
 
     private AppConfig config;
     private GitLabService gitLabService;
@@ -135,8 +139,8 @@ public class MainController {
         mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
         if (projectName != null) {
-            // Show loading dialog
-            DialogHelper.showLoadingDialog(stage, "Завантаження гілок проєкту...");
+            // Update status bar
+            updateStatus("Завантаження гілок проєкту...");
 
             try {
                 List<GitLabService.Project> projects = null;
@@ -173,8 +177,8 @@ public class MainController {
                 logger.error("Error loading project branches", e);
                 showError("Помилка завантаження", "Не вдалося завантажити гілки: " + e.getMessage());
             } finally {
-                // Hide loading dialog
-                DialogHelper.hideLoadingDialog();
+                // Update status bar
+                updateStatus("Готово");
             }
         }
     }
@@ -190,8 +194,8 @@ public class MainController {
                         branch.setMerged(false);
                     }
                 } else {
-                    // Show loading dialog
-                    DialogHelper.showLoadingDialog(stage, "Перевірка злиття гілок...");
+                    // Update status bar
+                    updateStatus("Перевірка злиття гілок...");
 
                     try {
                         // Check if branches have been merged into the selected main branch
@@ -202,6 +206,7 @@ public class MainController {
                                     branch.setMerged(false);
                                     continue;
                                 }
+                                updateStatus("Перевірка гілки: " + branch.getName());
                                 boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), mainBranch);
                                 branch.setMerged(isMerged);
                             } catch (IOException e) {
@@ -210,8 +215,8 @@ public class MainController {
                             }
                         }
                     } finally {
-                        // Hide loading dialog
-                        DialogHelper.hideLoadingDialog();
+                        // Update status bar
+                        updateStatus("Готово");
                     }
                 }
             }
@@ -273,22 +278,23 @@ public class MainController {
         if (!selectedBranches.isEmpty()) {
             List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, selectedBranches);
             if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
-                // Show loading dialog
-                DialogHelper.showLoadingDialog(stage, "Видалення вибраних гілок...");
+                // Update status bar
+                updateStatus("Видалення вибраних гілок...");
 
                 try {
                     for (BranchModel branch : confirmedBranches) {
+                        updateStatus("Видалення гілки: " + branch.getName());
                         gitLabService.deleteBranch(currentProjectId, branch.getName());
                     }
-                    // Hide loading dialog before refreshing branches
-                    DialogHelper.hideLoadingDialog();
+                    // Update status bar before refreshing branches
+                    updateStatus("Оновлення списку гілок...");
 
-                    // refreshBranches() will show its own loading dialog
+                    // refreshBranches() will update the status bar
                     refreshBranches();
                 } catch (IOException e) {
                     logger.error("Error deleting branches", e);
-                    // Hide loading dialog in case of error
-                    DialogHelper.hideLoadingDialog();
+                    // Update status bar in case of error
+                    updateStatus("Помилка видалення гілок");
                     showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
                 }
             }
@@ -306,13 +312,14 @@ public class MainController {
 
         LocalDate cutoffDate = DialogHelper.showDatePickerDialog(stage);
         if (cutoffDate != null) {
-            // Show loading dialog
-            DialogHelper.showLoadingDialog(stage, "Перевірка змерджених гілок...");
+            // Update status bar
+            updateStatus("Перевірка змерджених гілок...");
 
             try {
                 List<BranchModel> mergedBranches = branchesTableView.getItems().stream()
                         .filter(branch -> {
                             try {
+                                updateStatus("Перевірка гілки: " + branch.getName());
                                 return gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), mainBranch);
                             } catch (IOException e) {
                                 logger.error("Error checking if branch is merged", e);
@@ -337,38 +344,40 @@ public class MainController {
                         })
                         .collect(Collectors.toList());
 
-                // Hide loading dialog before showing confirmation dialog
-                DialogHelper.hideLoadingDialog();
+                // Update status bar before showing confirmation dialog
+                updateStatus("Готово");
 
                 if (!mergedBranches.isEmpty()) {
                     List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, mergedBranches);
                     if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
-                        // Show loading dialog for deletion
-                        DialogHelper.showLoadingDialog(stage, "Видалення змерджених гілок...");
+                        // Update status bar for deletion
+                        updateStatus("Видалення змерджених гілок...");
 
                         try {
                             for (BranchModel branch : confirmedBranches) {
+                                updateStatus("Видалення гілки: " + branch.getName());
                                 gitLabService.deleteBranch(currentProjectId, branch.getName());
                             }
-                            // Hide loading dialog before refreshing branches
-                            DialogHelper.hideLoadingDialog();
+                            // Update status bar before refreshing branches
+                            updateStatus("Оновлення списку гілок...");
 
-                            // refreshBranches() will show its own loading dialog
+                            // refreshBranches() will update the status bar
                             refreshBranches();
                         } catch (IOException e) {
                             logger.error("Error deleting merged branches", e);
-                            // Hide loading dialog in case of error
-                            DialogHelper.hideLoadingDialog();
+                            // Update status bar in case of error
+                            updateStatus("Помилка видалення гілок");
                             showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
                         }
                     }
                 } else {
+                    updateStatus("Готово");
                     showInfo("Інформація", "Не знайдено змерджених гілок, які старіші за вказану дату");
                 }
             } catch (Exception e) {
                 logger.error("Error checking merged branches", e);
-                // Hide loading dialog in case of error
-                DialogHelper.hideLoadingDialog();
+                // Update status bar in case of error
+                updateStatus("Помилка перевірки гілок");
                 showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
             }
         }
@@ -414,5 +423,19 @@ public class MainController {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    /**
+     * Updates the status label with the given message.
+     * This method is safe to call from any thread.
+     * 
+     * @param message The message to display
+     */
+    private void updateStatus(String message) {
+        if (Platform.isFxApplicationThread()) {
+            statusLabel.setText(message);
+        } else {
+            Platform.runLater(() -> statusLabel.setText(message));
+        }
     }
 }

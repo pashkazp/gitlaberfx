@@ -8,7 +8,7 @@
     <padding>
         <Insets bottom="10" left="10" right="10" top="10" />
     </padding>
-    
+
     <MenuBar>
         <Menu text="Файл">
             <MenuItem onAction="#showSettings" text="Налаштування" />
@@ -51,6 +51,10 @@
         <Button onAction="#deleteSelected" style="-fx-base: #ff0000;" text="Видалити вибрані" />
         <Button fx:id="mainDelMergedButton" onAction="#deleteMerged" text="Видалити змерджені" />
         <Button onAction="#addToExclusions" text="Додати до виключень" />
+    </HBox>
+
+    <HBox style="-fx-background-color: #f0f0f0; -fx-border-color: #c0c0c0; -fx-border-width: 1 0 0 0; -fx-padding: 5;">
+        <Label fx:id="statusLabel" text="Готово" HBox.hgrow="ALWAYS" />
     </HBox>
 
 </VBox>
