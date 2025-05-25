@@ -41,8 +41,6 @@ public class AppConfig {
     private String gitlabUrl;
     private String apiKey;
     private String username;
-    private String lastProject;
-    private String mainBranch;
     private List<String> excludedBranches;
 
     public AppConfig() {
@@ -115,21 +113,6 @@ public class AppConfig {
         this.username = username;
     }
 
-    public String getLastProject() {
-        return lastProject;
-    }
-
-    public void setLastProject(String lastProject) {
-        this.lastProject = lastProject;
-    }
-
-    public String getMainBranch() {
-        return mainBranch;
-    }
-
-    public void setMainBranch(String mainBranch) {
-        this.mainBranch = mainBranch;
-    }
 
     public List<String> getExcludedBranches() {
         return excludedBranches;

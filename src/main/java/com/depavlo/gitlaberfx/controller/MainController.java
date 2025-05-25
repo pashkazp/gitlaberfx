@@ -114,10 +114,6 @@ public class MainController {
                             .sorted(String.CASE_INSENSITIVE_ORDER)
                             .collect(Collectors.toList())
             ));
-
-            if (config.getLastProject() != null) {
-                projectComboBox.setValue(config.getLastProject());
-            }
         } catch (IOException e) {
             logger.error("Error loading configuration", e);
             showError("Помилка завантаження", "Не вдалося завантажити налаштування: " + e.getMessage());
@@ -150,7 +146,6 @@ public class MainController {
 
                 if (selectedProject != null) {
                     currentProjectId = String.valueOf(selectedProject.getId());
-                    config.setLastProject(projectName);
                     config.save();
 
                     List<BranchModel> branches = gitLabService.getBranches(currentProjectId);
@@ -166,12 +161,7 @@ public class MainController {
                                     .collect(Collectors.toList())
                     );
                     mainBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
-
-                    if (config.getMainBranch() != null) {
-                        mainBranchComboBox.setValue(config.getMainBranch());
-                    } else {
-                        mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
-                    }
+                    mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
                 }
             } catch (IOException e) {
                 logger.error("Error loading project branches", e);
@@ -183,19 +173,31 @@ public class MainController {
     private void onMainBranchSelected() {
         String mainBranch = mainBranchComboBox.getValue();
         if (mainBranch != null) {
-            // If "not selected" item is selected, reset the "Merged" flag for all branches
-            if (NOT_SELECTED_ITEM.equals(mainBranch)) {
-                ObservableList<BranchModel> branches = branchesTableView.getItems();
-                if (branches != null) {
+            ObservableList<BranchModel> branches = branchesTableView.getItems();
+            if (branches != null) {
+                // If "not selected" item is selected, reset the "Merged" flag for all branches
+                if (NOT_SELECTED_ITEM.equals(mainBranch)) {
                     for (BranchModel branch : branches) {
                         branch.setMerged(false);
                     }
+                } else {
+                    // Check if branches have been merged into the selected main branch
+                    for (BranchModel branch : branches) {
+                        try {
+                            // Skip checking the main branch itself
+                            if (branch.getName().equals(mainBranch)) {
+                                branch.setMerged(false);
+                                continue;
+                            }
+                            boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), mainBranch);
+                            branch.setMerged(isMerged);
+                        } catch (IOException e) {
+                            logger.error("Error checking if branch {} is merged into {}", branch.getName(), mainBranch, e);
+                            branch.setMerged(false);
+                        }
+                    }
                 }
-                config.setMainBranch(null);
-            } else {
-                config.setMainBranch(mainBranch);
             }
-            config.save();
         }
     }
 
@@ -269,7 +271,8 @@ public class MainController {
     @FXML
     private void checkMerged() {
         logger.debug("Checking merged branches");
-        if (config.getMainBranch() == null) {
+        String mainBranch = mainBranchComboBox.getValue();
+        if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
             showError("Помилка", "Не вибрано головну гілку");
             return;
         }
@@ -280,7 +283,7 @@ public class MainController {
                 List<BranchModel> mergedBranches = branchesTableView.getItems().stream()
                         .filter(branch -> {
                             try {
-                                return gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), config.getMainBranch());
+                                return gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), mainBranch);
                             } catch (IOException e) {
                                 logger.error("Error checking if branch is merged", e);
                                 return false;
