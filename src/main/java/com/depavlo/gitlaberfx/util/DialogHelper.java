@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 
 public class DialogHelper {
     private static final Logger logger = LoggerFactory.getLogger(DialogHelper.class);
@@ -65,8 +67,29 @@ public class DialogHelper {
             loadingStage.initOwner(parentStage);
             loadingStage.setScene(scene);
 
-            // Show the loading dialog
-            Platform.runLater(() -> loadingStage.show());
+            // Use a CountDownLatch to ensure the dialog is shown before returning
+            final CountDownLatch latch = new CountDownLatch(1);
+
+            // Show the loading dialog and wait for it to be shown
+            Platform.runLater(() -> {
+                try {
+                    loadingStage.show();
+                    // Force a layout pass to ensure the dialog is rendered
+                    loadingStage.getScene().getRoot().layout();
+                    // Process pending events to ensure the dialog is displayed
+                    Platform.requestNextPulse();
+                } finally {
+                    latch.countDown();
+                }
+            });
+
+            try {
+                // Wait for the dialog to be shown
+                latch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.error("Interrupted while waiting for loading dialog to show", e);
+            }
 
             return loadingStage;
         } catch (Exception e) {
