@@ -24,22 +24,22 @@ public class MainController {
 
     @FXML
     private ComboBox<String> projectComboBox;
-    
+
     @FXML
     private ComboBox<String> mainBranchComboBox;
-    
+
     @FXML
     private TableView<BranchModel> branchesTableView;
-    
+
     @FXML
     private TableColumn<BranchModel, Boolean> selectedColumn;
-    
+
     @FXML
     private TableColumn<BranchModel, String> nameColumn;
-    
+
     @FXML
     private TableColumn<BranchModel, String> lastCommitColumn;
-    
+
     @FXML
     private TableColumn<BranchModel, Boolean> mergedColumn;
 
@@ -51,19 +51,37 @@ public class MainController {
     public void initialize(AppConfig config, Stage stage) {
         this.config = config;
         this.stage = stage;
-        
+
         // Налаштування колонок таблиці
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
-        selectedColumn.setCellFactory(CheckBoxTableCell.forTableColumn(selectedColumn));
-        
+        selectedColumn.setCellFactory(column -> {
+            CheckBoxTableCell<BranchModel, Boolean> cell = new CheckBoxTableCell<>();
+            cell.setEditable(true);
+            return cell;
+        });
+
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
         mergedColumn.setCellValueFactory(new PropertyValueFactory<>("merged"));
-        
+
         // Налаштування комбобоксів
         projectComboBox.setOnAction(e -> onProjectSelected());
         mainBranchComboBox.setOnAction(e -> onMainBranchSelected());
-        
+
+        // Налаштування TableView для редагування
+        branchesTableView.setEditable(true);
+
+        // Додавання обробника клавіш для перемикання чекбоксів пробілом
+        branchesTableView.setOnKeyPressed(event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.SPACE) {
+                BranchModel selectedBranch = branchesTableView.getSelectionModel().getSelectedItem();
+                if (selectedBranch != null) {
+                    selectedBranch.setSelected(!selectedBranch.isSelected());
+                    event.consume();
+                }
+            }
+        });
+
         // Завантаження налаштувань
         loadConfig();
     }
@@ -72,14 +90,15 @@ public class MainController {
         try {
             gitLabService = new GitLabService(config);
             gitLabService.connect();
-            
+
             List<GitLabService.Project> projects = gitLabService.getProjects();
             projectComboBox.setItems(FXCollections.observableArrayList(
                     projects.stream()
                             .map(GitLabService.Project::getName)
+                            .sorted(String.CASE_INSENSITIVE_ORDER)
                             .collect(Collectors.toList())
             ));
-            
+
             if (config.getLastProject() != null) {
                 projectComboBox.setValue(config.getLastProject());
             }
@@ -91,6 +110,10 @@ public class MainController {
 
     private void onProjectSelected() {
         String projectName = projectComboBox.getValue();
+        // Clear mainBranchComboBox when a project is selected
+        mainBranchComboBox.getItems().clear();
+        mainBranchComboBox.setValue(null);
+
         if (projectName != null) {
             try {
                 List<GitLabService.Project> projects = null;
@@ -103,21 +126,21 @@ public class MainController {
                         .filter(p -> p.getName().equals(projectName))
                         .findFirst()
                         .orElse(null);
-                
+
                 if (selectedProject != null) {
                     currentProjectId = String.valueOf(selectedProject.getId());
                     config.setLastProject(projectName);
                     config.save();
-                    
+
                     List<BranchModel> branches = gitLabService.getBranches(currentProjectId);
                     branchesTableView.setItems(FXCollections.observableArrayList(branches));
-                    
+
                     mainBranchComboBox.setItems(FXCollections.observableArrayList(
                             branches.stream()
                                     .map(BranchModel::getName)
                                     .collect(Collectors.toList())
                     ));
-                    
+
                     if (config.getMainBranch() != null) {
                         mainBranchComboBox.setValue(config.getMainBranch());
                     }
@@ -187,7 +210,7 @@ public class MainController {
         List<BranchModel> selectedBranches = branchesTableView.getItems().stream()
                 .filter(BranchModel::isSelected)
                 .collect(Collectors.toList());
-        
+
         if (!selectedBranches.isEmpty()) {
             List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, selectedBranches);
             if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
@@ -211,7 +234,7 @@ public class MainController {
             showError("Помилка", "Не вибрано головну гілку");
             return;
         }
-        
+
         LocalDate date = DialogHelper.showDatePickerDialog(stage);
         if (date != null) {
             try {
@@ -225,7 +248,7 @@ public class MainController {
                             }
                         })
                         .collect(Collectors.toList());
-                
+
                 if (!mergedBranches.isEmpty()) {
                     List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, mergedBranches);
                     if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
@@ -250,7 +273,7 @@ public class MainController {
         List<BranchModel> selectedBranches = branchesTableView.getItems().stream()
                 .filter(BranchModel::isSelected)
                 .collect(Collectors.toList());
-        
+
         if (!selectedBranches.isEmpty()) {
             config.getExcludedBranches().addAll(
                     selectedBranches.stream()
