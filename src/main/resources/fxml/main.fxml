@@ -1,60 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.*?>
-<?import javafx.geometry.Insets?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.depavlo.gitlaberfx.controller.MainController"
-      spacing="10">
+<VBox spacing="10" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.MainController">
     <padding>
-        <Insets top="10" right="10" bottom="10" left="10"/>
+        <Insets bottom="10" left="10" right="10" top="10" />
     </padding>
     
     <MenuBar>
         <Menu text="Файл">
-            <MenuItem text="Налаштування" onAction="#showSettings"/>
-            <SeparatorMenuItem/>
-            <MenuItem text="Вихід" onAction="#exit"/>
+            <MenuItem onAction="#showSettings" text="Налаштування" />
+            <SeparatorMenuItem />
+            <MenuItem onAction="#exit" text="Вихід" />
         </Menu>
         <Menu text="Допомога">
-            <MenuItem text="Про програму" onAction="#showAbout"/>
+            <MenuItem onAction="#showAbout" text="Про програму" />
         </Menu>
     </MenuBar>
 
     <HBox spacing="10">
         <VBox spacing="5" HBox.hgrow="ALWAYS">
-            <Label text="Проєкт:"/>
-            <ComboBox fx:id="projectComboBox" HBox.hgrow="ALWAYS"/>
+            <Label text="Проєкт:" />
+            <ComboBox fx:id="projectComboBox" HBox.hgrow="ALWAYS" />
         </VBox>
         <VBox spacing="5">
-            <Label text="Головна гілка:"/>
-            <ComboBox fx:id="mainBranchComboBox"/>
+            <Label text="Головна гілка:" />
+            <ComboBox fx:id="mainBranchComboBox" />
         </VBox>
     </HBox>
 
     <HBox spacing="10">
-        <Button text="Оновити список" onAction="#refreshBranches"/>
-        <Button text="Вибрати всі" onAction="#selectAll"/>
-        <Button text="Скасувати вибір" onAction="#deselectAll"/>
-        <Button text="Інвертувати вибір" onAction="#invertSelection"/>
+        <Button onAction="#refreshBranches" text="Оновити список" />
+        <Button onAction="#selectAll" text="Вибрати всі" />
+        <Button onAction="#deselectAll" text="Скасувати вибір" />
+        <Button onAction="#invertSelection" text="Інвертувати вибір" />
     </HBox>
 
     <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="selectedColumn" text="Вибрати" prefWidth="50"/>
-            <TableColumn fx:id="nameColumn" text="Назва гілки" prefWidth="200"/>
-            <TableColumn fx:id="lastCommitColumn" text="Останній коміт" prefWidth="150"/>
-            <TableColumn fx:id="mergedColumn" text="Змерджена" prefWidth="100"/>
+            <TableColumn fx:id="selectedColumn" prefWidth="50" text="Вибрати" />
+            <TableColumn fx:id="nameColumn" prefWidth="200" text="Назва гілки" />
+            <TableColumn fx:id="lastCommitColumn" prefWidth="150" text="Останній коміт" />
+            <TableColumn fx:id="mergedColumn" prefWidth="100" text="Змерджена" />
         </columns>
     </TableView>
 
     <HBox spacing="10">
-        <Button text="Видалити вибрані" onAction="#deleteSelected" style="-fx-base: #ff0000;"/>
-        <Button text="Перевірити змерджені" onAction="#checkMerged"/>
-        <Button text="Додати до виключень" onAction="#addToExclusions"/>
+        <Button onAction="#deleteSelected" style="-fx-base: #ff0000;" text="Видалити вибрані" />
+        <Button fx:id="mainDelMergedButton" onAction="#deleteMerged" text="Видалити змерджені" />
+        <Button onAction="#addToExclusions" text="Додати до виключень" />
     </HBox>
 
-</VBox> 
+</VBox>

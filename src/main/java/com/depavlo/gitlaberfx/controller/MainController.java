@@ -25,6 +25,9 @@ public class MainController {
     private static final String NOT_SELECTED_ITEM = "не обрано";
 
     @FXML
+    public Button mainDelMergedButton;
+
+    @FXML
     private ComboBox<String> projectComboBox;
 
     @FXML
@@ -269,7 +272,7 @@ public class MainController {
     }
 
     @FXML
-    private void checkMerged() {
+    private void deleteMerged() {
         logger.debug("Checking merged branches");
         String mainBranch = mainBranchComboBox.getValue();
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
