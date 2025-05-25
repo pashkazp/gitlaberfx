@@ -134,8 +134,8 @@ public class GitLabService {
                 for (JsonNode branchNode : jsonArray) {
                     String branchName = branchNode.get("name").asText();
                     String lastCommitDate = branchNode.get("commit").get("committed_date").asText();
-                    boolean merged = isMerged(projectId, branchName);
-                    branches.add(new BranchModel(branchName, lastCommitDate, merged));
+                    // Initialize merged flag to false, it will be updated when a main branch is selected
+                    branches.add(new BranchModel(branchName, lastCommitDate, false));
                 }
                 if (jsonArray.size() < perPage) break;
                 page++;
@@ -160,35 +160,6 @@ public class GitLabService {
         }
     }
 
-    private boolean isMerged(String projectId, String branchName) {
-        int page = 1;
-        int perPage = 100;
-        try {
-            while (true) {
-                String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId +
-                        "/merge_requests?state=merged&source_branch=" + branchName +
-                        "&per_page=" + perPage + "&page=" + page;
-                Request request = new Request.Builder()
-                        .url(url)
-                        .header(PRIVATE_TOKEN, config.getApiKey())
-                        .build();
-
-                try (Response response = httpClient.newCall(request).execute()) {
-                    if (!response.isSuccessful()) {
-                        break;
-                    }
-                    JsonNode jsonArray = objectMapper.readTree(response.body().string());
-                    if (!jsonArray.isArray() || jsonArray.size() == 0) break;
-                    if (jsonArray.size() > 0) return true;
-                    if (jsonArray.size() < perPage) break;
-                    page++;
-                }
-            }
-        } catch (IOException e) {
-            logger.error("Error checking if branch {} is merged", branchName, e);
-        }
-        return false;
-    }
 
     public boolean isCommitInMainBranch(String projectId, String branchName, String mainBranch) throws IOException {
         logger.debug("Checking if branch {} is merged into {}", branchName, mainBranch);
