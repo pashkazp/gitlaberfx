@@ -53,6 +53,7 @@ public class MainController {
     private GitLabService gitLabService;
     private Stage stage;
     private String currentProjectId;
+    private List<GitLabService.Project> projects;
 
     public void initialize(AppConfig config, Stage stage) {
         this.config = config;
@@ -122,7 +123,7 @@ public class MainController {
                         progressCallback.updateProgress(0.3);
                         progressCallback.updateMessage("Завантаження проєктів...");
                         // Get projects directly
-                        List<GitLabService.Project> projects = gitLabService.getProjects();
+                        projects = gitLabService.getProjects();
 
                         progressCallback.updateProgress(1.0);
                         progressCallback.updateMessage("Завантаження завершено");
@@ -156,7 +157,7 @@ public class MainController {
         mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
         if (projectName != null) {
-            // Create the list for branches in the main thread
+            // Create the list in the main thread
             List<BranchModel> branchesList = new ArrayList<>();
 
             // Run the project selection and branch loading in a background task
@@ -168,9 +169,7 @@ public class MainController {
                         try {
                             progressCallback.updateProgress(0.1);
                             progressCallback.updateMessage("Отримання списку проєктів...");
-                            // Get projects directly without using the list created in the main thread
-                            List<GitLabService.Project> projects = gitLabService.getProjects();
-
+                            // Use the projects list from the class field
                             progressCallback.updateProgress(0.3);
                             progressCallback.updateMessage("Пошук обраного проєкту...");
                             GitLabService.Project selectedProject = projects.stream()
