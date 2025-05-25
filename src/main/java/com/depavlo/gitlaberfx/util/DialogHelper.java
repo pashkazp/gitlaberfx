@@ -67,28 +67,20 @@ public class DialogHelper {
             loadingStage.initOwner(parentStage);
             loadingStage.setScene(scene);
 
-            // Use a CountDownLatch to ensure the dialog is shown before returning
-            final CountDownLatch latch = new CountDownLatch(1);
-
-            // Show the loading dialog and wait for it to be shown
-            Platform.runLater(() -> {
-                try {
+            // If we're not on the JavaFX application thread, use Platform.runLater
+            if (!Platform.isFxApplicationThread()) {
+                Platform.runLater(() -> {
                     loadingStage.show();
-                    // Force a layout pass to ensure the dialog is rendered
-                    loadingStage.getScene().getRoot().layout();
-                    // Process pending events to ensure the dialog is displayed
-                    Platform.requestNextPulse();
-                } finally {
-                    latch.countDown();
-                }
-            });
-
-            try {
-                // Wait for the dialog to be shown
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                logger.error("Interrupted while waiting for loading dialog to show", e);
+                    // Center the dialog on the parent stage
+                    loadingStage.setX(parentStage.getX() + (parentStage.getWidth() - loadingStage.getWidth()) / 2);
+                    loadingStage.setY(parentStage.getY() + (parentStage.getHeight() - loadingStage.getHeight()) / 2);
+                });
+            } else {
+                // We're already on the JavaFX application thread, so show directly
+                loadingStage.show();
+                // Center the dialog on the parent stage
+                loadingStage.setX(parentStage.getX() + (parentStage.getWidth() - loadingStage.getWidth()) / 2);
+                loadingStage.setY(parentStage.getY() + (parentStage.getHeight() - loadingStage.getHeight()) / 2);
             }
 
             return loadingStage;
@@ -103,10 +95,19 @@ public class DialogHelper {
      */
     public static void hideLoadingDialog() {
         if (loadingStage != null) {
-            Platform.runLater(() -> {
+            // If we're not on the JavaFX application thread, use Platform.runLater
+            if (!Platform.isFxApplicationThread()) {
+                Platform.runLater(() -> {
+                    if (loadingStage != null) {
+                        loadingStage.close();
+                        loadingStage = null;
+                    }
+                });
+            } else {
+                // We're already on the JavaFX application thread, so close directly
                 loadingStage.close();
                 loadingStage = null;
-            });
+            }
         }
     }
 

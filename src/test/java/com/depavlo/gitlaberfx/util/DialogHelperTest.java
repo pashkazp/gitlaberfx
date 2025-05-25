@@ -31,10 +31,10 @@ class DialogHelperTest {
     void testShowSettingsDialog() {
         // Create test data
         AppConfig config = new AppConfig();
-        
+
         // Test that the method exists and has the expected signature
         assertNotNull(DialogHelper.class);
-        
+
         // Verify that the method can be called with the expected parameters
         // This doesn't actually call the method, just verifies it exists
         assertDoesNotThrow(() -> {
@@ -53,10 +53,10 @@ class DialogHelperTest {
             new BranchModel("branch1", "2024-01-01", true),
             new BranchModel("branch2", "2024-01-02", false)
         );
-        
+
         // Test that the method exists and has the expected signature
         assertNotNull(DialogHelper.class);
-        
+
         // Verify that the method can be called with the expected parameters
         assertDoesNotThrow(() -> {
             // This is just a compile-time check
@@ -71,7 +71,7 @@ class DialogHelperTest {
     void testShowDatePickerDialog() {
         // Test that the method exists and has the expected signature
         assertNotNull(DialogHelper.class);
-        
+
         // Verify that the method can be called with the expected parameters
         assertDoesNotThrow(() -> {
             // This is just a compile-time check
@@ -86,12 +86,41 @@ class DialogHelperTest {
     void testShowAboutDialog() {
         // Test that the method exists and has the expected signature
         assertNotNull(DialogHelper.class);
-        
+
         // Verify that the method can be called with the expected parameters
         assertDoesNotThrow(() -> {
             // This is just a compile-time check
             if (false) { // Never executed, just for compile-time checking
                 DialogHelper.showAboutDialog(mockStage);
+            }
+        });
+    }
+
+    @Test
+    void testShowLoadingDialog() {
+        // Test that the method exists and has the expected signature
+        assertNotNull(DialogHelper.class);
+
+        // Verify that the method can be called with the expected parameters
+        assertDoesNotThrow(() -> {
+            // This is just a compile-time check
+            Stage result = null;
+            if (false) { // Never executed, just for compile-time checking
+                result = DialogHelper.showLoadingDialog(mockStage, "Loading...");
+            }
+        });
+    }
+
+    @Test
+    void testHideLoadingDialog() {
+        // Test that the method exists and has the expected signature
+        assertNotNull(DialogHelper.class);
+
+        // Verify that the method can be called with the expected parameters
+        assertDoesNotThrow(() -> {
+            // This is just a compile-time check
+            if (false) { // Never executed, just for compile-time checking
+                DialogHelper.hideLoadingDialog();
             }
         });
     }
