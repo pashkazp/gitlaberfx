@@ -6,12 +6,8 @@ import com.depavlo.gitlaberfx.controller.DatePickerController;
 import com.depavlo.gitlaberfx.controller.DeleteConfirmationController;
 import com.depavlo.gitlaberfx.controller.SettingsController;
 import com.depavlo.gitlaberfx.model.BranchModel;
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.layout.StackPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -24,48 +20,20 @@ import java.util.List;
 public class DialogHelper {
     private static final Logger logger = LoggerFactory.getLogger(DialogHelper.class);
 
-    /**
-     * Shows a progress indicator.
-     * 
-     * @param indicator The progress indicator to show
-     */
-    public static void showProgressIndicator(ProgressIndicator indicator) {
-        if (indicator == null) return;
-
-        Platform.runLater(() -> {
-            indicator.setVisible(true);
-            indicator.setProgress(ProgressIndicator.INDETERMINATE_PROGRESS);
-        });
-    }
-
-    /**
-     * Hides the progress indicator.
-     * 
-     * @param indicator The progress indicator to hide
-     */
-    public static void hideProgressIndicator(ProgressIndicator indicator) {
-        if (indicator == null) return;
-
-        Platform.runLater(() -> {
-            indicator.setVisible(false);
-            indicator.setProgress(0);
-        });
-    }
-
     public static boolean showSettingsDialog(Stage parentStage, AppConfig config) {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/settings.fxml"));
             Scene scene = new Scene(loader.load());
-
+            
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(parentStage);
             stage.setTitle("Налаштування");
             stage.setScene(scene);
-
+            
             SettingsController controller = loader.getController();
             controller.initialize(config, stage);
-
+            
             stage.showAndWait();
             return controller.isSaved();
         } catch (IOException e) {
@@ -78,16 +46,16 @@ public class DialogHelper {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/delete-confirmation.fxml"));
             Scene scene = new Scene(loader.load());
-
+            
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(parentStage);
             stage.setTitle("Підтвердження видалення");
             stage.setScene(scene);
-
+            
             DeleteConfirmationController controller = loader.getController();
             controller.initialize(branches, stage);
-
+            
             stage.showAndWait();
             return controller.getSelectedBranches();
         } catch (IOException e) {
@@ -100,16 +68,16 @@ public class DialogHelper {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/date-picker.fxml"));
             Scene scene = new Scene(loader.load());
-
+            
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(parentStage);
             stage.setTitle("Вибір дати");
             stage.setScene(scene);
-
+            
             DatePickerController controller = loader.getController();
             controller.initialize(stage);
-
+            
             stage.showAndWait();
             return controller.getSelectedDate();
         } catch (IOException e) {
@@ -122,16 +90,16 @@ public class DialogHelper {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/about.fxml"));
             Scene scene = new Scene(loader.load());
-
+            
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(parentStage);
             stage.setTitle("Про програму");
             stage.setScene(scene);
-
+            
             AboutController controller = loader.getController();
             controller.initialize(stage);
-
+            
             stage.showAndWait();
         } catch (IOException e) {
             logger.error("Error showing about dialog", e);

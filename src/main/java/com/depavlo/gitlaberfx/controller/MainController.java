@@ -11,7 +11,6 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.stage.Stage;
-import javafx.application.Platform;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,9 +47,6 @@ public class MainController {
 
     @FXML
     private TableColumn<BranchModel, Boolean> mergedColumn;
-
-    @FXML
-    private ProgressIndicator progressIndicator;
 
     private AppConfig config;
     private GitLabService gitLabService;
@@ -139,9 +135,6 @@ public class MainController {
         mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
         if (projectName != null) {
-            // Show progress indicator
-            DialogHelper.showProgressIndicator(progressIndicator);
-
             try {
                 List<GitLabService.Project> projects = null;
                 try {
@@ -176,9 +169,6 @@ public class MainController {
             } catch (IOException e) {
                 logger.error("Error loading project branches", e);
                 showError("Помилка завантаження", "Не вдалося завантажити гілки: " + e.getMessage());
-            } finally {
-                // Hide progress indicator
-                DialogHelper.hideProgressIndicator(progressIndicator);
             }
         }
     }
@@ -194,28 +184,20 @@ public class MainController {
                         branch.setMerged(false);
                     }
                 } else {
-                    // Show progress indicator
-                    DialogHelper.showProgressIndicator(progressIndicator);
-
-                    try {
-                        // Check if branches have been merged into the selected main branch
-                        for (BranchModel branch : branches) {
-                            try {
-                                // Skip checking the main branch itself
-                                if (branch.getName().equals(mainBranch)) {
-                                    branch.setMerged(false);
-                                    continue;
-                                }
-                                boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), mainBranch);
-                                branch.setMerged(isMerged);
-                            } catch (IOException e) {
-                                logger.error("Error checking if branch {} is merged into {}", branch.getName(), mainBranch, e);
+                    // Check if branches have been merged into the selected main branch
+                    for (BranchModel branch : branches) {
+                        try {
+                            // Skip checking the main branch itself
+                            if (branch.getName().equals(mainBranch)) {
                                 branch.setMerged(false);
+                                continue;
                             }
+                            boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), mainBranch);
+                            branch.setMerged(isMerged);
+                        } catch (IOException e) {
+                            logger.error("Error checking if branch {} is merged into {}", branch.getName(), mainBranch, e);
+                            branch.setMerged(false);
                         }
-                    } finally {
-                        // Hide progress indicator
-                        DialogHelper.hideProgressIndicator(progressIndicator);
                     }
                 }
             }
@@ -276,20 +258,14 @@ public class MainController {
         if (!selectedBranches.isEmpty()) {
             List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, selectedBranches);
             if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
-                // Show progress indicator
-                DialogHelper.showProgressIndicator(progressIndicator);
-
                 try {
                     for (BranchModel branch : confirmedBranches) {
                         gitLabService.deleteBranch(currentProjectId, branch.getName());
                     }
-                    // refreshBranches will show/hide its own progress indicator
                     refreshBranches();
                 } catch (IOException e) {
                     logger.error("Error deleting branches", e);
                     showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
-                    // Hide progress indicator in case of error
-                    DialogHelper.hideProgressIndicator(progressIndicator);
                 }
             }
         }
@@ -306,9 +282,6 @@ public class MainController {
 
         LocalDate cutoffDate = DialogHelper.showDatePickerDialog(stage);
         if (cutoffDate != null) {
-            // Show progress indicator
-            DialogHelper.showProgressIndicator(progressIndicator);
-
             try {
                 List<BranchModel> mergedBranches = branchesTableView.getItems().stream()
                         .filter(branch -> {
@@ -338,18 +311,11 @@ public class MainController {
                         .collect(Collectors.toList());
 
                 if (!mergedBranches.isEmpty()) {
-                    // Hide progress indicator before showing the confirmation dialog
-                    DialogHelper.hideProgressIndicator(progressIndicator);
-
                     List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, mergedBranches);
                     if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
-                        // Show progress indicator again for the deletion operation
-                        DialogHelper.showProgressIndicator(progressIndicator);
-
                         for (BranchModel branch : confirmedBranches) {
                             gitLabService.deleteBranch(currentProjectId, branch.getName());
                         }
-                        // refreshBranches will show/hide its own progress indicator
                         refreshBranches();
                     }
                 } else {
@@ -358,9 +324,6 @@ public class MainController {
             } catch (IOException e) {
                 logger.error("Error checking merged branches", e);
                 showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
-            } finally {
-                // Hide progress indicator
-                DialogHelper.hideProgressIndicator(progressIndicator);
             }
         }
     }

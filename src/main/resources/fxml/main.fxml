@@ -8,13 +8,7 @@
     <padding>
         <Insets bottom="10" left="10" right="10" top="10" />
     </padding>
-
-    <StackPane>
-        <children>
-            <ProgressIndicator fx:id="progressIndicator" visible="false" />
-        </children>
-    </StackPane>
-
+    
     <MenuBar>
         <Menu text="Файл">
             <MenuItem onAction="#showSettings" text="Налаштування" />
