@@ -324,10 +324,46 @@ public class MainController {
 
     @FXML
     private void exit() {
+        shutdown();
+    }
+
+    /**
+     * Shuts down the application, canceling all running tasks and cleaning up resources.
+     * This method can be called from outside the controller to ensure proper cleanup.
+     */
+    public void shutdown() {
         logger.info("Exiting application");
+
+        // Shutdown the executor service and cancel tasks
+        shutdownExecutor();
+
+        // Exit the JavaFX Platform
+        Platform.exit();
+    }
+
+    /**
+     * Shuts down the executor service and cancels all running tasks.
+     * This method can be called separately from shutdown() to clean up resources
+     * without exiting the application, especially during abnormal termination.
+     */
+    public void shutdownExecutor() {
+        logger.info("Shutting down executor service");
+
+        // Cancel all running tasks
+        for (Future<?> task : currentTasks) {
+            if (task != null && !task.isDone()) {
+                // Cancel the task with interruption
+                task.cancel(true);
+            }
+        }
+
+        // Clear the tasks list
+        currentTasks.clear();
+
         // Shutdown the executor service to prevent resource leaks
-        executorService.shutdown();
-        System.exit(0);
+        executorService.shutdownNow();
+
+        logger.info("Executor service shutdown complete");
     }
 
     @FXML
@@ -648,6 +684,8 @@ public class MainController {
     private void onPlayButtonClick() {
         logger.debug("Play button clicked");
         pauseRequested.set(false);
+        playButton.setDisable(true);
+        pauseButton.setDisable(false);
         updateStatus("Виконання відновлено");
     }
 
@@ -659,6 +697,8 @@ public class MainController {
     private void onPauseButtonClick() {
         logger.debug("Pause button clicked");
         pauseRequested.set(true);
+        pauseButton.setDisable(true);
+        playButton.setDisable(false);
         updateStatus("Виконання призупинено");
     }
 
