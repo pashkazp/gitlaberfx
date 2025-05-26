@@ -258,6 +258,12 @@ public class GitLabService {
 
         public String getPath() { return path; }
         public void setPath(String path) { this.path = path; }
+
+        /**
+         * Returns the project identifier in "path/name" format
+         * @return String in format "path/name"
+         */
+        public String getPathName() { return path + "/" + name; }
     }
 
     /**

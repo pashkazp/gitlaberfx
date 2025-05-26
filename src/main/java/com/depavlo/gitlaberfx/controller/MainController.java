@@ -121,7 +121,7 @@ public class MainController {
             List<GitLabService.Project> projects = gitLabService.getProjects();
             projectComboBox.setItems(FXCollections.observableArrayList(
                     projects.stream()
-                            .map(GitLabService.Project::getName)
+                            .map(GitLabService.Project::getPathName)
                             .sorted(String.CASE_INSENSITIVE_ORDER)
                             .collect(Collectors.toList())
             ));
@@ -155,8 +155,9 @@ public class MainController {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
+                    // Extract project by matching path/name format
                     GitLabService.Project selectedProject = projects.stream()
-                            .filter(p -> p.getName().equals(projectName))
+                            .filter(p -> p.getPathName().equals(projectName))
                             .findFirst()
                             .orElse(null);
 
