@@ -119,12 +119,14 @@ public class MainController {
             gitLabService.connect();
 
             List<GitLabService.Project> projects = gitLabService.getProjects();
-            projectComboBox.setItems(FXCollections.observableArrayList(
-                    projects.stream()
-                            .map(GitLabService.Project::getPathName)
-                            .sorted(String.CASE_INSENSITIVE_ORDER)
-                            .collect(Collectors.toList())
-            ));
+            List<String> projectNames = new ArrayList<>();
+            projectNames.add(NOT_SELECTED_ITEM);
+            projectNames.addAll(projects.stream()
+                    .map(GitLabService.Project::getPathName)
+                    .sorted(String.CASE_INSENSITIVE_ORDER)
+                    .collect(Collectors.toList()));
+            projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
+            projectComboBox.setValue(NOT_SELECTED_ITEM);
         } catch (IOException e) {
             logger.error("Error loading configuration", e);
             showError("Помилка завантаження", "Не вдалося завантажити налаштування: " + e.getMessage());
@@ -141,6 +143,13 @@ public class MainController {
         branchNames.add(NOT_SELECTED_ITEM);
         mainBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
         mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
+
+        // If "not selected" is chosen, clear the branch list and return
+        if (projectName == null || NOT_SELECTED_ITEM.equals(projectName)) {
+            branchesTableView.setItems(FXCollections.observableArrayList());
+            updateStatus("Готово");
+            return;
+        }
 
         if (projectName != null) {
             // Update status bar
