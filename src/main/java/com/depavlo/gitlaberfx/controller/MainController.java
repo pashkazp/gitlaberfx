@@ -155,7 +155,7 @@ public class MainController {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    // Extract project by matching path/name format
+                    // Extract project by matching subgroup/name format
                     GitLabService.Project selectedProject = projects.stream()
                             .filter(p -> p.getPathName().equals(projectName))
                             .findFirst()

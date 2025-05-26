@@ -106,6 +106,15 @@ public class GitLabService {
                     project.setId(projectNode.get("id").asInt());
                     project.setName(projectNode.get("name").asText());
                     project.setPath(projectNode.get("path").asText());
+
+                    // Extract namespace path from the response
+                    if (projectNode.has("namespace") && projectNode.get("namespace").has("full_path")) {
+                        project.setNamespacePath(projectNode.get("namespace").get("full_path").asText());
+                    } else if (projectNode.has("path_with_namespace")) {
+                        // Alternative: use path_with_namespace if available
+                        project.setNamespacePath(projectNode.get("path_with_namespace").asText());
+                    }
+
                     projects.add(project);
                 }
                 if (jsonArray.size() < perPage) break;
@@ -255,6 +264,7 @@ public class GitLabService {
         private int id;
         private String name;
         private String path;
+        private String namespacePath; // Path to the namespace (group/subgroup)
 
         public int getId() { return id; }
         public void setId(int id) { this.id = id; }
@@ -265,11 +275,29 @@ public class GitLabService {
         public String getPath() { return path; }
         public void setPath(String path) { this.path = path; }
 
+        public String getNamespacePath() { return namespacePath; }
+        public void setNamespacePath(String namespacePath) { this.namespacePath = namespacePath; }
+
         /**
-         * Returns the project identifier in "path/name" format
-         * @return String in format "path/name"
+         * Returns the project identifier in "subgroup/name" format
+         * @return String in format "subgroup/name"
          */
-        public String getPathName() { return path + "/" + name; }
+        public String getPathName() { 
+            // If namespacePath is available, extract the subgroup from it
+            if (namespacePath != null && !namespacePath.isEmpty()) {
+                // Extract the last part of the namespace path (the subgroup)
+                int lastSlashIndex = namespacePath.lastIndexOf('/');
+                if (lastSlashIndex >= 0) {
+                    // There is a slash, so extract the subgroup (last part of the namespace path)
+                    String subgroup = namespacePath.substring(lastSlashIndex + 1);
+                    return subgroup + "/" + name;
+                }
+                // No slash, so the namespace path is the subgroup itself
+                return namespacePath + "/" + name;
+            }
+            // Fallback to the old behavior if namespacePath is not available
+            return name;
+        }
     }
 
     /**
