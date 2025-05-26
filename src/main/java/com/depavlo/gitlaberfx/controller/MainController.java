@@ -259,12 +259,33 @@ public class MainController {
                     submitTask(() -> {
                         try {
                             // Check if branches have been merged into the selected main branch
-                            for (BranchModel branch : branchesCopy) {
+                            outerLoop: for (BranchModel branch : branchesCopy) {
+                                // Check if pause is requested
+                                while (pauseRequested.get()) {
+                                    // Sleep while paused
+                                    try {
+                                        Thread.sleep(100);
+                                        // Check if thread was interrupted while sleeping
+                                        if (Thread.currentThread().isInterrupted()) {
+                                            break outerLoop;
+                                        }
+                                    } catch (InterruptedException e) {
+                                        // Restore interrupt status and exit
+                                        Thread.currentThread().interrupt();
+                                        break outerLoop;
+                                    }
+                                }
+
+                                // If thread was interrupted, exit the loop
+                                if (Thread.currentThread().isInterrupted()) {
+                                    break outerLoop;
+                                }
+
                                 try {
                                     // Skip checking the main branch itself
                                     if (branch.getName().equals(finalMainBranch)) {
                                         Platform.runLater(() -> branch.setMerged(false));
-                                        continue;
+                                        continue outerLoop;
                                     }
                                     updateStatus("Перевірка гілки: " + branch.getName());
                                     boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
@@ -358,7 +379,28 @@ public class MainController {
 
                 submitTask(() -> {
                     try {
-                        for (BranchModel branch : branchesToDelete) {
+                        outerLoop: for (BranchModel branch : branchesToDelete) {
+                            // Check if pause is requested
+                            while (pauseRequested.get()) {
+                                // Sleep while paused
+                                try {
+                                    Thread.sleep(100);
+                                    // Check if thread was interrupted while sleeping
+                                    if (Thread.currentThread().isInterrupted()) {
+                                        break outerLoop;
+                                    }
+                                } catch (InterruptedException e) {
+                                    // Restore interrupt status and exit
+                                    Thread.currentThread().interrupt();
+                                    break outerLoop;
+                                }
+                            }
+
+                            // If thread was interrupted, exit the loop
+                            if (Thread.currentThread().isInterrupted()) {
+                                break outerLoop;
+                            }
+
                             updateStatus("Видалення гілки: " + branch.getName());
                             gitLabService.deleteBranch(currentProjectId, branch.getName());
                         }
@@ -405,33 +447,65 @@ public class MainController {
                     // Create a copy of the branches list for thread safety
                     List<BranchModel> branchesCopy = new ArrayList<>(branchesTableView.getItems());
 
-                    List<BranchModel> mergedBranches = branchesCopy.stream()
-                            .filter(branch -> {
-                                try {
-                                    updateStatus("Перевірка гілки: " + branch.getName());
-                                    return gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
-                                } catch (IOException e) {
-                                    logger.error("Error checking if branch is merged", e);
-                                    return false;
+                    // Create a list to store merged branches
+                    List<BranchModel> mergedBranches = new ArrayList<>();
+
+                    // Iterate through each branch and check if it meets the criteria
+                    outerLoop: for (BranchModel branch : branchesCopy) {
+                        // Check if pause is requested
+                        while (pauseRequested.get()) {
+                            // Sleep while paused
+                            try {
+                                Thread.sleep(100);
+                                // Check if thread was interrupted while sleeping
+                                if (Thread.currentThread().isInterrupted()) {
+                                    break outerLoop;
                                 }
-                            })
-                            .filter(branch -> {
-                                // Parse the last commit date and compare it with the cutoff date
-                                String lastCommitDateStr = branch.getLastCommit();
-                                if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
-                                    return false;
-                                }
-                                try {
-                                    // The lastCommit is in ISO 8601 format, e.g. "2023-01-01T12:00:00Z"
-                                    // We need to parse it to a LocalDate for comparison
-                                    LocalDate lastCommitDate = LocalDate.parse(lastCommitDateStr.substring(0, 10));
-                                    return lastCommitDate.isBefore(finalCutoffDate) || lastCommitDate.isEqual(finalCutoffDate);
-                                } catch (Exception e) {
-                                    logger.error("Error parsing last commit date: {}", lastCommitDateStr, e);
-                                    return false;
-                                }
-                            })
-                            .collect(Collectors.toList());
+                            } catch (InterruptedException e) {
+                                // Restore interrupt status and exit
+                                Thread.currentThread().interrupt();
+                                break outerLoop;
+                            }
+                        }
+
+                        // If thread was interrupted, exit the loop
+                        if (Thread.currentThread().isInterrupted()) {
+                            break outerLoop;
+                        }
+
+                        // Check if the branch is merged into the main branch
+                        try {
+                            updateStatus("Перевірка гілки: " + branch.getName());
+                            boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+
+                            // If the branch is not merged, skip to the next branch
+                            if (!isMerged) {
+                                continue outerLoop;
+                            }
+                        } catch (IOException e) {
+                            logger.error("Error checking if branch is merged", e);
+                            continue outerLoop; // Skip to the next branch if there's an error
+                        }
+
+                        // Parse the last commit date and compare it with the cutoff date
+                        String lastCommitDateStr = branch.getLastCommit();
+                        if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
+                            continue outerLoop; // Skip to the next branch if there's no commit date
+                        }
+
+                        try {
+                            // The lastCommit is in ISO 8601 format, e.g. "2023-01-01T12:00:00Z"
+                            // We need to parse it to a LocalDate for comparison
+                            LocalDate lastCommitDate = LocalDate.parse(lastCommitDateStr.substring(0, 10));
+                            if (lastCommitDate.isBefore(finalCutoffDate) || lastCommitDate.isEqual(finalCutoffDate)) {
+                                // If the branch meets all criteria, add it to the merged branches list
+                                mergedBranches.add(branch);
+                            }
+                        } catch (Exception e) {
+                            logger.error("Error parsing last commit date: {}", lastCommitDateStr, e);
+                            // Skip to the next branch if there's an error parsing the date
+                        }
+                    }
 
                     // Update UI in JavaFX thread
                     Platform.runLater(() -> {
@@ -450,7 +524,28 @@ public class MainController {
                                 // Submit a new task for deletion
                                 submitTask(() -> {
                                     try {
-                                        for (BranchModel branch : branchesToDelete) {
+                                        outerLoop: for (BranchModel branch : branchesToDelete) {
+                                            // Check if pause is requested
+                                            while (pauseRequested.get()) {
+                                                // Sleep while paused
+                                                try {
+                                                    Thread.sleep(100);
+                                                    // Check if thread was interrupted while sleeping
+                                                    if (Thread.currentThread().isInterrupted()) {
+                                                        break outerLoop;
+                                                    }
+                                                } catch (InterruptedException e) {
+                                                    // Restore interrupt status and exit
+                                                    Thread.currentThread().interrupt();
+                                                    break outerLoop;
+                                                }
+                                            }
+
+                                            // If thread was interrupted, exit the loop
+                                            if (Thread.currentThread().isInterrupted()) {
+                                                break outerLoop;
+                                            }
+
                                             updateStatus("Видалення гілки: " + branch.getName());
                                             gitLabService.deleteBranch(currentProjectId, branch.getName());
                                         }
@@ -589,6 +684,7 @@ public class MainController {
 
     /**
      * Submits a task to the ExecutorService with support for pausing and stopping.
+     * Note: The actual pause handling is implemented in the tasks themselves.
      * 
      * @param task The task to submit
      * @return The Future representing the submitted task
@@ -604,44 +700,13 @@ public class MainController {
             stopButton.setDisable(false);
         });
 
-        // Wrap the task with pause and interrupt handling
+        // Wrap the task with interrupt handling
         Runnable wrappedTask = () -> {
             try {
-                // Run the task with pause support
-                while (!Thread.currentThread().isInterrupted()) {
-                    // Check if pause is requested
-                    while (pauseRequested.get()) {
-                        // Enable play button and disable pause button when paused
-                        Platform.runLater(() -> {
-                            playButton.setDisable(false);
-                            pauseButton.setDisable(true);
-                        });
-
-                        // Sleep while paused
-                        try {
-                            Thread.sleep(100);
-                            // Check if thread was interrupted while sleeping
-                            if (Thread.currentThread().isInterrupted()) {
-                                break;
-                            }
-                        } catch (InterruptedException e) {
-                            // Restore interrupt status and exit
-                            Thread.currentThread().interrupt();
-                            break;
-                        }
-                    }
-
-                    // Enable pause button and disable play button when running
-                    if (pauseRequested.get() == false) {
-                        Platform.runLater(() -> {
-                            playButton.setDisable(true);
-                            pauseButton.setDisable(false);
-                        });
-                    }
-
+                // Run the task
+                if (!Thread.currentThread().isInterrupted()) {
                     // Run the actual task
                     task.run();
-                    break;
                 }
             } catch (Exception e) {
                 logger.error("Task execution error", e);
