@@ -74,4 +74,19 @@ class GitLabServiceTest {
 
         logger.info("[DEBUG_LOG] encodeBranchName with comma test completed");
     }
+
+    @Test
+    void testIsCommitInMainBranchWithSameBranch() throws Exception {
+        logger.debug("[DEBUG_LOG] Testing isCommitInMainBranch with same branch names");
+
+        // Test with same branch names
+        String projectId = "123";
+        String branchName = "main";
+
+        // The method should return false when checking if a branch is merged into itself
+        assertFalse(gitLabService.isCommitInMainBranch(projectId, branchName, branchName),
+                "isCommitInMainBranch should return false when source and target branches are the same");
+
+        logger.info("[DEBUG_LOG] isCommitInMainBranch with same branch names test completed");
+    }
 } 

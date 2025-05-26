@@ -166,6 +166,12 @@ public class GitLabService {
     public boolean isCommitInMainBranch(String projectId, String branchName, String mainBranch) throws IOException {
         logger.debug("Checking if branch {} is merged into {}", branchName, mainBranch);
 
+        // Check if the source branch and target branch are the same
+        if (branchName.equals(mainBranch)) {
+            logger.debug("Source branch and target branch are the same, returning false");
+            return false;
+        }
+
         // Step 1: Get the SHA of the last commit of the source branch
         String sourceBranchSha = getBranchLastCommitSha(projectId, branchName);
         if (sourceBranchSha == null) {
