@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 public class MainController {
@@ -29,8 +31,21 @@ public class MainController {
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
+    // Fields to track task state
+    private Future<?> currentTask;
+    private final AtomicBoolean pauseRequested = new AtomicBoolean(false);
+
     @FXML
     public Button mainDelMergedButton;
+
+    @FXML
+    private Button playButton;
+
+    @FXML
+    private Button pauseButton;
+
+    @FXML
+    private Button stopButton;
 
     @FXML
     private ComboBox<String> projectComboBox;
@@ -101,6 +116,16 @@ public class MainController {
             }
         });
 
+        // Initialize control buttons
+        playButton.setTooltip(new Tooltip("Продовжити виконання"));
+        pauseButton.setTooltip(new Tooltip("Призупинити виконання"));
+        stopButton.setTooltip(new Tooltip("Зупинити виконання"));
+
+        // Initially disable control buttons
+        playButton.setDisable(true);
+        pauseButton.setDisable(true);
+        stopButton.setDisable(true);
+
         // Завантаження налаштувань
         loadConfig();
     }
@@ -155,7 +180,7 @@ public class MainController {
             // Update status bar
             updateStatus("Завантаження гілок проєкту...");
 
-            executorService.submit(() -> {
+            submitTask(() -> {
                 try {
                     // Виконання довготривалих операцій у фоновому потоці
                     List<GitLabService.Project> projects = null;
@@ -231,7 +256,7 @@ public class MainController {
                     List<BranchModel> branchesCopy = new ArrayList<>(branches);
                     String finalMainBranch = mainBranch;
 
-                    executorService.submit(() -> {
+                    submitTask(() -> {
                         try {
                             // Check if branches have been merged into the selected main branch
                             for (BranchModel branch : branchesCopy) {
@@ -331,7 +356,7 @@ public class MainController {
                 // Create a copy of the confirmed branches list for thread safety
                 List<BranchModel> branchesToDelete = new ArrayList<>(confirmedBranches);
 
-                executorService.submit(() -> {
+                submitTask(() -> {
                     try {
                         for (BranchModel branch : branchesToDelete) {
                             updateStatus("Видалення гілки: " + branch.getName());
@@ -375,7 +400,7 @@ public class MainController {
             final String finalMainBranch = mainBranch;
             final LocalDate finalCutoffDate = cutoffDate;
 
-            executorService.submit(() -> {
+            submitTask(() -> {
                 try {
                     // Create a copy of the branches list for thread safety
                     List<BranchModel> branchesCopy = new ArrayList<>(branchesTableView.getItems());
@@ -423,7 +448,7 @@ public class MainController {
                                 List<BranchModel> branchesToDelete = new ArrayList<>(confirmedBranches);
 
                                 // Submit a new task for deletion
-                                executorService.submit(() -> {
+                                submitTask(() -> {
                                     try {
                                         for (BranchModel branch : branchesToDelete) {
                                             updateStatus("Видалення гілки: " + branch.getName());
@@ -518,5 +543,124 @@ public class MainController {
         } else {
             Platform.runLater(() -> statusLabel.setText(message));
         }
+    }
+
+    /**
+     * Handles the play button click event.
+     * Resumes any paused tasks.
+     */
+    @FXML
+    private void onPlayButtonClick() {
+        logger.debug("Play button clicked");
+        pauseRequested.set(false);
+        updateStatus("Виконання відновлено");
+    }
+
+    /**
+     * Handles the pause button click event.
+     * Pauses any running tasks.
+     */
+    @FXML
+    private void onPauseButtonClick() {
+        logger.debug("Pause button clicked");
+        pauseRequested.set(true);
+        updateStatus("Виконання призупинено");
+    }
+
+    /**
+     * Handles the stop button click event.
+     * Stops any running tasks non-destructively.
+     */
+    @FXML
+    private void onStopButtonClick() {
+        logger.debug("Stop button clicked");
+        if (currentTask != null && !currentTask.isDone()) {
+            // Cancel the task with interruption
+            currentTask.cancel(true);
+            pauseRequested.set(false);
+            updateStatus("Виконання зупинено");
+
+            // Disable control buttons
+            playButton.setDisable(true);
+            pauseButton.setDisable(true);
+            stopButton.setDisable(true);
+        }
+    }
+
+    /**
+     * Submits a task to the ExecutorService with support for pausing and stopping.
+     * 
+     * @param task The task to submit
+     * @return The Future representing the submitted task
+     */
+    private Future<?> submitTask(Runnable task) {
+        // Reset pause flag
+        pauseRequested.set(false);
+
+        // Enable control buttons
+        Platform.runLater(() -> {
+            playButton.setDisable(true);  // Initially disable play button
+            pauseButton.setDisable(false);
+            stopButton.setDisable(false);
+        });
+
+        // Wrap the task with pause and interrupt handling
+        Runnable wrappedTask = () -> {
+            try {
+                // Run the task with pause support
+                while (!Thread.currentThread().isInterrupted()) {
+                    // Check if pause is requested
+                    while (pauseRequested.get()) {
+                        // Enable play button and disable pause button when paused
+                        Platform.runLater(() -> {
+                            playButton.setDisable(false);
+                            pauseButton.setDisable(true);
+                        });
+
+                        // Sleep while paused
+                        try {
+                            Thread.sleep(100);
+                            // Check if thread was interrupted while sleeping
+                            if (Thread.currentThread().isInterrupted()) {
+                                break;
+                            }
+                        } catch (InterruptedException e) {
+                            // Restore interrupt status and exit
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
+
+                    // Enable pause button and disable play button when running
+                    if (pauseRequested.get() == false) {
+                        Platform.runLater(() -> {
+                            playButton.setDisable(true);
+                            pauseButton.setDisable(false);
+                        });
+                    }
+
+                    // Run the actual task
+                    task.run();
+                    break;
+                }
+            } catch (Exception e) {
+                logger.error("Task execution error", e);
+                Platform.runLater(() -> {
+                    updateStatus("Помилка виконання");
+                    showError("Помилка", "Помилка виконання: " + e.getMessage());
+                });
+            } finally {
+                // Disable control buttons when task is done
+                Platform.runLater(() -> {
+                    playButton.setDisable(true);
+                    pauseButton.setDisable(true);
+                    stopButton.setDisable(true);
+                });
+            }
+        };
+
+        // Submit the wrapped task
+        currentTask = executorService.submit(wrappedTask);
+        return currentTask;
     }
 }

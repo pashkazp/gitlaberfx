@@ -53,7 +53,10 @@
         <Button onAction="#addToExclusions" text="Додати до виключень" />
     </HBox>
 
-    <HBox style="-fx-background-color: #f0f0f0; -fx-border-color: #c0c0c0; -fx-border-width: 1 0 0 0; -fx-padding: 5;">
+    <HBox spacing="5" style="-fx-background-color: #f0f0f0; -fx-border-color: #c0c0c0; -fx-border-width: 1 0 0 0; -fx-padding: 5;">
+        <Button fx:id="playButton" onAction="#onPlayButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #00ff00;" text="▶" />
+        <Button fx:id="pauseButton" onAction="#onPauseButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #ff9900;" text="⏸" />
+        <Button fx:id="stopButton" onAction="#onStopButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #ff0000;" text="⏹" />
         <Label fx:id="statusLabel" text="Готово" HBox.hgrow="ALWAYS" />
     </HBox>
 
