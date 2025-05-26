@@ -32,7 +32,7 @@ public class MainController {
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
     // Fields to track task state
-    private Future<?> currentTask;
+    private List<Future<?>> currentTasks = new ArrayList<>();
     private final AtomicBoolean pauseRequested = new AtomicBoolean(false);
 
     @FXML
@@ -669,9 +669,18 @@ public class MainController {
     @FXML
     private void onStopButtonClick() {
         logger.debug("Stop button clicked");
-        if (currentTask != null && !currentTask.isDone()) {
-            // Cancel the task with interruption
-            currentTask.cancel(true);
+        boolean tasksRunning = false;
+
+        // Cancel all running tasks
+        for (Future<?> task : currentTasks) {
+            if (task != null && !task.isDone()) {
+                // Cancel the task with interruption
+                task.cancel(true);
+                tasksRunning = true;
+            }
+        }
+
+        if (tasksRunning) {
             pauseRequested.set(false);
             updateStatus("Виконання зупинено");
 
@@ -679,6 +688,9 @@ public class MainController {
             playButton.setDisable(true);
             pauseButton.setDisable(true);
             stopButton.setDisable(true);
+
+            // Clear the tasks list
+            currentTasks.clear();
         }
     }
 
@@ -690,6 +702,18 @@ public class MainController {
      * @return The Future representing the submitted task
      */
     private Future<?> submitTask(Runnable task) {
+        return submitTasks(List.of(task));
+    }
+
+    /**
+     * Submits a list of tasks to the ExecutorService with support for pausing and stopping.
+     * Tasks are executed sequentially in the order they are provided.
+     * Note: The actual pause handling is implemented in the tasks themselves.
+     * 
+     * @param tasks The list of tasks to submit
+     * @return The Future representing the submitted tasks
+     */
+    private Future<?> submitTasks(List<Runnable> tasks) {
         // Reset pause flag
         pauseRequested.set(false);
 
@@ -700,22 +724,29 @@ public class MainController {
             stopButton.setDisable(false);
         });
 
-        // Wrap the task with interrupt handling
+        // Wrap the tasks with interrupt handling
         Runnable wrappedTask = () -> {
             try {
-                // Run the task
-                if (!Thread.currentThread().isInterrupted()) {
-                    // Run the actual task
-                    task.run();
+                // Run each task in sequence
+                for (Runnable task : tasks) {
+                    if (Thread.currentThread().isInterrupted()) {
+                        break;
+                    }
+
+                    try {
+                        // Run the actual task
+                        task.run();
+                    } catch (Exception e) {
+                        logger.error("Task execution error", e);
+                        Platform.runLater(() -> {
+                            updateStatus("Помилка виконання");
+                            showError("Помилка", "Помилка виконання: " + e.getMessage());
+                        });
+                        // Continue with the next task even if this one fails
+                    }
                 }
-            } catch (Exception e) {
-                logger.error("Task execution error", e);
-                Platform.runLater(() -> {
-                    updateStatus("Помилка виконання");
-                    showError("Помилка", "Помилка виконання: " + e.getMessage());
-                });
             } finally {
-                // Disable control buttons when task is done
+                // Disable control buttons when all tasks are done
                 Platform.runLater(() -> {
                     playButton.setDisable(true);
                     pauseButton.setDisable(true);
@@ -725,7 +756,8 @@ public class MainController {
         };
 
         // Submit the wrapped task
-        currentTask = executorService.submit(wrappedTask);
-        return currentTask;
+        Future<?> future = executorService.submit(wrappedTask);
+        currentTasks.add(future);
+        return future;
     }
 }
