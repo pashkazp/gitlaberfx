@@ -17,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -30,6 +32,47 @@ public class MainController {
     private static final String NOT_SELECTED_ITEM = "не обрано";
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
+
+    /**
+     * Parses a date string in various formats to a LocalDate.
+     * Tries multiple parsing strategies to handle different date formats.
+     *
+     * @param dateStr The date string to parse
+     * @return The parsed LocalDate
+     * @throws DateTimeParseException if the date string cannot be parsed
+     */
+    private LocalDate parseDate(String dateStr) throws DateTimeParseException {
+        if (dateStr == null || dateStr.isEmpty()) {
+            throw new DateTimeParseException("Date string is null or empty", dateStr, 0);
+        }
+
+        // Try multiple parsing strategies to handle different date formats
+        if (dateStr.length() >= 10) {
+            // First try to parse just the date part (YYYY-MM-DD)
+            try {
+                return LocalDate.parse(dateStr.substring(0, 10));
+            } catch (DateTimeParseException e1) {
+                // If that fails, try with a specific formatter for ISO format
+                try {
+                    DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_DATE_TIME;
+                    return LocalDate.from(isoFormatter.parse(dateStr));
+                } catch (DateTimeParseException e2) {
+                    // Try with a custom formatter as a fallback
+                    try {
+                        DateTimeFormatter customFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                        return LocalDate.from(customFormatter.parse(dateStr));
+                    } catch (DateTimeParseException e3) {
+                        // If all parsing attempts fail, throw an exception
+                        throw new DateTimeParseException("Failed to parse date after multiple attempts: " + dateStr, dateStr, 0);
+                    }
+                }
+            }
+        } else {
+            // If the string is too short, try a more lenient approach
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            return LocalDate.parse(dateStr, formatter);
+        }
+    }
 
     // Fields to track task state
     private List<Future<?>> currentTasks = new ArrayList<>();
@@ -531,8 +574,9 @@ public class MainController {
 
                         try {
                             // The lastCommit is in ISO 8601 format, e.g. "2023-01-01T12:00:00Z"
-                            // We need to parse it to a LocalDate for comparison
-                            LocalDate lastCommitDate = LocalDate.parse(lastCommitDateStr.substring(0, 10));
+                            // We need to parse it to a LocalDate for comparison using our helper method
+                            LocalDate lastCommitDate = parseDate(lastCommitDateStr);
+
                             if (lastCommitDate.isBefore(finalCutoffDate) || lastCommitDate.isEqual(finalCutoffDate)) {
                                 // If the branch meets all criteria, add it to the merged branches list
                                 mergedBranches.add(branch);
