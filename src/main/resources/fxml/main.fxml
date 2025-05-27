@@ -50,6 +50,7 @@
     <HBox spacing="10">
         <Button onAction="#deleteSelected" style="-fx-base: #ff0000;" text="Видалити вибрані" />
         <Button fx:id="mainDelMergedButton" onAction="#deleteMerged" text="Видалити змерджені" />
+        <Button fx:id="mainDelUnmergedButton" onAction="#deleteUnmerged" text="Видалити не змерджені" />
         <Button onAction="#addToExclusions" text="Додати до виключень" />
     </HBox>
 

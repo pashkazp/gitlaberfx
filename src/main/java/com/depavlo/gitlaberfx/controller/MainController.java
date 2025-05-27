@@ -665,6 +665,167 @@ public class MainController {
     }
 
     @FXML
+    private void deleteUnmerged() {
+        logger.debug("Checking unmerged branches");
+        String mainBranch = mainBranchComboBox.getValue();
+        if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
+            showError("Помилка", "Не вибрано головну гілку");
+            return;
+        }
+
+        LocalDate cutoffDate = DialogHelper.showDatePickerDialog(stage);
+        if (cutoffDate != null) {
+            // Update status bar
+            updateStatus("Перевірка не змерджених гілок...");
+
+            // Store final values for use in lambda
+            final String finalMainBranch = mainBranch;
+            final LocalDate finalCutoffDate = cutoffDate;
+
+            submitTask(() -> {
+                try {
+                    // Create a copy of the branches list for thread safety
+                    List<BranchModel> branchesCopy = new ArrayList<>(branchesTableView.getItems());
+
+                    // Create a list to store unmerged branches
+                    List<BranchModel> unmergedBranches = new ArrayList<>();
+
+                    // Iterate through each branch and check if it meets the criteria
+                    outerLoop: for (BranchModel branch : branchesCopy) {
+                        // Check if pause is requested
+                        while (pauseRequested.get()) {
+                            // Sleep while paused
+                            try {
+                                Thread.sleep(100);
+                                // Check if thread was interrupted while sleeping
+                                if (Thread.currentThread().isInterrupted()) {
+                                    break outerLoop;
+                                }
+                            } catch (InterruptedException e) {
+                                // Restore interrupt status and exit
+                                Thread.currentThread().interrupt();
+                                break outerLoop;
+                            }
+                        }
+
+                        // If thread was interrupted, exit the loop
+                        if (Thread.currentThread().isInterrupted()) {
+                            break outerLoop;
+                        }
+
+                        // Check if the branch is merged into the main branch
+                        try {
+                            updateStatus("Перевірка гілки: " + branch.getName());
+                            boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+
+                            // If the branch is merged, skip to the next branch (inverse of deleteMerged logic)
+                            if (isMerged) {
+                                continue outerLoop;
+                            }
+                        } catch (IOException e) {
+                            logger.error("Error checking if branch is merged", e);
+                            continue outerLoop; // Skip to the next branch if there's an error
+                        }
+
+                        // Parse the last commit date and compare it with the cutoff date
+                        String lastCommitDateStr = branch.getLastCommit();
+                        if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
+                            continue outerLoop; // Skip to the next branch if there's no commit date
+                        }
+
+                        try {
+                            // The lastCommit is in ISO 8601 format, e.g. "2023-01-01T12:00:00Z"
+                            // We need to parse it to a LocalDate for comparison using our helper method
+                            LocalDate lastCommitDate = parseDate(lastCommitDateStr);
+
+                            if (lastCommitDate.isBefore(finalCutoffDate)) {
+                                // If the branch meets all criteria, add it to the unmerged branches list
+                                unmergedBranches.add(branch);
+                            }
+                        } catch (Exception e) {
+                            logger.error("Error parsing last commit date: {}", lastCommitDateStr, e);
+                            // Skip to the next branch if there's an error parsing the date
+                        }
+                    }
+
+                    // Update UI in JavaFX thread
+                    Platform.runLater(() -> {
+                        // Update status bar before showing confirmation dialog
+                        updateStatus("Готово");
+
+                        if (!unmergedBranches.isEmpty()) {
+                            List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, unmergedBranches);
+                            if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
+                                // Update status bar for deletion
+                                updateStatus("Видалення не змерджених гілок...");
+
+                                // Create a copy of the confirmed branches list for thread safety
+                                List<BranchModel> branchesToDelete = new ArrayList<>(confirmedBranches);
+
+                                // Submit a new task for deletion
+                                submitTask(() -> {
+                                    try {
+                                        outerLoop: for (BranchModel branch : branchesToDelete) {
+                                            // Check if pause is requested
+                                            while (pauseRequested.get()) {
+                                                // Sleep while paused
+                                                try {
+                                                    Thread.sleep(100);
+                                                    // Check if thread was interrupted while sleeping
+                                                    if (Thread.currentThread().isInterrupted()) {
+                                                        break outerLoop;
+                                                    }
+                                                } catch (InterruptedException e) {
+                                                    // Restore interrupt status and exit
+                                                    Thread.currentThread().interrupt();
+                                                    break outerLoop;
+                                                }
+                                            }
+
+                                            // If thread was interrupted, exit the loop
+                                            if (Thread.currentThread().isInterrupted()) {
+                                                break outerLoop;
+                                            }
+
+                                            updateStatus("Видалення гілки: " + branch.getName());
+                                            gitLabService.deleteBranch(currentProjectId, branch.getName());
+                                        }
+
+                                        // Update UI in JavaFX thread
+                                        Platform.runLater(() -> {
+                                            // Update status bar before refreshing branches
+                                            updateStatus("Оновлення списку гілок...");
+                                            // refreshBranches() will update the status bar
+                                            refreshBranches();
+                                        });
+                                    } catch (IOException e) {
+                                        Platform.runLater(() -> {
+                                            logger.error("Error deleting unmerged branches", e);
+                                            // Update status bar in case of error
+                                            updateStatus("Помилка видалення гілок");
+                                            showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                                        });
+                                    }
+                                });
+                            }
+                        } else {
+                            updateStatus("Готово");
+                            showInfo("Інформація", "Не знайдено не змерджених гілок, які старіші за вказану дату");
+                        }
+                    });
+                } catch (Exception e) {
+                    Platform.runLater(() -> {
+                        logger.error("Error checking unmerged branches", e);
+                        // Update status bar in case of error
+                        updateStatus("Помилка перевірки гілок");
+                        showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
+                    });
+                }
+            });
+        }
+    }
+
+    @FXML
     private void addToExclusions() {
         logger.debug("Adding to exclusions");
         List<BranchModel> selectedBranches = branchesTableView.getItems().stream()
