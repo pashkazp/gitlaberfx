@@ -35,10 +35,10 @@
     </HBox>
 
     <HBox spacing="10">
-        <Button onAction="#refreshBranches" text="Оновити список" />
-        <Button onAction="#selectAll" text="Вибрати всі" />
-        <Button onAction="#deselectAll" text="Скасувати вибір" />
-        <Button onAction="#invertSelection" text="Інвертувати вибір" />
+        <Button fx:id="refreshBranchesButton" onAction="#refreshBranches" text="Оновити список" />
+        <Button fx:id="selectAllButton" onAction="#selectAll" text="Вибрати всі" />
+        <Button fx:id="deselectAllButton" onAction="#deselectAll" text="Скасувати вибір" />
+        <Button fx:id="invertSelectionButton" onAction="#invertSelection" text="Інвертувати вибір" />
     </HBox>
 
     <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
@@ -51,10 +51,10 @@
     </TableView>
 
     <HBox spacing="10">
-        <Button onAction="#deleteSelected" style="-fx-base: #ff0000;" text="Видалити вибрані" />
+        <Button fx:id="deleteSelectedButton" onAction="#deleteSelected" style="-fx-base: #ff0000;" text="Видалити вибрані" />
         <Button fx:id="mainDelMergedButton" onAction="#deleteMerged" text="Видалити змерджені" />
         <Button fx:id="mainDelUnmergedButton" onAction="#deleteUnmerged" text="Видалити не змерджені" />
-        <Button onAction="#addToExclusions" text="Додати до виключень" />
+        <Button fx:id="addToExclusionsButton" onAction="#addToExclusions" text="Додати до виключень" />
     </HBox>
 
     <HBox spacing="5" style="-fx-background-color: #f0f0f0; -fx-border-color: #c0c0c0; -fx-border-width: 1 0 0 0; -fx-padding: 5;">

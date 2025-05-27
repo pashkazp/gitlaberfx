@@ -114,6 +114,30 @@ public class MainController {
     @FXML
     private Label statusLabel;
 
+    @FXML
+    private Button refreshProjectsButton;
+
+    @FXML
+    private Button refreshBranchesButton;
+
+    @FXML
+    private Button selectAllButton;
+
+    @FXML
+    private Button deselectAllButton;
+
+    @FXML
+    private Button invertSelectionButton;
+
+    @FXML
+    private Button deleteSelectedButton;
+
+    @FXML
+    private Button mainDelUnmergedButton;
+
+    @FXML
+    private Button addToExclusionsButton;
+
     private AppConfig config;
     private GitLabService gitLabService;
     private Stage stage;
@@ -1003,6 +1027,9 @@ public class MainController {
             pauseButton.setDisable(true);
             stopButton.setDisable(true);
 
+            // Re-enable UI elements when tasks are stopped
+            setUiElementsDisabled(false);
+
             // Clear the tasks list
             currentTasks.clear();
         }
@@ -1020,6 +1047,30 @@ public class MainController {
     }
 
     /**
+     * Enables or disables UI elements during background operations.
+     * 
+     * @param disable true to disable UI elements, false to enable them
+     */
+    private void setUiElementsDisabled(boolean disable) {
+        Platform.runLater(() -> {
+            // Disable/enable buttons
+            refreshProjectsButton.setDisable(disable);
+            refreshBranchesButton.setDisable(disable);
+            selectAllButton.setDisable(disable);
+            deselectAllButton.setDisable(disable);
+            invertSelectionButton.setDisable(disable);
+            deleteSelectedButton.setDisable(disable);
+            mainDelMergedButton.setDisable(disable);
+            mainDelUnmergedButton.setDisable(disable);
+            addToExclusionsButton.setDisable(disable);
+
+            // Disable/enable comboboxes
+            projectComboBox.setDisable(disable);
+            mainBranchComboBox.setDisable(disable);
+        });
+    }
+
+    /**
      * Submits a list of tasks to the ExecutorService with support for pausing and stopping.
      * Tasks are executed sequentially in the order they are provided.
      * Note: The actual pause handling is implemented in the tasks themselves.
@@ -1031,12 +1082,15 @@ public class MainController {
         // Reset pause flag
         pauseRequested.set(false);
 
-        // Enable control buttons
+        // Enable control buttons and disable UI elements
         Platform.runLater(() -> {
             playButton.setDisable(true);  // Initially disable play button
             pauseButton.setDisable(false);
             stopButton.setDisable(false);
         });
+
+        // Disable UI elements during background operations
+        setUiElementsDisabled(true);
 
         // Wrap the tasks with interrupt handling
         Runnable wrappedTask = () -> {
@@ -1066,6 +1120,9 @@ public class MainController {
                     pauseButton.setDisable(true);
                     stopButton.setDisable(true);
                 });
+
+                // Re-enable UI elements when all tasks are done
+                setUiElementsDisabled(false);
             }
         };
 
