@@ -138,6 +138,9 @@ public class MainController {
     @FXML
     private Button addToExclusionsButton;
 
+    @FXML
+    private Button rescanMergedButton;
+
     private AppConfig config;
     private GitLabService gitLabService;
     private Stage stage;
@@ -192,6 +195,10 @@ public class MainController {
         playButton.setDisable(true);
         pauseButton.setDisable(true);
         stopButton.setDisable(true);
+
+        // Initially disable rescan button until a main branch is selected
+        rescanMergedButton.setDisable(true);
+        rescanMergedButton.setTooltip(new Tooltip("Пересканувати злиті гілки"));
 
         // Завантаження налаштувань
         loadConfig();
@@ -317,6 +324,9 @@ public class MainController {
     private void onMainBranchSelected() {
         String mainBranch = mainBranchComboBox.getValue();
         if (mainBranch != null) {
+            // Set the initial state of the rescan button based on whether a main branch is selected
+            rescanMergedButton.setDisable(NOT_SELECTED_ITEM.equals(mainBranch));
+
             ObservableList<BranchModel> branches = branchesTableView.getItems();
             if (branches != null) {
                 // If "not selected" item is selected, reset the "Merged" flag for all branches
@@ -936,6 +946,85 @@ public class MainController {
         }
     }
 
+    @FXML
+    private void rescanMerged() {
+        logger.debug("Rescanning merged branches");
+        String mainBranch = mainBranchComboBox.getValue();
+
+        // Check if a main branch is selected
+        if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
+            showError("Помилка", "Не вибрано головну гілку");
+            return;
+        }
+
+        ObservableList<BranchModel> branches = branchesTableView.getItems();
+        if (branches == null || branches.isEmpty()) {
+            showInfo("Інформація", "Немає гілок для перевірки");
+            return;
+        }
+
+        // Update status bar
+        updateStatus("Перевірка злиття гілок...");
+
+        // Create a copy of the branches list for thread safety
+        List<BranchModel> branchesCopy = new ArrayList<>(branches);
+        String finalMainBranch = mainBranch;
+
+        submitTask(() -> {
+            try {
+                // Check if branches have been merged into the selected main branch
+                outerLoop: for (BranchModel branch : branchesCopy) {
+                    // Check if pause is requested
+                    while (pauseRequested.get()) {
+                        // Sleep while paused
+                        try {
+                            Thread.sleep(100);
+                            // Check if thread was interrupted while sleeping
+                            if (Thread.currentThread().isInterrupted()) {
+                                break outerLoop;
+                            }
+                        } catch (InterruptedException e) {
+                            // Restore interrupt status and exit
+                            Thread.currentThread().interrupt();
+                            break outerLoop;
+                        }
+                    }
+
+                    // If thread was interrupted, exit the loop
+                    if (Thread.currentThread().isInterrupted()) {
+                        break outerLoop;
+                    }
+
+                    try {
+                        // Skip checking the main branch itself
+                        if (branch.getName().equals(finalMainBranch)) {
+                            Platform.runLater(() -> branch.setMerged(false));
+                            continue outerLoop;
+                        }
+                        updateStatus("Перевірка гілки: " + branch.getName());
+                        boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+
+                        // Update UI in JavaFX thread
+                        final boolean finalIsMerged = isMerged;
+                        Platform.runLater(() -> branch.setMerged(finalIsMerged));
+                    } catch (IOException e) {
+                        logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalMainBranch, e);
+                        Platform.runLater(() -> branch.setMerged(false));
+                    }
+                }
+
+                // Update status bar in JavaFX thread
+                Platform.runLater(() -> updateStatus("Готово"));
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    logger.error("Error checking branch merges", e);
+                    showError("Помилка перевірки", "Не вдалося перевірити злиття гілок: " + e.getMessage());
+                    updateStatus("Помилка перевірки");
+                });
+            }
+        });
+    }
+
     private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
@@ -1063,6 +1152,16 @@ public class MainController {
             mainDelMergedButton.setDisable(disable);
             mainDelUnmergedButton.setDisable(disable);
             addToExclusionsButton.setDisable(disable);
+
+            // Disable the rescan button during background operations
+            // but only if a main branch is selected (otherwise it should remain disabled)
+            if (disable) {
+                rescanMergedButton.setDisable(true);
+            } else {
+                // Re-enable only if a main branch is selected
+                String mainBranch = mainBranchComboBox.getValue();
+                rescanMergedButton.setDisable(mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch));
+            }
 
             // Disable/enable comboboxes
             projectComboBox.setDisable(disable);

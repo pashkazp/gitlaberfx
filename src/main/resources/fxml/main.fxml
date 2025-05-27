@@ -30,7 +30,10 @@
         </VBox>
         <VBox spacing="5">
             <Label text="Головна гілка:" />
-            <ComboBox fx:id="mainBranchComboBox" />
+            <HBox spacing="5">
+                <ComboBox fx:id="mainBranchComboBox" HBox.hgrow="ALWAYS" />
+                <Button fx:id="rescanMergedButton" onAction="#rescanMerged" text="↻" style="-fx-min-width: 25; -fx-min-height: 25;" />
+            </HBox>
         </VBox>
     </HBox>
 
