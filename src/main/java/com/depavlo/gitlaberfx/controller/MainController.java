@@ -432,6 +432,66 @@ public class MainController {
     }
 
     @FXML
+    private void refreshProjects() {
+        logger.debug("Refreshing projects list from GitLab");
+
+        // Save current project and main branch selection before updating
+        String currentProject = projectComboBox.getValue();
+        String currentMainBranch = mainBranchComboBox.getValue();
+
+        // Update status bar
+        updateStatus("Оновлення списку проєктів з GitLab...");
+
+        submitTask(() -> {
+            try {
+                // Get projects from GitLab
+                List<GitLabService.Project> projects = gitLabService.getProjects();
+
+                // Create a list of project names
+                List<String> projectNames = new ArrayList<>();
+                projectNames.add(NOT_SELECTED_ITEM);
+                projectNames.addAll(projects.stream()
+                        .map(GitLabService.Project::getPathName)
+                        .sorted(String.CASE_INSENSITIVE_ORDER)
+                        .collect(Collectors.toList()));
+
+                // Update UI in JavaFX thread
+                Platform.runLater(() -> {
+                    // Update the project combobox
+                    projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
+
+                    // Check if the current project still exists in the updated list
+                    if (currentProject != null && projectNames.contains(currentProject)) {
+                        // Restore the current project
+                        projectComboBox.setValue(currentProject);
+
+                        // Get the branches for the current project
+                        updateStatus("Оновлення гілок проєкту...");
+
+                        // The onProjectSelected() method will be called automatically when the project is selected,
+                        // which will update the branches and restore the main branch if it still exists
+                    } else {
+                        // Reset both project and main branch to "not selected"
+                        projectComboBox.setValue(NOT_SELECTED_ITEM);
+                        mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
+
+                        // Clear the branches table
+                        branchesTableView.setItems(FXCollections.observableArrayList());
+
+                        updateStatus("Готово");
+                    }
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    logger.error("Error refreshing projects", e);
+                    showError("Помилка оновлення", "Не вдалося оновити список проєктів: " + e.getMessage());
+                    updateStatus("Помилка оновлення");
+                });
+            }
+        });
+    }
+
+    @FXML
     private void selectAll() {
         logger.debug("Selecting all branches");
         branchesTableView.getItems().forEach(branch -> branch.setSelected(true));
