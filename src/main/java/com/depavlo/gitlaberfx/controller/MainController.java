@@ -203,6 +203,9 @@ public class MainController {
 
     private void onProjectSelected() {
         String projectName = projectComboBox.getValue();
+        // Save current main branch selection before updating
+        String currentMainBranch = mainBranchComboBox.getValue();
+
         // Clear mainBranchComboBox when a project is selected
         mainBranchComboBox.getItems().clear();
 
@@ -261,7 +264,13 @@ public class MainController {
 
                             branchesTableView.setItems(FXCollections.observableArrayList(branches));
                             mainBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranchNames));
-                            mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
+
+                            // Restore the previously selected main branch if it still exists in the updated list
+                            if (currentMainBranch != null && updatedBranchNames.contains(currentMainBranch)) {
+                                mainBranchComboBox.setValue(currentMainBranch);
+                            } else {
+                                mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
+                            }
 
                             updateStatus("Готово");
                         });
