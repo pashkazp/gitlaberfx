@@ -577,7 +577,7 @@ public class MainController {
                             // We need to parse it to a LocalDate for comparison using our helper method
                             LocalDate lastCommitDate = parseDate(lastCommitDateStr);
 
-                            if (lastCommitDate.isBefore(finalCutoffDate) || lastCommitDate.isEqual(finalCutoffDate)) {
+                            if (lastCommitDate.isBefore(finalCutoffDate)) {
                                 // If the branch meets all criteria, add it to the merged branches list
                                 mergedBranches.add(branch);
                             }
