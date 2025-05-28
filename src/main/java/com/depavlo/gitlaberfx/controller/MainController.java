@@ -115,6 +115,9 @@ public class MainController {
     private Label statusLabel;
 
     @FXML
+    private Label branchCounterLabel;
+
+    @FXML
     private ProgressBar progressBar;
 
     @FXML
@@ -184,10 +187,14 @@ public class MainController {
                 BranchModel selectedBranch = branchesTableView.getSelectionModel().getSelectedItem();
                 if (selectedBranch != null) {
                     selectedBranch.setSelected(!selectedBranch.isSelected());
+                    updateBranchCounter();
                     event.consume();
                 }
             }
         });
+
+        // Initialize branch counter
+        updateBranchCounter();
 
         // Initialize control buttons
         playButton.setTooltip(new Tooltip("Продовжити виконання"));
@@ -257,6 +264,7 @@ public class MainController {
             branchesTableView.setItems(FXCollections.observableArrayList());
             updateStatus("Готово");
             updateProgress(0.0);
+            updateBranchCounter();
             return;
         }
 
@@ -311,6 +319,7 @@ public class MainController {
                             }
 
                             updateStatus("Готово");
+                            updateBranchCounter();
                         });
                     } else {
                         Platform.runLater(() -> {
@@ -341,6 +350,7 @@ public class MainController {
                     for (BranchModel branch : branches) {
                         branch.setMerged(false);
                     }
+                    updateBranchCounter();
                 } else {
                     // Update status bar
                     updateStatus("Перевірка злиття гілок...");
@@ -409,7 +419,10 @@ public class MainController {
                                 new Thread(() -> {
                                     try {
                                         Thread.sleep(500);
-                                        Platform.runLater(() -> updateStatus("Готово"));
+                                        Platform.runLater(() -> {
+                                            updateStatus("Готово");
+                                            updateBranchCounter();
+                                        });
                                     } catch (InterruptedException e) {
                                         Thread.currentThread().interrupt();
                                     }
@@ -559,18 +572,21 @@ public class MainController {
     private void selectAll() {
         logger.debug("Selecting all branches");
         branchesTableView.getItems().forEach(branch -> branch.setSelected(true));
+        updateBranchCounter();
     }
 
     @FXML
     private void deselectAll() {
         logger.debug("Deselecting all branches");
         branchesTableView.getItems().forEach(branch -> branch.setSelected(false));
+        updateBranchCounter();
     }
 
     @FXML
     private void invertSelection() {
         logger.debug("Inverting selection");
         branchesTableView.getItems().forEach(branch -> branch.setSelected(!branch.isSelected()));
+        updateBranchCounter();
     }
 
     @FXML
@@ -635,6 +651,7 @@ public class MainController {
                             updateStatus("Оновлення списку гілок...");
                             // refreshBranches() will update the status bar
                             refreshBranches();
+                            // updateBranchCounter will be called by onProjectSelected
                         });
                     } catch (IOException e) {
                         Platform.runLater(() -> {
@@ -813,6 +830,7 @@ public class MainController {
                                             updateStatus("Оновлення списку гілок...");
                                             // refreshBranches() will update the status bar
                                             refreshBranches();
+                                            // updateBranchCounter will be called by onProjectSelected
                                         });
                                     } catch (IOException e) {
                                         Platform.runLater(() -> {
@@ -821,6 +839,7 @@ public class MainController {
                                             updateStatus("Помилка видалення гілок");
                                             updateProgress(0.0);
                                             showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                                            updateBranchCounter();
                                         });
                                     }
                                 });
@@ -1006,6 +1025,7 @@ public class MainController {
                                             updateStatus("Оновлення списку гілок...");
                                             // refreshBranches() will update the status bar
                                             refreshBranches();
+                                            // updateBranchCounter will be called by onProjectSelected
                                         });
                                     } catch (IOException e) {
                                         Platform.runLater(() -> {
@@ -1014,6 +1034,7 @@ public class MainController {
                                             updateStatus("Помилка видалення гілок");
                                             updateProgress(0.0);
                                             showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                                            updateBranchCounter();
                                         });
                                     }
                                 });
@@ -1193,6 +1214,23 @@ public class MainController {
             progressBar.setProgress(progress);
         } else {
             Platform.runLater(() -> progressBar.setProgress(progress));
+        }
+    }
+
+    /**
+     * Updates the branch counter label with the current count of selected branches and total branches.
+     * This method is safe to call from any thread.
+     */
+    private void updateBranchCounter() {
+        int totalBranches = branchesTableView.getItems().size();
+        int selectedBranches = (int) branchesTableView.getItems().stream()
+                .filter(BranchModel::isSelected)
+                .count();
+
+        if (Platform.isFxApplicationThread()) {
+            branchCounterLabel.setText(selectedBranches + "/" + totalBranches);
+        } else {
+            Platform.runLater(() -> branchCounterLabel.setText(selectedBranches + "/" + totalBranches));
         }
     }
 
