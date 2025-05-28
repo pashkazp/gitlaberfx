@@ -115,6 +115,9 @@ public class MainController {
     private Label statusLabel;
 
     @FXML
+    private ProgressBar progressBar;
+
+    @FXML
     private Button refreshProjectsButton;
 
     @FXML
@@ -200,6 +203,9 @@ public class MainController {
         rescanMergedButton.setDisable(true);
         rescanMergedButton.setTooltip(new Tooltip("Пересканувати злиті гілки"));
 
+        // Initialize progress bar
+        progressBar.setProgress(0.0);
+
         // Завантаження налаштувань
         loadConfig();
     }
@@ -250,6 +256,7 @@ public class MainController {
         if (projectName == null || NOT_SELECTED_ITEM.equals(projectName)) {
             branchesTableView.setItems(FXCollections.observableArrayList());
             updateStatus("Готово");
+            updateProgress(0.0);
             return;
         }
 
@@ -337,15 +344,21 @@ public class MainController {
                 } else {
                     // Update status bar
                     updateStatus("Перевірка злиття гілок...");
+                    updateProgress(0.0);
 
                     // Create a copy of the branches list for thread safety
                     List<BranchModel> branchesCopy = new ArrayList<>(branches);
                     String finalMainBranch = mainBranch;
+                    final int totalBranches = branchesCopy.size();
 
                     submitTask(() -> {
                         try {
                             // Check if branches have been merged into the selected main branch
+                            int branchCounter = 0;
                             outerLoop: for (BranchModel branch : branchesCopy) {
+                                // Update progress
+                                final double progress = (double) branchCounter / totalBranches;
+                                updateProgress(progress);
                                 // Check if pause is requested
                                 while (pauseRequested.get()) {
                                     // Sleep while paused
@@ -383,14 +396,31 @@ public class MainController {
                                     logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalMainBranch, e);
                                     Platform.runLater(() -> branch.setMerged(false));
                                 }
+
+                                // Increment branch counter
+                                branchCounter++;
                             }
 
-                            // Update status bar in JavaFX thread
-                            Platform.runLater(() -> updateStatus("Готово"));
+                            // Update status bar and progress bar in JavaFX thread
+                            Platform.runLater(() -> {
+                                // Set progress to 1.0 to indicate completion
+                                progressBar.setProgress(1.0);
+                                // Update status after a short delay to show the completed progress
+                                new Thread(() -> {
+                                    try {
+                                        Thread.sleep(500);
+                                        Platform.runLater(() -> updateStatus("Готово"));
+                                    } catch (InterruptedException e) {
+                                        Thread.currentThread().interrupt();
+                                    }
+                                }).start();
+                            });
                         } catch (Exception e) {
                             Platform.runLater(() -> {
                                 logger.error("Error checking branch merges", e);
                                 showError("Помилка перевірки", "Не вдалося перевірити злиття гілок: " + e.getMessage());
+                                // Directly set progress to 0.0 to avoid conflict with updateStatus
+                                progressBar.setProgress(0.0);
                                 updateStatus("Помилка перевірки");
                             });
                         }
@@ -1052,14 +1082,39 @@ public class MainController {
     /**
      * Updates the status label with the given message.
      * This method is safe to call from any thread.
+     * If the message is "Готово", it also resets the progress bar to 0.0.
      * 
      * @param message The message to display
      */
     private void updateStatus(String message) {
         if (Platform.isFxApplicationThread()) {
             statusLabel.setText(message);
+            // Reset progress bar when status is "Готово" (Ready)
+            if ("Готово".equals(message)) {
+                progressBar.setProgress(0.0);
+            }
         } else {
-            Platform.runLater(() -> statusLabel.setText(message));
+            Platform.runLater(() -> {
+                statusLabel.setText(message);
+                // Reset progress bar when status is "Готово" (Ready)
+                if ("Готово".equals(message)) {
+                    progressBar.setProgress(0.0);
+                }
+            });
+        }
+    }
+
+    /**
+     * Updates the progress bar with the given progress value.
+     * This method is safe to call from any thread.
+     * 
+     * @param progress The progress value between 0.0 and 1.0
+     */
+    private void updateProgress(double progress) {
+        if (Platform.isFxApplicationThread()) {
+            progressBar.setProgress(progress);
+        } else {
+            Platform.runLater(() -> progressBar.setProgress(progress));
         }
     }
 
