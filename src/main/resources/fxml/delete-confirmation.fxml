@@ -1,39 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.*?>
-<?import javafx.geometry.Insets?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.depavlo.gitlaberfx.controller.DeleteConfirmationController"
-      spacing="10">
-    
+<VBox spacing="10" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.DeleteConfirmationController">
+
     <padding>
-        <Insets top="10" right="10" bottom="10" left="10"/>
+        <Insets bottom="10" left="10" right="10" top="10" />
     </padding>
-    
-    <Label text="Виберіть гілки для видалення:"/>
-    
+
+    <Label text="Виберіть гілки для видалення:" />
+
     <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="selectedColumn" text="Вибрати" prefWidth="50"/>
-            <TableColumn fx:id="nameColumn" text="Назва гілки" prefWidth="200"/>
-            <TableColumn fx:id="lastCommitColumn" text="Останній коміт" prefWidth="150"/>
-            <TableColumn fx:id="mergedColumn" text="Змерджена" prefWidth="100"/>
+            <TableColumn fx:id="selectedColumn" prefWidth="50" text="Вибрати" />
+            <TableColumn fx:id="nameColumn" prefWidth="200" text="Назва гілки" />
+            <TableColumn fx:id="lastCommitColumn" prefWidth="150" text="Останній коміт" />
+            <TableColumn fx:id="mergedColumn" prefWidth="100" text="Змерджена" />
         </columns>
     </TableView>
-    
-    <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Вибрати всі" onAction="#selectAll"/>
-        <Button text="Скасувати вибір" onAction="#deselectAll"/>
-        <Button text="Інвертувати вибір" onAction="#invertSelection"/>
+
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <Button onAction="#selectAll" text="Вибрати всі" />
+        <Button onAction="#deselectAll" text="Скасувати вибір" />
+        <Button onAction="#invertSelection" text="Інвертувати вибір" />
+        <Label fx:id="branchCounterLabel" alignment="CENTER_RIGHT" style="-fx-padding: 5;" text="0/0" />
     </HBox>
-    
-    <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Видалити вибрані" onAction="#confirm" defaultButton="true" style="-fx-base: #ff0000;"/>
-        <Button text="Скасувати" onAction="#cancel" cancelButton="true"/>
+
+    <HBox alignment="CENTER_RIGHT" spacing="10">
+        <HBox spacing="10" HBox.hgrow="ALWAYS">
+            <Button defaultButton="true" onAction="#confirm" style="-fx-base: #ff0000;" text="Видалити вибрані" />
+            <Button cancelButton="true" onAction="#cancel" text="Скасувати" />
+        </HBox>
     </HBox>
-    
-</VBox> 
+
+</VBox>
