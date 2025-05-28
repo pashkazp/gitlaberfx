@@ -1166,9 +1166,6 @@ public class MainController {
             // Disable/enable comboboxes
             projectComboBox.setDisable(disable);
             mainBranchComboBox.setDisable(disable);
-
-            // Disable/enable branchesTableView to prevent selection changes during background operations
-            branchesTableView.setDisable(disable);
         });
     }
 
