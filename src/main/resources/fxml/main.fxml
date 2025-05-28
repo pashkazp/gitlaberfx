@@ -25,14 +25,14 @@
             <Label text="Проєкт:" />
             <HBox spacing="5">
                 <ComboBox fx:id="projectComboBox" HBox.hgrow="ALWAYS" />
-                <Button fx:id="refreshProjectsButton" onAction="#refreshProjects" text="↻" style="-fx-min-width: 25; -fx-min-height: 25;" />
+                <Button fx:id="refreshProjectsButton" onAction="#refreshProjects" style="-fx-min-width: 25; -fx-min-height: 25;" text="↻" />
             </HBox>
         </VBox>
         <VBox spacing="5">
             <Label text="Головна гілка:" />
             <HBox spacing="5">
                 <ComboBox fx:id="mainBranchComboBox" HBox.hgrow="ALWAYS" />
-                <Button fx:id="rescanMergedButton" onAction="#rescanMerged" text="↻" style="-fx-min-width: 25; -fx-min-height: 25;" />
+                <Button fx:id="rescanMergedButton" onAction="#rescanMerged" style="-fx-min-width: 25; -fx-min-height: 25;" text="↻" />
             </HBox>
         </VBox>
     </HBox>
@@ -60,12 +60,20 @@
         <Button fx:id="addToExclusionsButton" onAction="#addToExclusions" text="Додати до виключень" />
     </HBox>
 
-    <HBox spacing="5" style="-fx-background-color: #f0f0f0; -fx-border-color: #c0c0c0; -fx-border-width: 1 0 0 0; -fx-padding: 5;">
-        <Button fx:id="playButton" disable="true" onAction="#onPlayButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #00ff00;" text="▶" />
-        <Button fx:id="pauseButton" disable="true" onAction="#onPauseButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #ff9900;" text="⏸" />
-        <Button fx:id="stopButton" disable="true" onAction="#onStopButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #ff0000;" text="⏹" />
-        <Label fx:id="statusLabel" text="Готово" HBox.hgrow="ALWAYS" />
-        <ProgressBar fx:id="progressBar" prefWidth="150" progress="0.0" />
+    <HBox alignment="CENTER_LEFT" spacing="5" style="-fx-background-color: #f0f0f0; -fx-border-color: #c0c0c0; -fx-border-width: 1 0 0 0; -fx-padding: 5;">
+      <HBox alignment="CENTER_LEFT" spacing="5" HBox.hgrow="ALWAYS">
+         <children>
+              <Button fx:id="playButton" disable="true" onAction="#onPlayButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #00ff00;" text="▶" />
+              <Button fx:id="pauseButton" disable="true" onAction="#onPauseButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #ff9900;" text="⏸" />
+              <Button fx:id="stopButton" disable="true" onAction="#onStopButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #ff0000;" text="⏹" />
+              <Label fx:id="statusLabel" text="Готово" HBox.hgrow="ALWAYS" />
+         </children>
+      </HBox>
+        <HBox alignment="CENTER_RIGHT" spacing="10" HBox.hgrow="NEVER" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
+            <children>
+                <ProgressBar fx:id="progressBar" prefWidth="75" progress="0.0" />
+            </children>
+        </HBox>
     </HBox>
 
 </VBox>
