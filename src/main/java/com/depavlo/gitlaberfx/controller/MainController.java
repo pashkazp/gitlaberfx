@@ -583,15 +583,22 @@ public class MainController {
         if (!selectedBranches.isEmpty()) {
             List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, selectedBranches);
             if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
-                // Update status bar
+                // Update status bar and initialize progress bar
                 updateStatus("Видалення вибраних гілок...");
+                updateProgress(0.0);
 
                 // Create a copy of the confirmed branches list for thread safety
                 List<BranchModel> branchesToDelete = new ArrayList<>(confirmedBranches);
+                final int totalBranches = branchesToDelete.size();
 
                 submitTask(() -> {
                     try {
+                        int branchCounter = 0;
                         outerLoop: for (BranchModel branch : branchesToDelete) {
+                            // Update progress
+                            final double progress = (double) branchCounter / totalBranches;
+                            updateProgress(progress);
+
                             // Check if pause is requested
                             while (pauseRequested.get()) {
                                 // Sleep while paused
@@ -615,7 +622,13 @@ public class MainController {
 
                             updateStatus("Видалення гілки: " + branch.getName());
                             gitLabService.deleteBranch(currentProjectId, branch.getName());
+
+                            // Increment branch counter
+                            branchCounter++;
                         }
+
+                        // Set progress to 1.0 to indicate completion
+                        updateProgress(1.0);
 
                         // Update status bar before refreshing branches
                         Platform.runLater(() -> {
@@ -626,7 +639,8 @@ public class MainController {
                     } catch (IOException e) {
                         Platform.runLater(() -> {
                             logger.error("Error deleting branches", e);
-                            // Update status bar in case of error
+                            // Update status bar and reset progress bar in case of error
+                            updateProgress(0.0);
                             updateStatus("Помилка видалення гілок");
                             showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
                         });
