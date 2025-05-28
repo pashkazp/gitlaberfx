@@ -308,7 +308,12 @@ public class MainController {
                             currentProjectId = projectId;
                             config.save();
 
-                            branchesTableView.setItems(FXCollections.observableArrayList(branches));
+                            ObservableList<BranchModel> branchItems = FXCollections.observableArrayList(branches);
+                            branchesTableView.setItems(branchItems);
+
+                            // Add listeners to branch selection changes
+                            addBranchSelectionListeners(branchItems);
+
                             mainBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranchNames));
 
                             // Restore the previously selected main branch if it still exists in the updated list
@@ -1231,6 +1236,24 @@ public class MainController {
             branchCounterLabel.setText(selectedBranches + "/" + totalBranches);
         } else {
             Platform.runLater(() -> branchCounterLabel.setText(selectedBranches + "/" + totalBranches));
+        }
+    }
+
+    /**
+     * Adds listeners to each branch's selectedProperty to update the counter when selection changes.
+     * This ensures the counter is updated when branches are selected/deselected with the mouse.
+     * 
+     * @param branches The list of branches to add listeners to
+     */
+    private void addBranchSelectionListeners(List<BranchModel> branches) {
+        if (branches == null) return;
+
+        for (BranchModel branch : branches) {
+            // Add listener to the selectedProperty
+            branch.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                // Update the counter when the selection changes
+                updateBranchCounter();
+            });
         }
     }
 
