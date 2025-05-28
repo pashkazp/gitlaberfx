@@ -663,6 +663,7 @@ public class MainController {
         if (cutoffDate != null) {
             // Update status bar
             updateStatus("Перевірка змерджених гілок...");
+            updateProgress(0.0);
 
             // Store final values for use in lambda
             final String finalMainBranch = mainBranch;
@@ -677,7 +678,14 @@ public class MainController {
                     List<BranchModel> mergedBranches = new ArrayList<>();
 
                     // Iterate through each branch and check if it meets the criteria
+                    final int totalBranches = branchesCopy.size();
+                    int branchCounter = 0;
+
                     outerLoop: for (BranchModel branch : branchesCopy) {
+                        // Update progress
+                        final double progress = (double) branchCounter / totalBranches;
+                        updateProgress(progress);
+
                         // Check if pause is requested
                         while (pauseRequested.get()) {
                             // Sleep while paused
@@ -706,16 +714,19 @@ public class MainController {
 
                             // If the branch is not merged, skip to the next branch
                             if (!isMerged) {
+                                branchCounter++;
                                 continue outerLoop;
                             }
                         } catch (IOException e) {
                             logger.error("Error checking if branch is merged", e);
+                            branchCounter++;
                             continue outerLoop; // Skip to the next branch if there's an error
                         }
 
                         // Parse the last commit date and compare it with the cutoff date
                         String lastCommitDateStr = branch.getLastCommit();
                         if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
+                            branchCounter++;
                             continue outerLoop; // Skip to the next branch if there's no commit date
                         }
 
@@ -732,7 +743,13 @@ public class MainController {
                             logger.error("Error parsing last commit date: {}", lastCommitDateStr, e);
                             // Skip to the next branch if there's an error parsing the date
                         }
+
+                        // Increment branch counter
+                        branchCounter++;
                     }
+
+                    // Set progress to 1.0 to indicate completion of checking phase
+                    updateProgress(1.0);
 
                     // Update UI in JavaFX thread
                     Platform.runLater(() -> {
@@ -744,14 +761,21 @@ public class MainController {
                             if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
                                 // Update status bar for deletion
                                 updateStatus("Видалення змерджених гілок...");
+                                updateProgress(0.0);
 
                                 // Create a copy of the confirmed branches list for thread safety
                                 List<BranchModel> branchesToDelete = new ArrayList<>(confirmedBranches);
+                                final int totalBranchesToDelete = branchesToDelete.size();
 
                                 // Submit a new task for deletion
                                 submitTask(() -> {
                                     try {
+                                        int deleteCounter = 0;
                                         outerLoop: for (BranchModel branch : branchesToDelete) {
+                                            // Update progress
+                                            final double progress = (double) deleteCounter / totalBranchesToDelete;
+                                            updateProgress(progress);
+
                                             // Check if pause is requested
                                             while (pauseRequested.get()) {
                                                 // Sleep while paused
@@ -775,7 +799,13 @@ public class MainController {
 
                                             updateStatus("Видалення гілки: " + branch.getName());
                                             gitLabService.deleteBranch(currentProjectId, branch.getName());
+
+                                            // Increment delete counter
+                                            deleteCounter++;
                                         }
+
+                                        // Set progress to 1.0 to indicate completion of deletion phase
+                                        updateProgress(1.0);
 
                                         // Update UI in JavaFX thread
                                         Platform.runLater(() -> {
@@ -789,6 +819,7 @@ public class MainController {
                                             logger.error("Error deleting merged branches", e);
                                             // Update status bar in case of error
                                             updateStatus("Помилка видалення гілок");
+                                            updateProgress(0.0);
                                             showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
                                         });
                                     }
@@ -804,6 +835,7 @@ public class MainController {
                         logger.error("Error checking merged branches", e);
                         // Update status bar in case of error
                         updateStatus("Помилка перевірки гілок");
+                        updateProgress(0.0);
                         showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
                     });
                 }
@@ -824,6 +856,7 @@ public class MainController {
         if (cutoffDate != null) {
             // Update status bar
             updateStatus("Перевірка не змерджених гілок...");
+            updateProgress(0.0);
 
             // Store final values for use in lambda
             final String finalMainBranch = mainBranch;
@@ -838,7 +871,14 @@ public class MainController {
                     List<BranchModel> unmergedBranches = new ArrayList<>();
 
                     // Iterate through each branch and check if it meets the criteria
+                    final int totalBranches = branchesCopy.size();
+                    int branchCounter = 0;
+
                     outerLoop: for (BranchModel branch : branchesCopy) {
+                        // Update progress
+                        final double progress = (double) branchCounter / totalBranches;
+                        updateProgress(progress);
+
                         // Check if pause is requested
                         while (pauseRequested.get()) {
                             // Sleep while paused
@@ -867,16 +907,19 @@ public class MainController {
 
                             // If the branch is merged, skip to the next branch (inverse of deleteMerged logic)
                             if (isMerged) {
+                                branchCounter++;
                                 continue outerLoop;
                             }
                         } catch (IOException e) {
                             logger.error("Error checking if branch is merged", e);
+                            branchCounter++;
                             continue outerLoop; // Skip to the next branch if there's an error
                         }
 
                         // Parse the last commit date and compare it with the cutoff date
                         String lastCommitDateStr = branch.getLastCommit();
                         if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
+                            branchCounter++;
                             continue outerLoop; // Skip to the next branch if there's no commit date
                         }
 
@@ -893,7 +936,13 @@ public class MainController {
                             logger.error("Error parsing last commit date: {}", lastCommitDateStr, e);
                             // Skip to the next branch if there's an error parsing the date
                         }
+
+                        // Increment branch counter
+                        branchCounter++;
                     }
+
+                    // Set progress to 1.0 to indicate completion of checking phase
+                    updateProgress(1.0);
 
                     // Update UI in JavaFX thread
                     Platform.runLater(() -> {
@@ -905,14 +954,21 @@ public class MainController {
                             if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
                                 // Update status bar for deletion
                                 updateStatus("Видалення не змерджених гілок...");
+                                updateProgress(0.0);
 
                                 // Create a copy of the confirmed branches list for thread safety
                                 List<BranchModel> branchesToDelete = new ArrayList<>(confirmedBranches);
+                                final int totalBranchesToDelete = branchesToDelete.size();
 
                                 // Submit a new task for deletion
                                 submitTask(() -> {
                                     try {
+                                        int deleteCounter = 0;
                                         outerLoop: for (BranchModel branch : branchesToDelete) {
+                                            // Update progress
+                                            final double progress = (double) deleteCounter / totalBranchesToDelete;
+                                            updateProgress(progress);
+
                                             // Check if pause is requested
                                             while (pauseRequested.get()) {
                                                 // Sleep while paused
@@ -936,7 +992,13 @@ public class MainController {
 
                                             updateStatus("Видалення гілки: " + branch.getName());
                                             gitLabService.deleteBranch(currentProjectId, branch.getName());
+
+                                            // Increment delete counter
+                                            deleteCounter++;
                                         }
+
+                                        // Set progress to 1.0 to indicate completion of deletion phase
+                                        updateProgress(1.0);
 
                                         // Update UI in JavaFX thread
                                         Platform.runLater(() -> {
@@ -950,6 +1012,7 @@ public class MainController {
                                             logger.error("Error deleting unmerged branches", e);
                                             // Update status bar in case of error
                                             updateStatus("Помилка видалення гілок");
+                                            updateProgress(0.0);
                                             showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
                                         });
                                     }
@@ -965,6 +1028,7 @@ public class MainController {
                         logger.error("Error checking unmerged branches", e);
                         // Update status bar in case of error
                         updateStatus("Помилка перевірки гілок");
+                        updateProgress(0.0);
                         showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
                     });
                 }
