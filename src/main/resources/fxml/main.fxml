@@ -50,11 +50,11 @@
             <TableColumn fx:id="nameColumn" prefWidth="200" text="Назва гілки" />
             <TableColumn fx:id="lastCommitColumn" prefWidth="150" text="Останній коміт" />
             <TableColumn fx:id="mergedColumn" prefWidth="50" text="Змерджена" />
-            <TableColumn fx:id="protectedColumn" prefWidth="50" text="Захищена" />
-            <TableColumn fx:id="defaultColumn" prefWidth="50" text="Г" />
-            <TableColumn fx:id="developersCanPushColumn" prefWidth="50" text="ДП" />
-            <TableColumn fx:id="developersCanMergeColumn" prefWidth="50" text="ДМ" />
-            <TableColumn fx:id="canPushColumn" prefWidth="50" text="Д" />
+            <TableColumn fx:id="protectedColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="З" />
+            <TableColumn fx:id="defaultColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="Г" />
+            <TableColumn fx:id="developersCanPushColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="ДП" />
+            <TableColumn fx:id="developersCanMergeColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="ДМ" />
+            <TableColumn fx:id="canPushColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="Д" />
         </columns>
     </TableView>
 
