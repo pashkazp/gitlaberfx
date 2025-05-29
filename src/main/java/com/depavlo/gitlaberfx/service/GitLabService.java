@@ -103,7 +103,7 @@ public class GitLabService {
         }
         logger.info("Connecting to GitLab at {}", config.getGitlabUrl());
         // Тест з'єднання - спробуємо отримати список проєктів
-        getProjects();
+//        getProjects();
     }
 
     public List<Project> getProjects() throws IOException {

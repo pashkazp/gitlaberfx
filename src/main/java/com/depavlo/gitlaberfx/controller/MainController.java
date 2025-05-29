@@ -537,7 +537,7 @@ public class MainController {
     }
 
     @FXML
-    private void refreshProjects() {
+    public void refreshProjects() {
         logger.debug("Refreshing projects list from GitLab");
 
         // Save current project and main branch selection before updating

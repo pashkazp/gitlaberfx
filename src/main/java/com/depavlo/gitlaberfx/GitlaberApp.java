@@ -86,6 +86,7 @@ public class GitlaberApp extends Application {
         }));
 
         stage.show();
+        controller.refreshProjects();
     }
 
     @Override
