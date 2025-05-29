@@ -253,15 +253,15 @@ public class MainController {
         try {
             gitLabService.connect();
 
-            List<GitLabService.Project> projects = gitLabService.getProjects();
-            List<String> projectNames = new ArrayList<>();
-            projectNames.add(NOT_SELECTED_ITEM);
-            projectNames.addAll(projects.stream()
-                    .map(GitLabService.Project::getPathName)
-                    .sorted(String.CASE_INSENSITIVE_ORDER)
-                    .collect(Collectors.toList()));
-            projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
-            projectComboBox.setValue(NOT_SELECTED_ITEM);
+//            List<GitLabService.Project> projects = gitLabService.getProjects();
+//            List<String> projectNames = new ArrayList<>();
+//            projectNames.add(NOT_SELECTED_ITEM);
+//            projectNames.addAll(projects.stream()
+//                    .map(GitLabService.Project::getPathName)
+//                    .sorted(String.CASE_INSENSITIVE_ORDER)
+//                    .collect(Collectors.toList()));
+//            projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
+//            projectComboBox.setValue(NOT_SELECTED_ITEM);
         } catch (IOException e) {
             logger.error("Error loading configuration", e);
             showError("Помилка завантаження", "Не вдалося завантажити налаштування: " + e.getMessage());
