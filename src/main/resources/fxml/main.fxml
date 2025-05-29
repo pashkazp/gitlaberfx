@@ -50,6 +50,7 @@
             <TableColumn fx:id="nameColumn" prefWidth="200" text="Назва гілки" />
             <TableColumn fx:id="lastCommitColumn" prefWidth="150" text="Останній коміт" />
             <TableColumn fx:id="mergedColumn" prefWidth="100" text="Змерджена" />
+            <TableColumn fx:id="statusColumn" prefWidth="100" text="Статус" />
         </columns>
     </TableView>
 

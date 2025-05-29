@@ -33,12 +33,28 @@ public class BranchModel {
     private final StringProperty name;
     private final StringProperty lastCommit;
     private final BooleanProperty merged;
+    private final BooleanProperty protected_;
+    private final BooleanProperty developersCanPush;
+    private final BooleanProperty developersCanMerge;
+    private final BooleanProperty canPush;
+    private final BooleanProperty default_;
 
-    public BranchModel(String name, String lastCommit, boolean merged) {
+    public BranchModel(String name, String lastCommit, boolean merged, boolean protected_, 
+                  boolean developersCanPush, boolean developersCanMerge, boolean canPush, boolean default_) {
         this.selected = new SimpleBooleanProperty(false);
         this.name = new SimpleStringProperty(name);
         this.lastCommit = new SimpleStringProperty(lastCommit);
         this.merged = new SimpleBooleanProperty(merged);
+        this.protected_ = new SimpleBooleanProperty(protected_);
+        this.developersCanPush = new SimpleBooleanProperty(developersCanPush);
+        this.developersCanMerge = new SimpleBooleanProperty(developersCanMerge);
+        this.canPush = new SimpleBooleanProperty(canPush);
+        this.default_ = new SimpleBooleanProperty(default_);
+    }
+
+    // Constructor with default values for backward compatibility
+    public BranchModel(String name, String lastCommit, boolean merged) {
+        this(name, lastCommit, merged, false, false, false, false, false);
     }
 
     public boolean isSelected() {
@@ -88,4 +104,64 @@ public class BranchModel {
     public void setMerged(boolean merged) {
         this.merged.set(merged);
     }
-} 
+
+    public boolean isProtected() {
+        return protected_.get();
+    }
+
+    public BooleanProperty protectedProperty() {
+        return protected_;
+    }
+
+    public void setProtected(boolean protected_) {
+        this.protected_.set(protected_);
+    }
+
+    public boolean isDevelopersCanPush() {
+        return developersCanPush.get();
+    }
+
+    public BooleanProperty developersCanPushProperty() {
+        return developersCanPush;
+    }
+
+    public void setDevelopersCanPush(boolean developersCanPush) {
+        this.developersCanPush.set(developersCanPush);
+    }
+
+    public boolean isDevelopersCanMerge() {
+        return developersCanMerge.get();
+    }
+
+    public BooleanProperty developersCanMergeProperty() {
+        return developersCanMerge;
+    }
+
+    public void setDevelopersCanMerge(boolean developersCanMerge) {
+        this.developersCanMerge.set(developersCanMerge);
+    }
+
+    public boolean isCanPush() {
+        return canPush.get();
+    }
+
+    public BooleanProperty canPushProperty() {
+        return canPush;
+    }
+
+    public void setCanPush(boolean canPush) {
+        this.canPush.set(canPush);
+    }
+
+    public boolean isDefault() {
+        return default_.get();
+    }
+
+    public BooleanProperty defaultProperty() {
+        return default_;
+    }
+
+    public void setDefault(boolean default_) {
+        this.default_.set(default_);
+    }
+}
