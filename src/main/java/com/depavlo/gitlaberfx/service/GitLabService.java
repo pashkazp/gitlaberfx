@@ -168,18 +168,15 @@ public class GitLabService {
                 for (JsonNode branchNode : jsonArray) {
                     String branchName = branchNode.get("name").asText();
                     String lastCommitDate = branchNode.get("commit").get("committed_date").asText();
-
-                    // Extract additional boolean fields from the GitLab API response
+                    // Extract additional boolean properties
                     boolean isProtected = branchNode.has("protected") ? branchNode.get("protected").asBoolean() : false;
                     boolean developersCanPush = branchNode.has("developers_can_push") ? branchNode.get("developers_can_push").asBoolean() : false;
                     boolean developersCanMerge = branchNode.has("developers_can_merge") ? branchNode.get("developers_can_merge").asBoolean() : false;
                     boolean canPush = branchNode.has("can_push") ? branchNode.get("can_push").asBoolean() : false;
                     boolean isDefault = branchNode.has("default") ? branchNode.get("default").asBoolean() : false;
-
                     // Initialize merged flag to false, it will be updated when a main branch is selected
-                    branches.add(new BranchModel(branchName, lastCommitDate, false, 
-                                                isProtected, developersCanPush, developersCanMerge, 
-                                                canPush, isDefault));
+                    branches.add(new BranchModel(branchName, lastCommitDate, false, isProtected, 
+                                               developersCanPush, developersCanMerge, canPush, isDefault));
                 }
                 if (jsonArray.size() < perPage) break;
                 page++;

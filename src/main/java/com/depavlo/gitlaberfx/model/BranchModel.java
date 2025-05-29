@@ -52,7 +52,7 @@ public class BranchModel {
         this.default_ = new SimpleBooleanProperty(default_);
     }
 
-    // Constructor with default values for backward compatibility
+    // Overload constructor for backward compatibility
     public BranchModel(String name, String lastCommit, boolean merged) {
         this(name, lastCommit, merged, false, false, false, false, false);
     }

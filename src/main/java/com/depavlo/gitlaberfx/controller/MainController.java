@@ -34,8 +34,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
 import java.io.IOException;
 import org.slf4j.Logger;
@@ -137,7 +135,19 @@ public class MainController {
     private TableColumn<BranchModel, Boolean> mergedColumn;
 
     @FXML
-    private TableColumn<BranchModel, BranchModel> statusColumn;
+    private TableColumn<BranchModel, Boolean> protectedColumn;
+
+    @FXML
+    private TableColumn<BranchModel, Boolean> developersCanPushColumn;
+
+    @FXML
+    private TableColumn<BranchModel, Boolean> developersCanMergeColumn;
+
+    @FXML
+    private TableColumn<BranchModel, Boolean> canPushColumn;
+
+    @FXML
+    private TableColumn<BranchModel, Boolean> defaultColumn;
 
     @FXML
     private Label statusLabel;
@@ -194,134 +204,14 @@ public class MainController {
 
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
-        mergedColumn.setCellValueFactory(new PropertyValueFactory<>("merged"));
 
-        // Configure the status column to display icons based on branch properties
-        statusColumn.setCellValueFactory(cellData -> new javafx.beans.property.SimpleObjectProperty<>(cellData.getValue()));
-        statusColumn.setCellFactory(column -> new TableCell<BranchModel, BranchModel>() {
-            private final ImageView imageView = new ImageView();
-
-            {
-                // Configure the ImageView
-                imageView.setFitHeight(16);
-                imageView.setFitWidth(16);
-                setGraphic(imageView);
-            }
-
-            @Override
-            protected void updateItem(BranchModel branch, boolean empty) {
-                super.updateItem(branch, empty);
-
-                if (empty || branch == null) {
-                    setText(null);
-                    setGraphic(null);
-                    setTooltip(null);
-                } else {
-                    // Create a tooltip with all branch statuses
-                    StringBuilder tooltipText = new StringBuilder();
-
-                    if (branch.isMerged()) {
-                        tooltipText.append("Merged\n");
-                    } else {
-                        tooltipText.append("Not merged\n");
-                    }
-
-                    if (branch.isProtected()) {
-                        tooltipText.append("Protected\n");
-                    } else {
-                        tooltipText.append("Not protected\n");
-                    }
-
-                    if (branch.isDevelopersCanPush()) {
-                        tooltipText.append("Developers can push\n");
-                    } else {
-                        tooltipText.append("Developers cannot push\n");
-                    }
-
-                    if (branch.isDevelopersCanMerge()) {
-                        tooltipText.append("Developers can merge\n");
-                    } else {
-                        tooltipText.append("Developers cannot merge\n");
-                    }
-
-                    if (branch.isCanPush()) {
-                        tooltipText.append("Can push\n");
-                    } else {
-                        tooltipText.append("Cannot push\n");
-                    }
-
-                    if (branch.isDefault()) {
-                        tooltipText.append("Default branch");
-                    } else {
-                        tooltipText.append("Not default branch");
-                    }
-
-                    setTooltip(new Tooltip(tooltipText.toString()));
-
-                    // Use Unicode characters as icons
-                    HBox iconsContainer = new HBox(2); // 2 pixels spacing between icons
-
-                    if (branch.isMerged()) {
-                        Label mergedIcon = createIconLabel("✓", "Merged");
-                        iconsContainer.getChildren().add(mergedIcon);
-                    } else {
-                        Label notMergedIcon = createIconLabel("✗", "Not merged");
-                        iconsContainer.getChildren().add(notMergedIcon);
-                    }
-
-                    if (branch.isProtected()) {
-                        Label protectedIcon = createIconLabel("🔒", "Protected");
-                        iconsContainer.getChildren().add(protectedIcon);
-                    } else {
-                        Label notProtectedIcon = createIconLabel("🔓", "Not protected");
-                        iconsContainer.getChildren().add(notProtectedIcon);
-                    }
-
-                    if (branch.isDevelopersCanPush()) {
-                        Label devPushIcon = createIconLabel("\uD83D\uDD92", "Developers can push");
-                        iconsContainer.getChildren().add(devPushIcon);
-                    } else {
-                        Label devPushIcon = createIconLabel("\uD83D\uDD93", "Developers can't push");
-                        iconsContainer.getChildren().add(devPushIcon);
-                    }
-
-                    if (branch.isDevelopersCanMerge()) {
-                        Label devMergeIcon = createIconLabel("🔄", "Developers can merge");
-                        iconsContainer.getChildren().add(devMergeIcon);
-                    } else {
-                        Label devMergeIcon = createIconLabel("\uD83D\uDD95", "Developers can merge");
-                        iconsContainer.getChildren().add(devMergeIcon);
-                    }
-
-                    if (branch.isCanPush()) {
-                        Label canPushIcon = createIconLabel("➕", "Can push");
-                        iconsContainer.getChildren().add(canPushIcon);
-                    } else {
-                        Label canPushIcon = createIconLabel("-", "Can't push");
-                        iconsContainer.getChildren().add(canPushIcon);
-                    }
-
-                    if (branch.isDefault()) {
-                        Label defaultIcon = createIconLabel("⭐", "Default branch");
-                        iconsContainer.getChildren().add(defaultIcon);
-                    } else {
-                        Label defaultIcon = createIconLabel(" ", "Default branch");
-                        iconsContainer.getChildren().add(defaultIcon);
-                    }
-
-                    setText(null);
-                    setGraphic(iconsContainer);
-                }
-            }
-
-            private Label createIconLabel(String iconText, String tooltipText) {
-                Label iconLabel = new Label(iconText);
-                iconLabel.setStyle("-fx-font-size: 14px;"); // Adjust size as needed
-                Tooltip tooltip = new Tooltip(tooltipText);
-                Tooltip.install(iconLabel, tooltip);
-                return iconLabel;
-            }
-        });
+        // Setup boolean columns with icon display
+        setupBooleanColumn(mergedColumn, "merged", "Merged", "Not Merged");
+        setupBooleanColumn(protectedColumn, "protected", "Protected", "Not Protected");
+        setupBooleanColumn(developersCanPushColumn, "developersCanPush", "Developers Can Push", "Developers Cannot Push");
+        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", "Developers Can Merge", "Developers Cannot Merge");
+        setupBooleanColumn(canPushColumn, "canPush", "Can Push", "Cannot Push");
+        setupBooleanColumn(defaultColumn, "default", "Default Branch", "Not Default Branch");
 
         // Initialize mainBranchComboBox with "not selected" item
         List<String> initialItems = new ArrayList<>();
@@ -1392,6 +1282,34 @@ public class MainController {
         } else {
             Platform.runLater(() -> branchCounterLabel.setText(selectedBranches + "/" + totalBranches));
         }
+    }
+
+    /**
+     * Sets up a boolean column to display icons (★ for true, space for false) with tooltips
+     * 
+     * @param column The TableColumn to set up
+     * @param propertyName The name of the property in the BranchModel
+     * @param trueTooltip The tooltip text for true values
+     * @param falseTooltip The tooltip text for false values
+     */
+    private void setupBooleanColumn(TableColumn<BranchModel, Boolean> column, String propertyName, 
+                                   String trueTooltip, String falseTooltip) {
+        column.setCellValueFactory(new PropertyValueFactory<>(propertyName));
+        column.setCellFactory(col -> new TableCell<BranchModel, Boolean>() {
+            @Override
+            protected void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+
+                if (empty || item == null) {
+                    setText(null);
+                    setTooltip(null);
+                } else {
+                    // Use star symbol for true, space for false
+                    setText(item ? "★" : " ");
+                    setTooltip(new Tooltip(item ? trueTooltip : falseTooltip));
+                }
+            }
+        });
     }
 
     /**
