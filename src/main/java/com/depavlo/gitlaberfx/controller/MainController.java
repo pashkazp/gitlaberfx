@@ -1309,7 +1309,7 @@ public class MainController {
                     setTooltip(null);
                 } else {
                     // Use star symbol for true, space for false
-                    setText(item ? "★" : " ");
+                    setText(item ? "🗸" : " ");
                     setTooltip(new Tooltip(item ? trueTooltip : falseTooltip));
                 }
             }
