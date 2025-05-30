@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox spacing="10" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.DeleteConfirmationController">
+<VBox prefHeight="522.0" prefWidth="642.0" spacing="10" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.DeleteConfirmationController">
 
     <padding>
         <Insets bottom="10" left="10" right="10" top="10" />
@@ -14,10 +14,10 @@
 
     <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="selectedColumn" prefWidth="50" text="Вибрати" />
-            <TableColumn fx:id="nameColumn" prefWidth="200" text="Назва гілки" />
-            <TableColumn fx:id="lastCommitColumn" prefWidth="150" text="Останній коміт" />
-            <TableColumn fx:id="mergedColumn" prefWidth="100" text="Змерджена" />
+            <TableColumn fx:id="selectedColumn" maxWidth="70.0" prefWidth="70.0" text="Вибрати" />
+            <TableColumn fx:id="nameColumn" prefWidth="260.0" text="Назва гілки" />
+            <TableColumn fx:id="lastCommitColumn" maxWidth="180.0" prefWidth="180.0" text="Останній коміт" />
+            <TableColumn fx:id="mergedColumn" maxWidth="90.0" prefWidth="90.0" text="Змерджена" />
         </columns>
     </TableView>
 
