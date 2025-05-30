@@ -135,6 +135,9 @@ public class MainController {
     private TableColumn<BranchModel, Boolean> mergedColumn;
 
     @FXML
+    private TableColumn<BranchModel, Boolean> mergedIntoTargetColumn;
+
+    @FXML
     private TableColumn<BranchModel, Boolean> protectedColumn;
 
     @FXML
@@ -207,6 +210,7 @@ public class MainController {
 
         // Setup boolean columns with icon display
         setupBooleanColumn(mergedColumn, "merged", "Merged", "Not Merged");
+        setupBooleanColumn(mergedIntoTargetColumn, "mergedIntoTarget", "Merged into Target", "Not Merged into Target");
         setupBooleanColumn(protectedColumn, "protected", "Protected", "Not Protected");
         setupBooleanColumn(developersCanPushColumn, "developersCanPush", "Developers Can Push", "Developers Cannot Push");
         setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", "Developers Can Merge", "Developers Cannot Merge");
@@ -398,7 +402,7 @@ public class MainController {
                 // If "not selected" item is selected, reset the "Merged" flag for all branches
                 if (NOT_SELECTED_ITEM.equals(mainBranch)) {
                     for (BranchModel branch : branches) {
-                        branch.setMerged(false);
+                        branch.setMergedIntoTarget(false);
                     }
                     updateBranchCounter();
                 } else {
@@ -443,7 +447,7 @@ public class MainController {
                                 try {
                                     // Skip checking the main branch itself
                                     if (branch.getName().equals(finalMainBranch)) {
-                                        Platform.runLater(() -> branch.setMerged(false));
+                                        Platform.runLater(() -> branch.setMergedIntoTarget(false));
                                         continue outerLoop;
                                     }
                                     updateStatus("Перевірка гілки: " + branch.getName());
@@ -451,10 +455,10 @@ public class MainController {
 
                                     // Update UI in JavaFX thread
                                     final boolean finalIsMerged = isMerged;
-                                    Platform.runLater(() -> branch.setMerged(finalIsMerged));
+                                    Platform.runLater(() -> branch.setMergedIntoTarget(finalIsMerged));
                                 } catch (IOException e) {
                                     logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalMainBranch, e);
-                                    Platform.runLater(() -> branch.setMerged(false));
+                                    Platform.runLater(() -> branch.setMergedIntoTarget(false));
                                 }
 
                                 // Increment branch counter
@@ -1177,7 +1181,7 @@ public class MainController {
                     try {
                         // Skip checking the main branch itself
                         if (branch.getName().equals(finalMainBranch)) {
-                            Platform.runLater(() -> branch.setMerged(false));
+                            Platform.runLater(() -> branch.setMergedIntoTarget(false));
                             continue outerLoop;
                         }
                         updateStatus("Перевірка гілки: " + branch.getName());
@@ -1185,10 +1189,10 @@ public class MainController {
 
                         // Update UI in JavaFX thread
                         final boolean finalIsMerged = isMerged;
-                        Platform.runLater(() -> branch.setMerged(finalIsMerged));
+                        Platform.runLater(() -> branch.setMergedIntoTarget(finalIsMerged));
                     } catch (IOException e) {
                         logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalMainBranch, e);
-                        Platform.runLater(() -> branch.setMerged(false));
+                        Platform.runLater(() -> branch.setMergedIntoTarget(false));
                     }
                 }
 

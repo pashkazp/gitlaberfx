@@ -33,6 +33,7 @@ public class BranchModel {
     private final StringProperty name;
     private final StringProperty lastCommit;
     private final BooleanProperty merged;
+    private final BooleanProperty mergedIntoTarget;
     private final BooleanProperty protected_;
     private final BooleanProperty developersCanPush;
     private final BooleanProperty developersCanMerge;
@@ -45,6 +46,7 @@ public class BranchModel {
         this.name = new SimpleStringProperty(name);
         this.lastCommit = new SimpleStringProperty(lastCommit);
         this.merged = new SimpleBooleanProperty(merged);
+        this.mergedIntoTarget = new SimpleBooleanProperty(false);
         this.protected_ = new SimpleBooleanProperty(protected_);
         this.developersCanPush = new SimpleBooleanProperty(developersCanPush);
         this.developersCanMerge = new SimpleBooleanProperty(developersCanMerge);
@@ -103,6 +105,18 @@ public class BranchModel {
 
     public void setMerged(boolean merged) {
         this.merged.set(merged);
+    }
+
+    public boolean isMergedIntoTarget() {
+        return mergedIntoTarget.get();
+    }
+
+    public BooleanProperty mergedIntoTargetProperty() {
+        return mergedIntoTarget;
+    }
+
+    public void setMergedIntoTarget(boolean mergedIntoTarget) {
+        this.mergedIntoTarget.set(mergedIntoTarget);
     }
 
     public boolean isProtected() {
