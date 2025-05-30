@@ -1303,6 +1303,7 @@ public class MainController {
             protected void updateItem(Boolean item, boolean empty) {
                 super.updateItem(item, empty);
                 setTooltip(new Tooltip( trueTooltip ));
+                setAlignment(javafx.geometry.Pos.CENTER);
 
                 if (empty || item == null) {
                     setText(null);
