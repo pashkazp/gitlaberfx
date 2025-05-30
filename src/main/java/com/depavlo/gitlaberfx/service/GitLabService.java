@@ -174,8 +174,9 @@ public class GitLabService {
                     boolean developersCanMerge = branchNode.has("developers_can_merge") ? branchNode.get("developers_can_merge").asBoolean() : false;
                     boolean canPush = branchNode.has("can_push") ? branchNode.get("can_push").asBoolean() : false;
                     boolean isDefault = branchNode.has("default") ? branchNode.get("default").asBoolean() : false;
+                    boolean isMerged = branchNode.has("merged") ? branchNode.get("merged").asBoolean() : false;
                     // Initialize merged flag to false, it will be updated when a main branch is selected
-                    branches.add(new BranchModel(branchName, lastCommitDate, false, isProtected, 
+                    branches.add(new BranchModel(branchName, lastCommitDate, isMerged, isProtected,
                                                developersCanPush, developersCanMerge, canPush, isDefault));
                 }
                 if (jsonArray.size() < perPage) break;
