@@ -47,7 +47,7 @@
     <TableView fx:id="branchesTableView" prefHeight="400.0" prefWidth="532.0" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="selectedColumn" maxWidth="70.0" prefWidth="70.0" text="Вибрати" />
-            <TableColumn fx:id="nameColumn" prefWidth="500.0" text="Назва гілки" />
+            <TableColumn fx:id="nameColumn" prefWidth="350.0" text="Назва гілки" />
             <TableColumn fx:id="lastCommitColumn" maxWidth="170.0" prefWidth="170.0" text="Останній коміт" />
             <TableColumn fx:id="mergeToDestColumn" maxWidth="90.0" prefWidth="90.0" text="Змерджена" />
             <TableColumn fx:id="defaultColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🔅" />
@@ -70,7 +70,7 @@
     </HBox>
 
     <HBox alignment="CENTER_LEFT" spacing="5" style="-fx-background-color: #f0f0f0; -fx-border-color: #c0c0c0; -fx-border-width: 1 0 0 0; -fx-padding: 5;">
-      <HBox alignment="CENTER_LEFT" spacing="5" HBox.hgrow="ALWAYS">
+      <HBox alignment="CENTER_LEFT" maxHeight="27.0" minHeight="27.0" prefHeight="27.0" spacing="5" HBox.hgrow="ALWAYS">
          <children>
               <Button fx:id="playButton" disable="true" minHeight="28.0" minWidth="28.0" onAction="#onPlayButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #00ff00;" text="▶" />
               <Button fx:id="pauseButton" disable="true" onAction="#onPauseButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #ff9900;" text="⏸" />
