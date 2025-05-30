@@ -47,7 +47,7 @@
     <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="selectedColumn" prefWidth="50" text="Вибрати" />
-            <TableColumn fx:id="nameColumn" text="Назва гілки" />
+            <TableColumn fx:id="nameColumn" prefWidth="200" text="Назва гілки" />
             <TableColumn fx:id="lastCommitColumn" prefWidth="150" text="Останній коміт" />
             <TableColumn fx:id="mergeToDestColumn" prefWidth="80" text="Змерджена" />
             <TableColumn fx:id="defaultColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🔅" />
