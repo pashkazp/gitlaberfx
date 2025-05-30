@@ -206,6 +206,23 @@ public class MainController {
         });
 
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        // Make the name column dynamically resize with the table
+        nameColumn.setMinWidth(100);  // Ensure a reasonable minimum width
+        nameColumn.setMaxWidth(Double.MAX_VALUE);
+        // Set high priority for this column when resizing
+        nameColumn.prefWidthProperty().bind(
+            branchesTableView.widthProperty()
+            .subtract(selectedColumn.widthProperty())
+            .subtract(lastCommitColumn.widthProperty())
+            .subtract(mergeToDestColumn.widthProperty())
+            .subtract(defaultColumn.widthProperty())
+            .subtract(protectedColumn.widthProperty())
+            .subtract(mergedColumn.widthProperty())
+            .subtract(developersCanPushColumn.widthProperty())
+            .subtract(developersCanMergeColumn.widthProperty())
+            .subtract(canPushColumn.widthProperty())
+            .subtract(2)  // Account for borders and padding
+        );
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
 
         // Setup boolean columns with icon display
@@ -229,6 +246,9 @@ public class MainController {
 
         // Налаштування TableView для редагування
         branchesTableView.setEditable(true);
+
+        // Set column resize policy to allow dynamic resizing
+        branchesTableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         // Додавання обробника клавіш для перемикання чекбоксів пробілом
         branchesTableView.setOnKeyPressed(event -> {
