@@ -29,9 +29,9 @@
             </HBox>
         </VBox>
         <VBox spacing="5">
-            <Label text="Головна гілка:" />
+            <Label text="Цільова гілка:" />
             <HBox spacing="5">
-                <ComboBox fx:id="mainBranchComboBox" HBox.hgrow="ALWAYS" />
+                <ComboBox fx:id="destBranchComboBox" HBox.hgrow="ALWAYS" />
                 <Button fx:id="rescanMergedButton" onAction="#rescanMerged" style="-fx-min-width: 25; -fx-min-height: 25;" text="↻" />
             </HBox>
         </VBox>
@@ -49,11 +49,10 @@
             <TableColumn fx:id="selectedColumn" prefWidth="50" text="Вибрати" />
             <TableColumn fx:id="nameColumn" prefWidth="200" text="Назва гілки" />
             <TableColumn fx:id="lastCommitColumn" prefWidth="150" text="Останній коміт" />
-            <TableColumn fx:id="mergedIntoTargetColumn" prefWidth="80" text="Змерджена" />
-<!--            <TableColumn fx:id="mergedColumn" prefWidth="50" text="🗸" />-->
-            <TableColumn fx:id="mergedColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🗹" />
-            <TableColumn fx:id="protectedColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🗝" />
+            <TableColumn fx:id="mergeToDestColumn" prefWidth="80" text="Змерджена" />
             <TableColumn fx:id="defaultColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🔅" />
+            <TableColumn fx:id="protectedColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🗝" />
+            <TableColumn fx:id="mergedColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🗹" />
             <TableColumn fx:id="developersCanPushColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="⮅" />
             <TableColumn fx:id="developersCanMergeColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🔁" />
             <TableColumn fx:id="canPushColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="➹" />

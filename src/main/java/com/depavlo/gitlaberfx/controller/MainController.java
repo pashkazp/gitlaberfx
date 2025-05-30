@@ -117,7 +117,7 @@ public class MainController {
     private ComboBox<String> projectComboBox;
 
     @FXML
-    private ComboBox<String> mainBranchComboBox;
+    private ComboBox<String> destBranchComboBox;
 
     @FXML
     private TableView<BranchModel> branchesTableView;
@@ -135,7 +135,7 @@ public class MainController {
     private TableColumn<BranchModel, Boolean> mergedColumn;
 
     @FXML
-    private TableColumn<BranchModel, Boolean> mergedIntoTargetColumn;
+    private TableColumn<BranchModel, Boolean> mergeToDestColumn;
 
     @FXML
     private TableColumn<BranchModel, Boolean> protectedColumn;
@@ -209,23 +209,23 @@ public class MainController {
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
 
         // Setup boolean columns with icon display
-        setupBooleanColumn(mergedColumn, "merged", "Merged", "Not Merged");
-        setupBooleanColumn(mergedIntoTargetColumn, "mergedIntoTarget", "Merged into Target", "Not Merged into Target");
-        setupBooleanColumn(protectedColumn, "protected", "Protected", "Not Protected");
-        setupBooleanColumn(developersCanPushColumn, "developersCanPush", "Developers Can Push", "Developers Cannot Push");
-        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", "Developers Can Merge", "Developers Cannot Merge");
-        setupBooleanColumn(canPushColumn, "canPush", "Can Push", "Cannot Push");
-        setupBooleanColumn(defaultColumn, "default", "Default Branch", "Not Default Branch");
+        setupBooleanColumn(mergedColumn, "merged", "Змерджено");
+        setupBooleanColumn(mergeToDestColumn, "mergedIntoTarget", "Змерджено в цільову");
+        setupBooleanColumn(protectedColumn, "protected", "Захищена");
+        setupBooleanColumn(developersCanPushColumn, "developersCanPush", "Розробник може пушити");
+        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", "Розробник може мержити");
+        setupBooleanColumn(canPushColumn, "canPush", "Можно пушити");
+        setupBooleanColumn(defaultColumn, "default", "Гілка по замовченю");
 
-        // Initialize mainBranchComboBox with "not selected" item
+        // Initialize destBranchComboBox with "not selected" item
         List<String> initialItems = new ArrayList<>();
         initialItems.add(NOT_SELECTED_ITEM);
-        mainBranchComboBox.setItems(FXCollections.observableArrayList(initialItems));
-        mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
+        destBranchComboBox.setItems(FXCollections.observableArrayList(initialItems));
+        destBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
         // Налаштування комбобоксів
         projectComboBox.setOnAction(e -> onProjectSelected());
-        mainBranchComboBox.setOnAction(e -> onMainBranchSelected());
+        destBranchComboBox.setOnAction(e -> onMainBranchSelected());
 
         // Налаштування TableView для редагування
         branchesTableView.setEditable(true);
@@ -297,16 +297,16 @@ public class MainController {
     private void onProjectSelected() {
         String projectName = projectComboBox.getValue();
         // Save current main branch selection before updating
-        String currentMainBranch = mainBranchComboBox.getValue();
+        String currentMainBranch = destBranchComboBox.getValue();
 
-        // Clear mainBranchComboBox when a project is selected
-        mainBranchComboBox.getItems().clear();
+        // Clear destBranchComboBox when a project is selected
+        destBranchComboBox.getItems().clear();
 
         // Always add "not selected" item as the first option
         List<String> branchNames = new ArrayList<>();
         branchNames.add(NOT_SELECTED_ITEM);
-        mainBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
-        mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
+        destBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
+        destBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
         // If "not selected" is chosen, clear the branch list and return
         if (projectName == null || NOT_SELECTED_ITEM.equals(projectName)) {
@@ -363,13 +363,13 @@ public class MainController {
                             // Add listeners to branch selection changes
                             addBranchSelectionListeners(branchItems);
 
-                            mainBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranchNames));
+                            destBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranchNames));
 
                             // Restore the previously selected main branch if it still exists in the updated list
                             if (currentMainBranch != null && updatedBranchNames.contains(currentMainBranch)) {
-                                mainBranchComboBox.setValue(currentMainBranch);
+                                destBranchComboBox.setValue(currentMainBranch);
                             } else {
-                                mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
+                                destBranchComboBox.setValue(NOT_SELECTED_ITEM);
                             }
 
                             updateStatus("Готово");
@@ -392,7 +392,7 @@ public class MainController {
     }
 
     private void onMainBranchSelected() {
-        String mainBranch = mainBranchComboBox.getValue();
+        String mainBranch = destBranchComboBox.getValue();
         if (mainBranch != null) {
             // Set the initial state of the rescan button based on whether a main branch is selected
             rescanMergedButton.setDisable(NOT_SELECTED_ITEM.equals(mainBranch));
@@ -568,7 +568,7 @@ public class MainController {
 
         // Save current project and main branch selection before updating
         String currentProject = projectComboBox.getValue();
-        String currentMainBranch = mainBranchComboBox.getValue();
+        String currentMainBranch = destBranchComboBox.getValue();
 
         // Update status bar
         updateStatus("Оновлення списку проєктів з GitLab...");
@@ -604,7 +604,7 @@ public class MainController {
                     } else {
                         // Reset both project and main branch to "not selected"
                         projectComboBox.setValue(NOT_SELECTED_ITEM);
-                        mainBranchComboBox.setValue(NOT_SELECTED_ITEM);
+                        destBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
                         // Clear the branches table
                         branchesTableView.setItems(FXCollections.observableArrayList());
@@ -724,7 +724,7 @@ public class MainController {
     @FXML
     private void deleteMerged() {
         logger.debug("Checking merged branches");
-        String mainBranch = mainBranchComboBox.getValue();
+        String mainBranch = destBranchComboBox.getValue();
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
             showError("Помилка", "Не вибрано головну гілку");
             return;
@@ -919,7 +919,7 @@ public class MainController {
     @FXML
     private void deleteUnmerged() {
         logger.debug("Checking unmerged branches");
-        String mainBranch = mainBranchComboBox.getValue();
+        String mainBranch = destBranchComboBox.getValue();
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
             showError("Помилка", "Не вибрано головну гілку");
             return;
@@ -1132,7 +1132,7 @@ public class MainController {
     @FXML
     private void rescanMerged() {
         logger.debug("Rescanning merged branches");
-        String mainBranch = mainBranchComboBox.getValue();
+        String mainBranch = destBranchComboBox.getValue();
 
         // Check if a main branch is selected
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
@@ -1294,23 +1294,21 @@ public class MainController {
      * @param column The TableColumn to set up
      * @param propertyName The name of the property in the BranchModel
      * @param trueTooltip The tooltip text for true values
-     * @param falseTooltip The tooltip text for false values
      */
     private void setupBooleanColumn(TableColumn<BranchModel, Boolean> column, String propertyName, 
-                                   String trueTooltip, String falseTooltip) {
+                                   String trueTooltip) {
         column.setCellValueFactory(new PropertyValueFactory<>(propertyName));
         column.setCellFactory(col -> new TableCell<BranchModel, Boolean>() {
             @Override
             protected void updateItem(Boolean item, boolean empty) {
                 super.updateItem(item, empty);
+                setTooltip(new Tooltip( trueTooltip ));
 
                 if (empty || item == null) {
                     setText(null);
-                    setTooltip(null);
                 } else {
                     // Use star symbol for true, space for false
                     setText(item ? "🗸" : " ");
-                    setTooltip(new Tooltip(item ? trueTooltip : falseTooltip));
                 }
             }
         });
@@ -1430,13 +1428,13 @@ public class MainController {
                 rescanMergedButton.setDisable(true);
             } else {
                 // Re-enable only if a main branch is selected
-                String mainBranch = mainBranchComboBox.getValue();
+                String mainBranch = destBranchComboBox.getValue();
                 rescanMergedButton.setDisable(mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch));
             }
 
             // Disable/enable comboboxes
             projectComboBox.setDisable(disable);
-            mainBranchComboBox.setDisable(disable);
+            destBranchComboBox.setDisable(disable);
         });
     }
 
