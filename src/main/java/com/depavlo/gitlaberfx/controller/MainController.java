@@ -726,7 +726,7 @@ public class MainController {
         logger.debug("Checking merged branches");
         String mainBranch = destBranchComboBox.getValue();
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
-            showError("Помилка", "Не вибрано головну гілку");
+            showError("Помилка", "Не вибрано цільову гілку");
             return;
         }
 
@@ -921,7 +921,7 @@ public class MainController {
         logger.debug("Checking unmerged branches");
         String mainBranch = destBranchComboBox.getValue();
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
-            showError("Помилка", "Не вибрано головну гілку");
+            showError("Помилка", "Не вибрано цільову гілку");
             return;
         }
 
@@ -1136,7 +1136,7 @@ public class MainController {
 
         // Check if a main branch is selected
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
-            showError("Помилка", "Не вибрано головну гілку");
+            showError("Помилка", "Не вибрано цільову гілку");
             return;
         }
 

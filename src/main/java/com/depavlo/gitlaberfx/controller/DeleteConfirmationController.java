@@ -29,10 +29,13 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.geometry.Pos;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,7 +58,25 @@ public class DeleteConfirmationController {
     private TableColumn<BranchModel, String> lastCommitColumn;
 
     @FXML
+    private TableColumn<BranchModel, Boolean> mergeToDestColumn;
+
+    @FXML
+    private TableColumn<BranchModel, Boolean> defaultColumn;
+
+    @FXML
+    private TableColumn<BranchModel, Boolean> protectedColumn;
+
+    @FXML
     private TableColumn<BranchModel, Boolean> mergedColumn;
+
+    @FXML
+    private TableColumn<BranchModel, Boolean> developersCanPushColumn;
+
+    @FXML
+    private TableColumn<BranchModel, Boolean> developersCanMergeColumn;
+
+    @FXML
+    private TableColumn<BranchModel, Boolean> canPushColumn;
 
     @FXML
     private Label branchCounterLabel;
@@ -76,7 +97,15 @@ public class DeleteConfirmationController {
 
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
-        mergedColumn.setCellValueFactory(new PropertyValueFactory<>("merged"));
+
+        // Setup boolean columns with icon display
+        setupBooleanColumn(mergedColumn, "merged", "Змерджено");
+        setupBooleanColumn(mergeToDestColumn, "mergedIntoTarget", "Змерджено в цільову");
+        setupBooleanColumn(protectedColumn, "protected", "Захищена");
+        setupBooleanColumn(developersCanPushColumn, "developersCanPush", "Розробник може пушити");
+        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", "Розробник може мержити");
+        setupBooleanColumn(canPushColumn, "canPush", "Можно пушити");
+        setupBooleanColumn(defaultColumn, "default", "Гілка по замовченю");
 
         // Налаштування TableView для редагування
         branchesTableView.setEditable(true);
@@ -180,5 +209,32 @@ public class DeleteConfirmationController {
                 updateBranchCounter();
             });
         }
+    }
+
+    /**
+     * Sets up a boolean column to display icons (★ for true, space for false) with tooltips
+     * 
+     * @param column The TableColumn to set up
+     * @param propertyName The name of the property in the BranchModel
+     * @param trueTooltip The tooltip text for true values
+     */
+    private void setupBooleanColumn(TableColumn<BranchModel, Boolean> column, String propertyName, 
+                                   String trueTooltip) {
+        column.setCellValueFactory(new PropertyValueFactory<>(propertyName));
+        column.setCellFactory(col -> new TableCell<BranchModel, Boolean>() {
+            @Override
+            protected void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+                setTooltip(new Tooltip(trueTooltip));
+                setAlignment(javafx.geometry.Pos.CENTER);
+
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    // Use star symbol for true, space for false
+                    setText(item ? "🗸" : " ");
+                }
+            }
+        });
     }
 }
