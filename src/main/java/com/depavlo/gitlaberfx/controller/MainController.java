@@ -71,9 +71,12 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         logger.info("Locale changed to: {}", newLocale);
         Platform.runLater(() -> {
             try {
-                // Save current state
+                // Save current state and check if current values are NOT_SELECTED_ITEM
                 String currentProject = projectComboBox.getValue();
                 String currentMainBranch = destBranchComboBox.getValue();
+
+                boolean projectWasNotSelected = currentProject == null || currentProject.equals(NOT_SELECTED_ITEM);
+                boolean branchWasNotSelected = currentMainBranch == null || currentMainBranch.equals(NOT_SELECTED_ITEM);
 
                 // Create a new FXMLLoader with the current locale
                 FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
@@ -91,11 +94,29 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                 // Initialize the new controller
                 newController.initialize(config, stage);
 
-                // Restore state if possible
-                if (currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM)) {
+                // Update NOT_SELECTED_ITEM with new localized value
+                NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
+
+                // Restore state based on previous selections
+                if (!projectWasNotSelected) {
+                    // If a project was selected, restore it
                     newController.projectComboBox.setValue(currentProject);
-                    if (currentMainBranch != null && !currentMainBranch.equals(NOT_SELECTED_ITEM)) {
-                        newController.destBranchComboBox.setValue(currentMainBranch);
+                } else {
+                    // If no project was selected or it was NOT_SELECTED_ITEM, set to the new localized NOT_SELECTED_ITEM
+                    // This is handled automatically by the combobox initialization, but we make it explicit here
+                    if (newController.projectComboBox.getItems().contains(NOT_SELECTED_ITEM)) {
+                        newController.projectComboBox.setValue(NOT_SELECTED_ITEM);
+                    }
+                }
+
+                if (!branchWasNotSelected && !projectWasNotSelected) {
+                    // If a branch was selected and a project was selected, restore the branch
+                    newController.destBranchComboBox.setValue(currentMainBranch);
+                } else if (!projectWasNotSelected) {
+                    // If no branch was selected or it was NOT_SELECTED_ITEM, but a project was selected,
+                    // set to the new localized NOT_SELECTED_ITEM
+                    if (newController.destBranchComboBox.getItems().contains(NOT_SELECTED_ITEM)) {
+                        newController.destBranchComboBox.setValue(NOT_SELECTED_ITEM);
                     }
                 }
 
