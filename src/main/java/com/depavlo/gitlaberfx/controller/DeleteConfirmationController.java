@@ -138,7 +138,11 @@ public class DeleteConfirmationController {
     @FXML
     private void selectAll() {
         logger.debug("Selecting all branches");
-        branchesTableView.getItems().forEach(branch -> branch.setSelected(true));
+        branchesTableView.getItems().forEach(branch -> {
+            if (!branch.isProtected()) {
+                branch.setSelected(true);
+            }
+        });
         updateBranchCounter();
     }
 
@@ -152,7 +156,11 @@ public class DeleteConfirmationController {
     @FXML
     private void invertSelection() {
         logger.debug("Inverting selection");
-        branchesTableView.getItems().forEach(branch -> branch.setSelected(!branch.isSelected()));
+        branchesTableView.getItems().forEach(branch -> {
+            if (!branch.isProtected()) {
+                branch.setSelected(!branch.isSelected());
+            }
+        });
         updateBranchCounter();
     }
 

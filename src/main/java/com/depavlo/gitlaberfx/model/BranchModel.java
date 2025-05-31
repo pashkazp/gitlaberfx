@@ -68,6 +68,10 @@ public class BranchModel {
     }
 
     public void setSelected(boolean selected) {
+        // Protected branches cannot be selected
+        if (isProtected() && selected) {
+            return;
+        }
         this.selected.set(selected);
     }
 
