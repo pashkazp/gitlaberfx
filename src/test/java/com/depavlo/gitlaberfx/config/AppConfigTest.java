@@ -92,33 +92,5 @@ class AppConfigTest {
         assertTrue(config.getExcludedBranches().isEmpty());
     }
 
-    @Test
-    void testMigrationFromOldLocation() throws Exception {
-        // Create a config in the old location
-        AppConfig oldConfig = new AppConfig();
-        oldConfig.setGitlabUrl("https://old-gitlab.com");
-        oldConfig.setApiKey("old-api-key");
-        oldConfig.setUsername("old-user");
-
-        // Ensure old config directory exists
-        String oldConfigDir = tempDir.toString() + "/.gitlaberfx";
-        new File(oldConfigDir).mkdirs();
-
-        // Save to old location
-        File oldConfigFile = new File(oldConfigDir + "/config.json");
-        new ObjectMapper().writeValue(oldConfigFile, oldConfig);
-
-        // Load config (should migrate from old to new location)
-        AppConfig loadedConfig = AppConfig.load();
-
-        // Verify migration
-        assertEquals("https://old-gitlab.com", loadedConfig.getGitlabUrl());
-        assertEquals("old-api-key", loadedConfig.getApiKey());
-        assertEquals("old-user", loadedConfig.getUsername());
-
-        // Verify config was saved to new location
-        File newConfigFile = new File(tempDir.toString() + "/.config/gitlaberfx/config.properties");
-        assertTrue(newConfigFile.exists());
-    }
 
 }

@@ -277,13 +277,28 @@ public class MainController {
         progressBar.setProgress(0.0);
 
         // Завантаження налаштувань
-//        loadConfig();
+        loadConfig();
+    }
+
+    public boolean checkConfig(){
+        // Check if required configuration is present
+        if (!gitLabService.hasRequiredConfig()) {
+            logger.warn("Missing required GitLab configuration");
+            showWarning("Відсутні налаштування", "Відсутні необхідні налаштування для з'єднання з GitLab. Будь ласка, перевірте URL GitLab та API ключ у налаштуваннях.");
+            return false;
+        } else {
+            return true;
+        }
+
     }
 
     private void loadConfig() {
         gitLabService = new GitLabService(config);
 
-        if (checkRequiredConfigs()) return;
+        // Check if required configuration is present
+        if (!gitLabService.hasRequiredConfig()) {
+            return;
+        }
 
         try {
             gitLabService.connect();
@@ -301,16 +316,6 @@ public class MainController {
             logger.error("Error loading configuration", e);
             showError("Помилка завантаження", "Не вдалося завантажити налаштування: " + e.getMessage());
         }
-    }
-
-    public boolean checkRequiredConfigs() {
-        // Check if required configuration is present
-        if (!gitLabService.hasRequiredConfig()) {
-            logger.warn("Missing required GitLab configuration");
-            showWarning("Відсутні налаштування", "Відсутні необхідні налаштування для з'єднання з GitLab. Будь ласка, перевірте URL GitLab та API ключ у налаштуваннях.");
-            return true;
-        }
-        return false;
     }
 
     private void onProjectSelected() {
@@ -584,7 +589,7 @@ public class MainController {
     @FXML
     public void refreshProjects() {
         logger.debug("Refreshing projects list from GitLab");
-        if (!checkRequiredConfigs()) return;
+        if (!checkConfig()) return;
         // Save current project and main branch selection before updating
         String currentProject = projectComboBox.getValue();
         String currentMainBranch = destBranchComboBox.getValue();
