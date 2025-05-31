@@ -10,20 +10,20 @@
         <Insets bottom="10" left="10" right="10" top="10" />
     </padding>
 
-    <Label text="Виберіть гілки для видалення:" />
+    <Label text="%delete.confirmation.select.branches" />
 
     <HBox alignment="CENTER_LEFT" spacing="10">
-        <Button onAction="#selectAll" text="Вибрати всі" />
-        <Button onAction="#deselectAll" text="Скасувати вибір" />
-        <Button onAction="#invertSelection" text="Інвертувати вибір" />
+        <Button onAction="#selectAll" text="%main.select.all" />
+        <Button onAction="#deselectAll" text="%main.deselect.all" />
+        <Button onAction="#invertSelection" text="%main.invert.selection" />
     </HBox>
 
     <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="selectedColumn" maxWidth="70.0" prefWidth="70.0" text="Вибрати" />
-            <TableColumn fx:id="nameColumn" prefWidth="260.0" text="Назва гілки" />
-            <TableColumn fx:id="lastCommitColumn" maxWidth="180.0" prefWidth="180.0" text="Останній коміт" />
-            <TableColumn fx:id="mergeToDestColumn" maxWidth="90.0" prefWidth="90.0" text="Змерджена" />
+            <TableColumn fx:id="selectedColumn" maxWidth="70.0" prefWidth="70.0" text="%column.select" />
+            <TableColumn fx:id="nameColumn" prefWidth="260.0" text="%column.branch.name" />
+            <TableColumn fx:id="lastCommitColumn" maxWidth="180.0" prefWidth="180.0" text="%column.last.commit" />
+            <TableColumn fx:id="mergeToDestColumn" maxWidth="90.0" prefWidth="90.0" text="%column.merged" />
             <TableColumn fx:id="defaultColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🔅" />
             <TableColumn fx:id="protectedColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🗝" />
             <TableColumn fx:id="mergedColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🗹" />
@@ -35,8 +35,8 @@
 
     <HBox spacing="10">
         <HBox spacing="10" HBox.hgrow="ALWAYS">
-            <Button defaultButton="true" onAction="#confirm" style="-fx-base: #ff0000;" text="Видалити вибрані" />
-            <Button cancelButton="true" onAction="#cancel" text="Скасувати" />
+            <Button defaultButton="true" onAction="#confirm" style="-fx-base: #ff0000;" text="%delete.confirmation.delete.selected" />
+            <Button cancelButton="true" onAction="#cancel" text="%date.picker.cancel" />
         </HBox>
         <Label fx:id="branchCounterLabel" alignment="CENTER_RIGHT" style="-fx-padding: 5;" text="0/0" />
     </HBox>

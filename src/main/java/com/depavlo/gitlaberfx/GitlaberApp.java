@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ResourceBundle;
 
 public class GitlaberApp extends Application {
     private static final Logger logger = LoggerFactory.getLogger(GitlaberApp.class);
@@ -47,12 +48,25 @@ public class GitlaberApp extends Application {
         // Завантаження налаштувань
         AppConfig config = AppConfig.load();
 
+        // Set the application locale from config
+        String localeCode = config.getLocale();
+        if (localeCode != null && !localeCode.isEmpty()) {
+            String[] localeParts = localeCode.split("_");
+            if (localeParts.length == 2) {
+                com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new java.util.Locale(localeParts[0], localeParts[1]));
+            }
+        } else {
+            // Default to English if no locale is specified
+            com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new java.util.Locale("en", "US"));
+        }
+
         // Завантаження головного вікна
         FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));
+        fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", com.depavlo.gitlaberfx.util.I18nUtil.getCurrentLocale()));
         Scene scene = new Scene(fxmlLoader.load(), 800, 600);
 
         // Налаштування головного вікна
-        stage.setTitle("GitLaberFX");
+        stage.setTitle(com.depavlo.gitlaberfx.util.I18nUtil.getMessage("app.title"));
         stage.setScene(scene);
 
         // Ініціалізація контролера

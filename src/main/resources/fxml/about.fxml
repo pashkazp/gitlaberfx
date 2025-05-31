@@ -13,14 +13,14 @@
         <Insets top="10" right="10" bottom="10" left="10"/>
     </padding>
 
-    <Label text="GitLaberFX" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
-    <Label text="Версія 1.0"/>
-    <Label text="Програма для управління гілками GitLab"/>
-    <Label text="© 2025"/>
-    <Label text="Автор: Дегтярьов Павло"/>
+    <Label text="%about.title" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+    <Label text="%about.version"/>
+    <Label text="%about.description"/>
+    <Label text="%about.copyright"/>
+    <Label text="%about.author"/>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="OK" onAction="#close" defaultButton="true"/>
+        <Button text="%about.ok" onAction="#close" defaultButton="true"/>
     </HBox>
 
 </VBox> 

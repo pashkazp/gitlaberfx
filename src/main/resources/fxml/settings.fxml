@@ -9,26 +9,29 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.depavlo.gitlaberfx.controller.SettingsController"
       spacing="10">
-    
+
     <padding>
         <Insets top="10" right="10" bottom="10" left="10"/>
     </padding>
-    
+
     <GridPane vgap="10" hgap="10">
-        <Label text="GitLab URL:" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Label text="%settings.gitlab.url" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
         <TextField fx:id="gitlabUrlField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
-        
-        <Label text="API Key:" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+
+        <Label text="%settings.api.key" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
         <PasswordField fx:id="apiKeyField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        
-        <Label text="Username:" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+
+        <Label text="%settings.username" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
         <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+        <Label text="%settings.language" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <ComboBox fx:id="languageComboBox" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
     </GridPane>
-    
+
     <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="Тестувати з'єднання" onAction="#testConnection"/>
-        <Button text="Зберегти" onAction="#save" defaultButton="true"/>
-        <Button text="Скасувати" onAction="#cancel" cancelButton="true"/>
+        <Button text="%settings.test.connection" onAction="#testConnection"/>
+        <Button text="%app.save" onAction="#save" defaultButton="true"/>
+        <Button text="%app.cancel" onAction="#cancel" cancelButton="true"/>
     </HBox>
-    
+
 </VBox> 

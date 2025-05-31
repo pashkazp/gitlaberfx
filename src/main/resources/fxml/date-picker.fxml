@@ -9,18 +9,18 @@
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.depavlo.gitlaberfx.controller.DatePickerController"
       spacing="10">
-    
+
     <padding>
         <Insets top="10" right="10" bottom="10" left="10"/>
     </padding>
-    
-    <Label text="Виберіть крайню дату:"/>
-    
+
+    <Label text="%date.picker.select"/>
+
     <DatePicker fx:id="datePicker"/>
-    
+
     <HBox spacing="10" alignment="CENTER_RIGHT">
-        <Button text="OK" onAction="#confirm" defaultButton="true"/>
-        <Button text="Скасувати" onAction="#cancel" cancelButton="true"/>
+        <Button text="%date.picker.ok" onAction="#confirm" defaultButton="true"/>
+        <Button text="%date.picker.cancel" onAction="#cancel" cancelButton="true"/>
     </HBox>
-    
+
 </VBox> 

@@ -50,10 +50,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+import com.depavlo.gitlaberfx.util.I18nUtil;
 
 public class MainController {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
-    private static final String NOT_SELECTED_ITEM = "не обрано";
+    private static final String NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -223,13 +224,13 @@ public class MainController {
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
 
         // Setup boolean columns with icon display
-        setupBooleanColumn(mergedColumn, "merged", "Змерджено");
-        setupBooleanColumn(mergeToDestColumn, "mergedIntoTarget", "Змерджено в цільову");
-        setupBooleanColumn(protectedColumn, "protected", "Захищена");
-        setupBooleanColumn(developersCanPushColumn, "developersCanPush", "Розробник може пушити");
-        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", "Розробник може мержити");
-        setupBooleanColumn(canPushColumn, "canPush", "Можно пушити");
-        setupBooleanColumn(defaultColumn, "default", "Гілка по замовченю");
+        setupBooleanColumn(mergedColumn, "merged", I18nUtil.getMessage("column.tooltip.merged"));
+        setupBooleanColumn(mergeToDestColumn, "mergedIntoTarget", I18nUtil.getMessage("column.tooltip.merged.into.target"));
+        setupBooleanColumn(protectedColumn, "protected", I18nUtil.getMessage("column.tooltip.protected"));
+        setupBooleanColumn(developersCanPushColumn, "developersCanPush", I18nUtil.getMessage("column.tooltip.developers.can.push"));
+        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", I18nUtil.getMessage("column.tooltip.developers.can.merge"));
+        setupBooleanColumn(canPushColumn, "canPush", I18nUtil.getMessage("column.tooltip.can.push"));
+        setupBooleanColumn(defaultColumn, "default", I18nUtil.getMessage("column.tooltip.default"));
 
         // Initialize destBranchComboBox with "not selected" item
         List<String> initialItems = new ArrayList<>();
@@ -260,9 +261,9 @@ public class MainController {
         updateBranchCounter();
 
         // Initialize control buttons
-        playButton.setTooltip(new Tooltip("Продовжити виконання"));
-        pauseButton.setTooltip(new Tooltip("Призупинити виконання"));
-        stopButton.setTooltip(new Tooltip("Зупинити виконання"));
+        playButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.play")));
+        pauseButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.pause")));
+        stopButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.stop")));
 
         // Initially disable control buttons
         playButton.setDisable(true);
@@ -271,7 +272,7 @@ public class MainController {
 
         // Initially disable rescan button until a main branch is selected
         rescanMergedButton.setDisable(true);
-        rescanMergedButton.setTooltip(new Tooltip("Пересканувати злиті гілки"));
+        rescanMergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.rescan")));
 
         // Initialize progress bar
         progressBar.setProgress(0.0);
@@ -284,7 +285,7 @@ public class MainController {
         // Check if required configuration is present
         if (!gitLabService.hasRequiredConfig()) {
             logger.warn("Missing required GitLab configuration");
-            showWarning("Відсутні налаштування", "Відсутні необхідні налаштування для з'єднання з GitLab. Будь ласка, перевірте URL GitLab та API ключ у налаштуваннях.");
+            showWarning(I18nUtil.getMessage("warning.missing.settings"), I18nUtil.getMessage("warning.missing.settings.message"));
             return false;
         } else {
             return true;
@@ -314,7 +315,7 @@ public class MainController {
 //            projectComboBox.setValue(NOT_SELECTED_ITEM);
         } catch (IOException e) {
             logger.error("Error loading configuration", e);
-            showError("Помилка завантаження", "Не вдалося завантажити налаштування: " + e.getMessage());
+            showError(I18nUtil.getMessage("error.loading"), I18nUtil.getMessage("error.loading.message", e.getMessage()));
         }
     }
 
@@ -407,8 +408,8 @@ public class MainController {
                 } catch (Exception e) {
                     Platform.runLater(() -> {
                         logger.error("Error loading project branches", e);
-                        showError("Помилка завантаження", "Не вдалося завантажити гілки: " + e.getMessage());
-                        updateStatus("Помилка завантаження");
+                        showError(I18nUtil.getMessage("error.loading"), I18nUtil.getMessage("error.loading.branches", e.getMessage()));
+                        updateStatus(I18nUtil.getMessage("error.loading"));
                     });
                 }
             });
@@ -509,10 +510,10 @@ public class MainController {
                         } catch (Exception e) {
                             Platform.runLater(() -> {
                                 logger.error("Error checking branch merges", e);
-                                showError("Помилка перевірки", "Не вдалося перевірити злиття гілок: " + e.getMessage());
+                                showError(I18nUtil.getMessage("error.checking"), I18nUtil.getMessage("error.checking.message", e.getMessage()));
                                 // Directly set progress to 0.0 to avoid conflict with updateStatus
                                 progressBar.setProgress(0.0);
-                                updateStatus("Помилка перевірки");
+                                updateStatus(I18nUtil.getMessage("error.checking"));
                             });
                         }
                     });
@@ -639,8 +640,8 @@ public class MainController {
             } catch (Exception e) {
                 Platform.runLater(() -> {
                     logger.error("Error refreshing projects", e);
-                    showError("Помилка оновлення", "Не вдалося оновити список проєктів: " + e.getMessage());
-                    updateStatus("Помилка оновлення");
+                    showError(I18nUtil.getMessage("error.updating"), I18nUtil.getMessage("error.updating.message", e.getMessage()));
+                    updateStatus(I18nUtil.getMessage("error.updating"));
                 });
             }
         });
@@ -744,8 +745,8 @@ public class MainController {
                             logger.error("Error deleting branches", e);
                             // Update status bar and reset progress bar in case of error
                             updateProgress(0.0);
-                            updateStatus("Помилка видалення гілок");
-                            showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                            updateStatus(I18nUtil.getMessage("main.error.deleting.branches"));
+                            showError(I18nUtil.getMessage("main.error.deleting"), I18nUtil.getMessage("main.error.deleting.message", e.getMessage()));
                         });
                     }
                 });
@@ -758,7 +759,7 @@ public class MainController {
         logger.debug("Checking merged branches");
         String mainBranch = destBranchComboBox.getValue();
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
-            showError("Помилка", "Не вибрано цільову гілку");
+            showError(I18nUtil.getMessage("error.target.branch"), I18nUtil.getMessage("error.target.branch.message"));
             return;
         }
 
@@ -949,7 +950,7 @@ public class MainController {
         logger.debug("Checking unmerged branches");
         String mainBranch = destBranchComboBox.getValue();
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
-            showError("Помилка", "Не вибрано цільову гілку");
+            showError(I18nUtil.getMessage("error.target.branch"), I18nUtil.getMessage("error.target.branch.message"));
             return;
         }
 
@@ -1159,7 +1160,7 @@ public class MainController {
 
         // Check if a main branch is selected
         if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
-            showError("Помилка", "Не вибрано цільову гілку");
+            showError(I18nUtil.getMessage("error.target.branch"), I18nUtil.getMessage("error.target.branch.message"));
             return;
         }
 
@@ -1220,12 +1221,12 @@ public class MainController {
                 }
 
                 // Update status bar in JavaFX thread
-                Platform.runLater(() -> updateStatus("Готово"));
+                Platform.runLater(() -> updateStatus(I18nUtil.getMessage("app.ready")));
             } catch (Exception e) {
                 Platform.runLater(() -> {
                     logger.error("Error checking branch merges", e);
-                    showError("Помилка перевірки", "Не вдалося перевірити злиття гілок: " + e.getMessage());
-                    updateStatus("Помилка перевірки");
+                    showError(I18nUtil.getMessage("main.error.checking"), I18nUtil.getMessage("main.error.checking.message", e.getMessage()));
+                    updateStatus(I18nUtil.getMessage("main.error.checking"));
                 });
             }
         });
@@ -1265,15 +1266,15 @@ public class MainController {
     private void updateStatus(String message) {
         if (Platform.isFxApplicationThread()) {
             statusLabel.setText(message);
-            // Reset progress bar when status is "Готово" (Ready)
-            if ("Готово".equals(message)) {
+            // Reset progress bar when status is "Ready"
+            if (I18nUtil.getMessage("app.ready").equals(message)) {
                 progressBar.setProgress(0.0);
             }
         } else {
             Platform.runLater(() -> {
                 statusLabel.setText(message);
-                // Reset progress bar when status is "Готово" (Ready)
-                if ("Готово".equals(message)) {
+                // Reset progress bar when status is "Ready"
+                if (I18nUtil.getMessage("app.ready").equals(message)) {
                     progressBar.setProgress(0.0);
                 }
             });
@@ -1366,7 +1367,7 @@ public class MainController {
         pauseRequested.set(false);
         playButton.setDisable(true);
         pauseButton.setDisable(false);
-        updateStatus("Виконання відновлено");
+        updateStatus(I18nUtil.getMessage("status.execution.resumed"));
     }
 
     /**
@@ -1379,7 +1380,7 @@ public class MainController {
         pauseRequested.set(true);
         pauseButton.setDisable(true);
         playButton.setDisable(false);
-        updateStatus("Виконання призупинено");
+        updateStatus(I18nUtil.getMessage("status.execution.paused"));
     }
 
     /**
@@ -1402,7 +1403,7 @@ public class MainController {
 
         if (tasksRunning) {
             pauseRequested.set(false);
-            updateStatus("Виконання зупинено");
+            updateStatus(I18nUtil.getMessage("status.execution.stopped"));
 
             // Disable control buttons
             playButton.setDisable(true);
@@ -1499,8 +1500,8 @@ public class MainController {
                     } catch (Exception e) {
                         logger.error("Task execution error", e);
                         Platform.runLater(() -> {
-                            updateStatus("Помилка виконання");
-                            showError("Помилка", "Помилка виконання: " + e.getMessage());
+                            updateStatus(I18nUtil.getMessage("error.execution"));
+                            showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("error.execution.message", e.getMessage()));
                         });
                         // Continue with the next task even if this one fails
                     }

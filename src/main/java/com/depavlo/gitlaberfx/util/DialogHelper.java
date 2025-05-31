@@ -41,10 +41,12 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.depavlo.gitlaberfx.util.I18nUtil;
 
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.ResourceBundle;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
@@ -137,12 +139,13 @@ public class DialogHelper {
     public static boolean showSettingsDialog(Stage parentStage, AppConfig config) {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/settings.fxml"));
+            loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
             Scene scene = new Scene(loader.load());
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(parentStage);
-            stage.setTitle("Налаштування");
+            stage.setTitle(I18nUtil.getMessage("dialog.settings"));
             stage.setScene(scene);
 
             SettingsController controller = loader.getController();
@@ -159,12 +162,13 @@ public class DialogHelper {
     public static List<BranchModel> showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches) {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/delete-confirmation.fxml"));
+            loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
             Scene scene = new Scene(loader.load());
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(parentStage);
-            stage.setTitle("Підтвердження видалення");
+            stage.setTitle(I18nUtil.getMessage("dialog.delete.confirmation"));
             stage.setScene(scene);
 
             DeleteConfirmationController controller = loader.getController();
@@ -181,12 +185,13 @@ public class DialogHelper {
     public static LocalDate showDatePickerDialog(Stage parentStage) {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/date-picker.fxml"));
+            loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
             Scene scene = new Scene(loader.load());
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(parentStage);
-            stage.setTitle("Вибір дати");
+            stage.setTitle(I18nUtil.getMessage("dialog.date.picker"));
             stage.setScene(scene);
 
             DatePickerController controller = loader.getController();
@@ -203,12 +208,13 @@ public class DialogHelper {
     public static void showAboutDialog(Stage parentStage) {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/about.fxml"));
+            loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
             Scene scene = new Scene(loader.load());
 
             Stage stage = new Stage();
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.initOwner(parentStage);
-            stage.setTitle("Про програму");
+            stage.setTitle(I18nUtil.getMessage("dialog.about"));
             stage.setScene(scene);
 
             AboutController controller = loader.getController();

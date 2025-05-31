@@ -4,32 +4,32 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox prefHeight="637.0" prefWidth="891.0" spacing="10" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.MainController">
+<VBox prefHeight="637.0" prefWidth="891.0" spacing="10" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.MainController" fx:id="mainVBox">
     <padding>
         <Insets bottom="10" left="10" right="10" top="10" />
     </padding>
 
     <MenuBar>
-        <Menu text="Файл">
-            <MenuItem onAction="#showSettings" text="Налаштування" />
+        <Menu text="%menu.file">
+            <MenuItem onAction="#showSettings" text="%app.settings" />
             <SeparatorMenuItem />
-            <MenuItem onAction="#exit" text="Вихід" />
+            <MenuItem onAction="#exit" text="%app.exit" />
         </Menu>
-        <Menu text="Допомога">
-            <MenuItem onAction="#showAbout" text="Про програму" />
+        <Menu text="%menu.help">
+            <MenuItem onAction="#showAbout" text="%app.about" />
         </Menu>
     </MenuBar>
 
     <HBox spacing="10">
         <VBox spacing="5" HBox.hgrow="ALWAYS">
-            <Label text="Проєкт:" />
+            <Label text="%main.project" />
             <HBox spacing="5">
                 <ComboBox fx:id="projectComboBox" HBox.hgrow="ALWAYS" />
                 <Button fx:id="refreshProjectsButton" onAction="#refreshProjects" style="-fx-min-width: 25; -fx-min-height: 25;" text="↻" />
             </HBox>
         </VBox>
         <VBox spacing="5">
-            <Label text="Цільова гілка:" />
+            <Label text="%main.target.branch" />
             <HBox spacing="5">
                 <ComboBox fx:id="destBranchComboBox" HBox.hgrow="ALWAYS" />
                 <Button fx:id="rescanMergedButton" onAction="#rescanMerged" style="-fx-min-width: 25; -fx-min-height: 25;" text="↻" />
@@ -38,18 +38,18 @@
     </HBox>
 
     <HBox spacing="10">
-        <Button fx:id="refreshBranchesButton" onAction="#refreshBranches" text="Оновити список" />
-        <Button fx:id="selectAllButton" onAction="#selectAll" text="Вибрати всі" />
-        <Button fx:id="deselectAllButton" onAction="#deselectAll" text="Скасувати вибір" />
-        <Button fx:id="invertSelectionButton" onAction="#invertSelection" text="Інвертувати вибір" />
+        <Button fx:id="refreshBranchesButton" onAction="#refreshBranches" text="%main.refresh.list" />
+        <Button fx:id="selectAllButton" onAction="#selectAll" text="%main.select.all" />
+        <Button fx:id="deselectAllButton" onAction="#deselectAll" text="%main.deselect.all" />
+        <Button fx:id="invertSelectionButton" onAction="#invertSelection" text="%main.invert.selection" />
     </HBox>
 
     <TableView fx:id="branchesTableView" prefHeight="400.0" prefWidth="532.0" VBox.vgrow="ALWAYS">
         <columns>
-            <TableColumn fx:id="selectedColumn" maxWidth="70.0" prefWidth="70.0" text="Вибрати" />
-            <TableColumn fx:id="nameColumn" prefWidth="260.0" text="Назва гілки" />
-            <TableColumn fx:id="lastCommitColumn" maxWidth="180.0" prefWidth="180.0" text="Останній коміт" />
-            <TableColumn fx:id="mergeToDestColumn" maxWidth="90.0" prefWidth="90.0" text="Змерджена" />
+            <TableColumn fx:id="selectedColumn" maxWidth="70.0" prefWidth="70.0" text="%column.select" />
+            <TableColumn fx:id="nameColumn" prefWidth="260.0" text="%column.branch.name" />
+            <TableColumn fx:id="lastCommitColumn" maxWidth="180.0" prefWidth="180.0" text="%column.last.commit" />
+            <TableColumn fx:id="mergeToDestColumn" maxWidth="90.0" prefWidth="90.0" text="%column.merged" />
             <TableColumn fx:id="defaultColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🔅" />
             <TableColumn fx:id="protectedColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🗝" />
             <TableColumn fx:id="mergedColumn" maxWidth="27.0" minWidth="27.0" prefWidth="27.0" text="🗹" />
@@ -61,10 +61,10 @@
 
     <HBox spacing="10">
         <HBox spacing="10" HBox.hgrow="ALWAYS">
-            <Button fx:id="deleteSelectedButton" onAction="#deleteSelected" style="-fx-base: #ff0000;" text="Видалити вибрані" />
-            <Button fx:id="mainDelMergedButton" onAction="#deleteMerged" text="Видалити змерджені" />
-            <Button fx:id="mainDelUnmergedButton" onAction="#deleteUnmerged" text="Видалити не змерджені" />
-            <Button fx:id="addToExclusionsButton" onAction="#addToExclusions" text="Додати до виключень" />
+            <Button fx:id="deleteSelectedButton" onAction="#deleteSelected" style="-fx-base: #ff0000;" text="%main.delete.selected" />
+            <Button fx:id="mainDelMergedButton" onAction="#deleteMerged" text="%main.delete.merged" />
+            <Button fx:id="mainDelUnmergedButton" onAction="#deleteUnmerged" text="%main.delete.unmerged" />
+            <Button fx:id="addToExclusionsButton" onAction="#addToExclusions" text="%main.add.to.exclusions" />
         </HBox>
         <Label fx:id="branchCounterLabel" alignment="CENTER_RIGHT" style="-fx-padding: 5;" text="0/0" />
     </HBox>
@@ -75,7 +75,7 @@
               <Button fx:id="playButton" disable="true" minHeight="28.0" minWidth="28.0" onAction="#onPlayButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #00ff00;" text="▶" />
               <Button fx:id="pauseButton" disable="true" onAction="#onPauseButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #ff9900;" text="⏸" />
               <Button fx:id="stopButton" disable="true" onAction="#onStopButtonClick" style="-fx-min-width: 20; -fx-min-height: 20; -fx-base: #ff0000;" text="⏹" />
-              <Label fx:id="statusLabel" text="Готово" HBox.hgrow="ALWAYS" />
+              <Label fx:id="statusLabel" text="%app.ready" HBox.hgrow="ALWAYS" />
          </children>
       </HBox>
         <HBox alignment="CENTER_RIGHT" spacing="10" HBox.hgrow="NEVER" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1">
