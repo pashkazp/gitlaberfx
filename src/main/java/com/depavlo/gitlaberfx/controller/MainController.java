@@ -34,6 +34,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.TableRow;
 import javafx.stage.Stage;
 import java.io.IOException;
 import org.slf4j.Logger;
@@ -200,7 +201,20 @@ public class MainController {
         // Налаштування колонок таблиці
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
         selectedColumn.setCellFactory(column -> {
-            CheckBoxTableCell<BranchModel, Boolean> cell = new CheckBoxTableCell<>();
+            CheckBoxTableCell<BranchModel, Boolean> cell = new CheckBoxTableCell<BranchModel, Boolean>() {
+                @Override
+                public void updateItem(Boolean item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (!empty) {
+                        TableRow<?> row = getTableRow();
+                        if (row != null && row.getItem() != null) {
+                            BranchModel branch = (BranchModel) row.getItem();
+                            // Disable checkbox for protected branches
+                            setDisable(branch.isProtected());
+                        }
+                    }
+                }
+            };
             cell.setEditable(true);
             return cell;
         });
@@ -234,7 +248,7 @@ public class MainController {
         branchesTableView.setOnKeyPressed(event -> {
             if (event.getCode() == javafx.scene.input.KeyCode.SPACE) {
                 BranchModel selectedBranch = branchesTableView.getSelectionModel().getSelectedItem();
-                if (selectedBranch != null) {
+                if (selectedBranch != null && !selectedBranch.isProtected()) {
                     selectedBranch.setSelected(!selectedBranch.isSelected());
                     updateBranchCounter();
                     event.consume();
