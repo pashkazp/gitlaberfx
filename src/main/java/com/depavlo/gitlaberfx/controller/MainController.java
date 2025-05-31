@@ -31,6 +31,8 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -67,7 +69,43 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     @Override
     public void onLocaleChanged(Locale newLocale) {
         logger.info("Locale changed to: {}", newLocale);
-        Platform.runLater(this::updateUILanguage);
+        Platform.runLater(() -> {
+            try {
+                // Save current state
+                String currentProject = projectComboBox.getValue();
+                String currentMainBranch = destBranchComboBox.getValue();
+
+                // Create a new FXMLLoader with the current locale
+                FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
+                fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", newLocale));
+
+                // Load the FXML
+                Scene scene = new Scene(fxmlLoader.load());
+
+                // Set the scene of the stage
+                stage.setScene(scene);
+
+                // Get the new controller
+                MainController newController = fxmlLoader.getController();
+
+                // Initialize the new controller
+                newController.initialize(config, stage);
+
+                // Restore state if possible
+                if (currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM)) {
+                    newController.projectComboBox.setValue(currentProject);
+                    if (currentMainBranch != null && !currentMainBranch.equals(NOT_SELECTED_ITEM)) {
+                        newController.destBranchComboBox.setValue(currentMainBranch);
+                    }
+                }
+
+                logger.info("Main window FXML reloaded successfully");
+            } catch (Exception e) {
+                logger.error("Error reloading main window FXML", e);
+                // Fallback to the old method if there's an error
+                updateUILanguage();
+            }
+        });
     }
 
     /**
