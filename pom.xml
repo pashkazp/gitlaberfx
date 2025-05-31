@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.depavlo</groupId>
     <artifactId>gitlaberfx</artifactId>
     <version>1.0</version>
+
     <name>gitlaberfx</name>
 
     <properties>
@@ -14,16 +13,38 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <junit.version>5.10.2</junit.version>
         <javafx.version>21</javafx.version>
 
+        <bootstrapfx-core.version>0.4.0</bootstrapfx-core.version>
+        <controlsfx.version>11.2.1</controlsfx.version>
+        <ikonli-javafx.version>12.3.1</ikonli-javafx.version>
+        <jackson-databind.version>2.16.1</jackson-databind.version>
+        <junit.version>5.10.2</junit.version>
+        <logback-classic.version>1.5.18</logback-classic.version>
+        <mockito-core.version>5.8.0</mockito-core.version>
+        <mockito-junit-jupiter.version>5.8.0</mockito-junit-jupiter.version>
+        <okhttp.version>4.12.0</okhttp.version>
+        <slf4j-api.version>2.0.9</slf4j-api.version>
+        <testfx-core.version>4.0.18</testfx-core.version>
+        <testfx-junit5.version>4.0.18</testfx-junit5.version>
+        <validatorfx.version>0.5.0</validatorfx.version>
 
-        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
-        <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
         <exec-maven-plugin.version>3.1.0</exec-maven-plugin.version>
         <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
-
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-shade-plugin.version>3.5.1</maven-shade-plugin.version>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j-api.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
@@ -49,12 +70,12 @@
         <dependency>
             <groupId>org.controlsfx</groupId>
             <artifactId>controlsfx</artifactId>
-            <version>11.2.1</version>
+            <version>${controlsfx.version}</version>
         </dependency>
         <dependency>
             <groupId>net.synedra</groupId>
             <artifactId>validatorfx</artifactId>
-            <version>0.5.0</version>
+            <version>${validatorfx.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.openjfx</groupId>
@@ -65,32 +86,31 @@
         <dependency>
             <groupId>org.kordamp.ikonli</groupId>
             <artifactId>ikonli-javafx</artifactId>
-            <version>12.3.1</version>
+            <version>${ikonli-javafx.version}</version>
         </dependency>
         <dependency>
             <groupId>org.kordamp.bootstrapfx</groupId>
             <artifactId>bootstrapfx-core</artifactId>
-            <version>0.4.0</version>
+            <version>${bootstrapfx-core.version}</version>
         </dependency>
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
-            <version>4.12.0</version>
+            <version>${okhttp.version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.4.14</version>
+            <version>${logback-classic.version}</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.9</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.16.1</version>
+            <version>${jackson-databind.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -107,25 +127,25 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>5.8.0</version>
+            <version>${mockito-core.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-junit-jupiter</artifactId>
-            <version>5.8.0</version>
+            <version>${mockito-junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testfx</groupId>
             <artifactId>testfx-core</artifactId>
-            <version>4.0.18</version>
+            <version>${testfx-core.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testfx</groupId>
             <artifactId>testfx-junit5</artifactId>
-            <version>4.0.18</version>
+            <version>${testfx-junit5.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -263,7 +283,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
-                        <version>3.2.5</version>
+                        <version>${maven-surefire-plugin.version}</version>
                         <configuration>
                             <testFailureIgnore>true</testFailureIgnore>
                         </configuration>
