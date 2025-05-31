@@ -67,7 +67,6 @@ class AppConfigTest {
         AppConfig config = new AppConfig();
         config.setGitlabUrl("https://gitlab.com");
         config.setApiKey("test-api-key");
-        config.setUsername("test-user");
         config.setExcludedBranches(Arrays.asList("branch1", "branch2"));
 
         // Зберігаємо конфіг
@@ -79,7 +78,6 @@ class AppConfigTest {
         // Перевіряємо значення
         assertEquals("https://gitlab.com", loadedConfig.getGitlabUrl());
         assertEquals("test-api-key", loadedConfig.getApiKey());
-        assertEquals("test-user", loadedConfig.getUsername());
         assertEquals(Arrays.asList("branch1", "branch2"), loadedConfig.getExcludedBranches());
     }
 
@@ -88,7 +86,6 @@ class AppConfigTest {
         AppConfig config = new AppConfig();
         assertNull(config.getGitlabUrl());
         assertNull(config.getApiKey());
-        assertNull(config.getUsername());
         assertTrue(config.getExcludedBranches().isEmpty());
     }
 

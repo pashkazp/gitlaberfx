@@ -58,8 +58,6 @@ public class SettingsController {
     @FXML
     private PasswordField apiKeyField;
 
-    @FXML
-    private TextField usernameField;
 
     @FXML
     private ComboBox<String> languageComboBox;
@@ -75,7 +73,6 @@ public class SettingsController {
 
         gitlabUrlField.setText(config.getGitlabUrl());
         apiKeyField.setText(config.getApiKey());
-        usernameField.setText(config.getUsername());
 
         // Initialize available locales
         initializeLocales();
@@ -281,7 +278,6 @@ public class SettingsController {
             AppConfig testConfig = new AppConfig();
             testConfig.setGitlabUrl(gitlabUrlField.getText());
             testConfig.setApiKey(apiKeyField.getText());
-            testConfig.setUsername(usernameField.getText());
 
             GitLabService service = new GitLabService(testConfig);
             service.connect();
@@ -305,7 +301,6 @@ public class SettingsController {
     private void save() {
         config.setGitlabUrl(gitlabUrlField.getText());
         config.setApiKey(apiKeyField.getText());
-        config.setUsername(usernameField.getText());
 
         // Save the selected locale
         String selectedLanguage = languageComboBox.getSelectionModel().getSelectedItem();
