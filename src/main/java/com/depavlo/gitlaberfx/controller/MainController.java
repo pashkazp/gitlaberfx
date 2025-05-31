@@ -981,6 +981,7 @@ public class MainController {
 
                     outerLoop: for (BranchModel branch : branchesCopy) {
                         // Update progress
+                        branchCounter++;
                         final double progress = (double) branchCounter / totalBranches;
                         updateProgress(progress);
 
@@ -1011,20 +1012,17 @@ public class MainController {
                             boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                             // If the branch is merged, skip to the next branch (inverse of deleteMerged logic)
-                            if (isMerged) {
-                                branchCounter++;
+                            if (isMerged || branch.isProtected() || branch.getName().equalsIgnoreCase(finalMainBranch)) {
                                 continue outerLoop;
                             }
                         } catch (IOException e) {
                             logger.error("Error checking if branch is merged", e);
-                            branchCounter++;
                             continue outerLoop; // Skip to the next branch if there's an error
                         }
 
                         // Parse the last commit date and compare it with the cutoff date
                         String lastCommitDateStr = branch.getLastCommit();
                         if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
-                            branchCounter++;
                             continue outerLoop; // Skip to the next branch if there's no commit date
                         }
 
@@ -1033,7 +1031,7 @@ public class MainController {
                             // We need to parse it to a LocalDate for comparison using our helper method
                             LocalDate lastCommitDate = parseDate(lastCommitDateStr);
 
-                            if (lastCommitDate.isBefore(finalCutoffDate)) {
+                            if (lastCommitDate.isBefore(finalCutoffDate) && !branch.isProtected() ) {
                                 // If the branch meets all criteria, add it to the unmerged branches list
                                 unmergedBranches.add(branch);
                             }
@@ -1041,9 +1039,6 @@ public class MainController {
                             logger.error("Error parsing last commit date: {}", lastCommitDateStr, e);
                             // Skip to the next branch if there's an error parsing the date
                         }
-
-                        // Increment branch counter
-                        branchCounter++;
                     }
 
                     // Set progress to 1.0 to indicate completion of checking phase
