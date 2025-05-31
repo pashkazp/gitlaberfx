@@ -45,6 +45,8 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -52,9 +54,60 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import com.depavlo.gitlaberfx.util.I18nUtil;
 
-public class MainController {
+public class MainController implements I18nUtil.LocaleChangeListener {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
-    private static final String NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
+    private static String NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
+
+    /**
+     * Updates the UI with the new locale.
+     * This method is called when the locale changes.
+     * 
+     * @param newLocale The new locale
+     */
+    @Override
+    public void onLocaleChanged(Locale newLocale) {
+        logger.info("Locale changed to: {}", newLocale);
+        Platform.runLater(this::updateUILanguage);
+    }
+
+    /**
+     * Updates all UI components with the current locale.
+     */
+    private void updateUILanguage() {
+        // Update window title
+        if (stage != null) {
+            stage.setTitle(I18nUtil.getMessage("app.title"));
+        }
+
+        // Update NOT_SELECTED_ITEM
+        NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
+
+        // Update menu items and labels
+        // These are bound to resource bundle keys in FXML, so they should update automatically
+
+        // Update tooltips
+        playButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.play")));
+        pauseButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.pause")));
+        stopButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.stop")));
+        rescanMergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.rescan")));
+
+        // Update table column tooltips
+        setupBooleanColumn(mergedColumn, "merged", I18nUtil.getMessage("column.tooltip.merged"));
+        setupBooleanColumn(mergeToDestColumn, "mergedIntoTarget", I18nUtil.getMessage("column.tooltip.merged.into.target"));
+        setupBooleanColumn(protectedColumn, "protected", I18nUtil.getMessage("column.tooltip.protected"));
+        setupBooleanColumn(developersCanPushColumn, "developersCanPush", I18nUtil.getMessage("column.tooltip.developers.can.push"));
+        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", I18nUtil.getMessage("column.tooltip.developers.can.merge"));
+        setupBooleanColumn(canPushColumn, "canPush", I18nUtil.getMessage("column.tooltip.can.push"));
+        setupBooleanColumn(defaultColumn, "default", I18nUtil.getMessage("column.tooltip.default"));
+
+        // Update status label
+        updateStatus(I18nUtil.getMessage("app.ready"));
+
+        // Update branch counter
+        updateBranchCounter();
+
+        logger.info("UI language updated successfully");
+    }
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -198,6 +251,9 @@ public class MainController {
     public void initialize(AppConfig config, Stage stage) {
         this.config = config;
         this.stage = stage;
+
+        // Register as a locale change listener
+        I18nUtil.addLocaleChangeListener(this);
 
         // Налаштування колонок таблиці
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
@@ -541,6 +597,9 @@ public class MainController {
      */
     public void shutdown() {
         logger.info("Exiting application");
+
+        // Unregister as a locale change listener
+        I18nUtil.removeLocaleChangeListener(this);
 
         // Shutdown the executor service and cancel tasks
         shutdownExecutor();

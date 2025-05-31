@@ -331,12 +331,12 @@ public class SettingsController {
         config.save();
         saved = true;
 
-        // Show restart message if locale was changed
+        // Show success message if locale was changed
         if (localeChanged) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle(I18nUtil.getMessage("app.info"));
             alert.setHeaderText(null);
-            alert.setContentText(I18nUtil.getMessage("settings.locale.restart"));
+            alert.setContentText(I18nUtil.getMessage("settings.locale.changed"));
             alert.showAndWait();
         }
 
