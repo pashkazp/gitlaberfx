@@ -786,6 +786,7 @@ public class MainController {
 
                     outerLoop: for (BranchModel branch : branchesCopy) {
                         // Update progress
+                        branchCounter++;
                         final double progress = (double) branchCounter / totalBranches;
                         updateProgress(progress);
 
@@ -817,19 +818,16 @@ public class MainController {
 
                             // If the branch is not merged, skip to the next branch
                             if (!isMerged) {
-                                branchCounter++;
                                 continue outerLoop;
                             }
                         } catch (IOException e) {
                             logger.error("Error checking if branch is merged", e);
-                            branchCounter++;
                             continue outerLoop; // Skip to the next branch if there's an error
                         }
 
                         // Parse the last commit date and compare it with the cutoff date
                         String lastCommitDateStr = branch.getLastCommit();
                         if (lastCommitDateStr == null || lastCommitDateStr.isEmpty()) {
-                            branchCounter++;
                             continue outerLoop; // Skip to the next branch if there's no commit date
                         }
 
@@ -847,8 +845,6 @@ public class MainController {
                             // Skip to the next branch if there's an error parsing the date
                         }
 
-                        // Increment branch counter
-                        branchCounter++;
                     }
 
                     // Set progress to 1.0 to indicate completion of checking phase
