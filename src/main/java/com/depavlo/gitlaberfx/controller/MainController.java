@@ -371,12 +371,11 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         destBranchComboBox.setOnAction(e -> onMainBranchSelected());
 
         // Налаштування комбобоксів
-        projectComboBox.setOnAction(e -> onProjectSelected());
         initialItems = new ArrayList<>();
         initialItems.add(NOT_SELECTED_ITEM);
         projectComboBox.setItems(FXCollections.observableArrayList(initialItems));
         projectComboBox.setValue(NOT_SELECTED_ITEM);
-        projectComboBox.setOnAction(e -> onMainBranchSelected());
+        projectComboBox.setOnAction(e -> onProjectSelected());
 
         // Налаштування TableView для редагування
         branchesTableView.setEditable(true);
