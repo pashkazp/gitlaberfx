@@ -69,6 +69,11 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     @Override
     public void onLocaleChanged(Locale newLocale) {
         logger.info("Locale changed to: {}", newLocale);
+
+        // Store a reference to the stage before running on JavaFX thread
+        // to ensure it's available even if the controller is garbage collected
+        final Stage currentStage = this.stage;
+
         Platform.runLater(() -> {
             try {
                 // Unregister this controller from locale change listeners to prevent multiple calls
@@ -675,7 +680,11 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
     @FXML
     private void exit() {
+        logger.info("Exit method called");
         shutdown();
+
+        // Force exit to ensure all threads are terminated
+        System.exit(0);
     }
 
     /**
@@ -716,6 +725,17 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
         // Shutdown the executor service to prevent resource leaks
         executorService.shutdownNow();
+
+        try {
+            // Give a short time for tasks to terminate
+            if (!executorService.awaitTermination(100, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+                logger.warn("Executor service did not terminate in the allowed time");
+            }
+        } catch (InterruptedException e) {
+            // Restore the interrupted status
+            Thread.currentThread().interrupt();
+            logger.warn("Interrupted while waiting for executor service to terminate", e);
+        }
 
         logger.info("Executor service shutdown complete");
     }
