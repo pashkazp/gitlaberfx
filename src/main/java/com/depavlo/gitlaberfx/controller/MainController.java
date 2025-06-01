@@ -71,17 +71,22 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         logger.info("Locale changed to: {}", newLocale);
         Platform.runLater(() -> {
             try {
+//----------------------------------dual------------------------
                 // Save current state and check if current values are NOT_SELECTED_ITEM
                 String currentProject = projectComboBox.getValue();
                 String currentMainBranch = destBranchComboBox.getValue();
 
                 // Save the current list of projects
-                List<String> currentProjects = new ArrayList<>(projectComboBox.getItems());
+                ObservableList<String> currentProjects = projectComboBox.getItems();
+                ObservableList<String> currentBranches = destBranchComboBox.getItems();
                 String oldNotSelectedItem = NOT_SELECTED_ITEM;
 
-                boolean projectWasNotSelected = currentProject == null || currentProject.equals(NOT_SELECTED_ITEM);
-                boolean branchWasNotSelected = currentMainBranch == null || currentMainBranch.equals(NOT_SELECTED_ITEM);
+                int oldNotSelectedItemProjectIndex = projectComboBox.getItems().indexOf(NOT_SELECTED_ITEM);
+                int oldNotSelectedItemBranchIndex = destBranchComboBox.getItems().indexOf(NOT_SELECTED_ITEM);
 
+                boolean projectWasSelected = currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM);
+                boolean branchWasSelected = currentMainBranch != null && !currentMainBranch.equals(NOT_SELECTED_ITEM);
+//---------------------------------------window-----------------------
                 // Create a new FXMLLoader with the current locale
                 FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
                 fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", newLocale));
@@ -100,63 +105,39 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
                 // Update NOT_SELECTED_ITEM with new localized value
                 NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
+//------------------------------------projects---------------------------
+
 
                 // Preserve the project list but update the NOT_SELECTED_ITEM
-                if (currentProjects.size() > 0) {
-                    List<String> updatedProjects = new ArrayList<>();
-                    updatedProjects.add(NOT_SELECTED_ITEM); // Add the new localized NOT_SELECTED_ITEM at the beginning
-
-                    // Add all other projects, skipping the old NOT_SELECTED_ITEM
-                    for (String project : currentProjects) {
-                        if (!project.equals(oldNotSelectedItem)) {
-                            updatedProjects.add(project);
-                        }
-                    }
-
+                if (!currentProjects.isEmpty()) {
+                    currentProjects.set(oldNotSelectedItemProjectIndex, NOT_SELECTED_ITEM);
                     // Set the updated project list in the new controller
-                    newController.projectComboBox.setItems(FXCollections.observableArrayList(updatedProjects));
                 }
+                newController.projectComboBox.setItems(currentProjects);
 
                 // Restore state based on previous selections
-                if (!projectWasNotSelected) {
+                if (projectWasSelected) {
                     // If a project was selected, restore it
                     newController.projectComboBox.setValue(currentProject);
                 } else {
                     // If no project was selected or it was NOT_SELECTED_ITEM, set to the new localized NOT_SELECTED_ITEM
                     // This is handled automatically by the combobox initialization, but we make it explicit here
-                    if (newController.projectComboBox.getItems().contains(NOT_SELECTED_ITEM)) {
-                        newController.projectComboBox.setValue(NOT_SELECTED_ITEM);
-                    }
+                    newController.projectComboBox.setValue(NOT_SELECTED_ITEM);
                 }
+//--------------------------------------branches--------------------------------
 
-                // Save the current list of branches
-                List<String> currentBranches = new ArrayList<>(destBranchComboBox.getItems());
-
-                // Preserve the branch list but update the NOT_SELECTED_ITEM
-                if (currentBranches.size() > 0 && !projectWasNotSelected) {
-                    List<String> updatedBranches = new ArrayList<>();
-                    updatedBranches.add(NOT_SELECTED_ITEM); // Add the new localized NOT_SELECTED_ITEM at the beginning
-
-                    // Add all other branches, skipping the old NOT_SELECTED_ITEM
-                    for (String branch : currentBranches) {
-                        if (!branch.equals(oldNotSelectedItem)) {
-                            updatedBranches.add(branch);
-                        }
-                    }
-
-                    // Set the updated branch list in the new controller
-                    newController.destBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranches));
+                if (!currentBranches.isEmpty()) {
+                    currentBranches.set(oldNotSelectedItemBranchIndex, NOT_SELECTED_ITEM);
                 }
+                newController.destBranchComboBox.setItems(currentBranches);
 
-                if (!branchWasNotSelected && !projectWasNotSelected) {
+                if (branchWasSelected && projectWasSelected) {
                     // If a branch was selected and a project was selected, restore the branch
                     newController.destBranchComboBox.setValue(currentMainBranch);
-                } else if (!projectWasNotSelected) {
+                } else if (projectWasSelected) {
                     // If no branch was selected or it was NOT_SELECTED_ITEM, but a project was selected,
                     // set to the new localized NOT_SELECTED_ITEM
-                    if (newController.destBranchComboBox.getItems().contains(NOT_SELECTED_ITEM)) {
-                        newController.destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-                    }
+                    newController.destBranchComboBox.setValue(NOT_SELECTED_ITEM);
                 }
 
                 logger.info("Main window FXML reloaded successfully");
