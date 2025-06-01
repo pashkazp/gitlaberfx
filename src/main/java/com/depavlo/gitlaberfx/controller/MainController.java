@@ -79,7 +79,6 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                 // Save the current list of projects
                 ObservableList<String> currentProjects = projectComboBox.getItems();
                 ObservableList<String> currentBranches = destBranchComboBox.getItems();
-                String oldNotSelectedItem = NOT_SELECTED_ITEM;
 
                 boolean projectWasSelected = currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM);
                 boolean branchWasSelected = currentMainBranch != null && !currentMainBranch.equals(NOT_SELECTED_ITEM);
