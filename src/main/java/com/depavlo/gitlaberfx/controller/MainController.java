@@ -86,103 +86,99 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         // Update NOT_SELECTED_ITEM with new localized value
         NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
 
+        // Save the current state of the table
+        List<BranchModel> branches = new ArrayList<>(branchesTableView.getItems());
+
         try {
-            // Save the current state of the table
-            List<BranchModel> branches = new ArrayList<>(branchesTableView.getItems());
-
-            // Reload the FXML with the new locale
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
-            fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", newLocale));
-
-            // Get the current scene and stage
+            // Get the current scene
             Scene currentScene = projectComboBox.getScene();
-            Stage currentStage = (Stage) currentScene.getWindow();
 
-            // Load the new scene
-            Scene newScene = new Scene(fxmlLoader.load(), currentScene.getWidth(), currentScene.getHeight());
+            // Create a new ResourceBundle with the new locale
+            ResourceBundle newBundle = ResourceBundle.getBundle("i18n.messages", newLocale);
 
-            // Get the new controller
-            MainController newController = fxmlLoader.getController();
+            // Create a new FXMLLoader with the new ResourceBundle
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
+            fxmlLoader.setResources(newBundle);
 
-            // Initialize the new controller with the same config and stage
-            newController.initialize(config, currentStage);
+            // Load the FXML but don't create a new scene yet
+            fxmlLoader.load();
 
-            // Set the new scene on the stage
-            currentStage.setScene(newScene);
+            // Get the controller from the loader
+            MainController tempController = fxmlLoader.getController();
 
-            // Transfer the state to the new controller
-            Platform.runLater(() -> {
-                // Set the project combobox items and selection
-                newController.projectComboBox.setItems(currentProjects);
-                if (projectWasSelected) {
-                    newController.projectComboBox.setValue(currentProject);
-                } else {
-                    newController.projectComboBox.setValue(NOT_SELECTED_ITEM);
-                }
+            // Update all UI text elements with the new locale in the current scene
+            updateUILanguage();
 
-                // Set the branch combobox items and selection
-                newController.destBranchComboBox.setItems(currentBranches);
-                if (branchWasSelected) {
-                    newController.destBranchComboBox.setValue(currentDestBranch);
-                    // Explicitly call onDestBranchSelected to update the UI based on the selected branch
-                    newController.onDestBranchSelected();
-                } else {
-                    newController.destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-                }
+            // Update all text elements that are bound to resource bundle keys in FXML
+            // This is done by updating the text property of all labeled nodes in the scene
+            updateAllLabeledNodes(currentScene.getRoot());
 
-                // Restore the table data
-                newController.branchesTableView.setItems(FXCollections.observableArrayList(branches));
+            // Update combobox items that contain the NOT_SELECTED_ITEM
+            if (!currentProjects.isEmpty() && currentProjects.get(0).equals(NOT_SELECTED_ITEM) || 
+                (currentProjects.get(0).equals(currentProject) && !projectWasSelected)) {
+                currentProjects.set(0, NOT_SELECTED_ITEM);
+            }
 
-                // Update branch counter
-                newController.updateBranchCounter();
+            if (!currentBranches.isEmpty() && currentBranches.get(0).equals(NOT_SELECTED_ITEM) || 
+                (currentBranches.get(0).equals(currentDestBranch) && !branchWasSelected)) {
+                currentBranches.set(0, NOT_SELECTED_ITEM);
+            }
 
-                // Set the current project ID
-                newController.currentProjectId = currentProjectId;
+            // Restore combobox selections
+            if (projectWasSelected) {
+                projectComboBox.setValue(currentProject);
+            } else {
+                projectComboBox.setValue(NOT_SELECTED_ITEM);
+            }
 
-                logger.info("UI reloaded successfully with new locale");
-            });
+            if (branchWasSelected) {
+                destBranchComboBox.setValue(currentDestBranch);
+                // Explicitly call onDestBranchSelected to update the UI based on the selected branch
+                onDestBranchSelected();
+            } else {
+                destBranchComboBox.setValue(NOT_SELECTED_ITEM);
+            }
 
-            // Unregister this controller as a locale change listener
-            I18nUtil.removeLocaleChangeListener(this);
+            // Force a refresh of the scene to ensure all bindings are updated
+            currentScene.getRoot().requestLayout();
 
-            return;
-        } catch (IOException e) {
-            logger.error("Error reloading UI with new locale", e);
-            // Fall back to the old method if reloading fails
+            logger.info("UI language updated successfully with new approach");
+        } catch (Exception e) {
+            logger.error("Error updating UI with new locale using new approach", e);
+
+            // Fall back to the old method if the new approach fails
+
+            // Preserve the project list but update the NOT_SELECTED_ITEM
+            if (!currentProjects.isEmpty()) {
+                currentProjects.set(0, NOT_SELECTED_ITEM);
+            }
+            projectComboBox.setItems(currentProjects);
+
+            // Restore project selection
+            if (projectWasSelected) {
+                projectComboBox.setValue(currentProject);
+            } else {
+                projectComboBox.setValue(NOT_SELECTED_ITEM);
+            }
+
+            // Preserve the branch list but update the NOT_SELECTED_ITEM
+            if (!currentBranches.isEmpty()) {
+                currentBranches.set(0, NOT_SELECTED_ITEM);
+            }
+            destBranchComboBox.setItems(currentBranches);
+
+            // Restore branch selection
+            if (branchWasSelected) {
+                destBranchComboBox.setValue(currentDestBranch);
+                // Explicitly call onDestBranchSelected to update the UI based on the selected branch
+                onDestBranchSelected();
+            } else {
+                destBranchComboBox.setValue(NOT_SELECTED_ITEM);
+            }
+
+            // Update all UI components with the new locale
+            updateUILanguage();
         }
-
-        // If reloading fails, use the old method
-
-        // Preserve the project list but update the NOT_SELECTED_ITEM
-        if (!currentProjects.isEmpty()) {
-            currentProjects.set(0, NOT_SELECTED_ITEM);
-        }
-        projectComboBox.setItems(currentProjects);
-
-        // Restore project selection
-        if (projectWasSelected) {
-            projectComboBox.setValue(currentProject);
-        } else {
-            projectComboBox.setValue(NOT_SELECTED_ITEM);
-        }
-
-        // Preserve the branch list but update the NOT_SELECTED_ITEM
-        if (!currentBranches.isEmpty()) {
-            currentBranches.set(0, NOT_SELECTED_ITEM);
-        }
-        destBranchComboBox.setItems(currentBranches);
-
-        // Restore branch selection
-        if (branchWasSelected) {
-            destBranchComboBox.setValue(currentDestBranch);
-            // Explicitly call onDestBranchSelected to update the UI based on the selected branch
-            onDestBranchSelected();
-        } else {
-            destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-        }
-
-        // Update all UI components with the new locale
-        updateUILanguage();
     }
 
 
@@ -222,7 +218,99 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         // Update branch counter
         updateBranchCounter();
 
+        // Update table column headers
+        selectedColumn.setText(I18nUtil.getMessage("column.select"));
+        nameColumn.setText(I18nUtil.getMessage("column.branch.name"));
+        lastCommitColumn.setText(I18nUtil.getMessage("column.last.commit"));
+        mergeToDestColumn.setText(I18nUtil.getMessage("column.merged"));
+
+        // Update button texts
+        refreshBranchesButton.setText(I18nUtil.getMessage("main.refresh.list"));
+        selectAllButton.setText(I18nUtil.getMessage("main.select.all"));
+        deselectAllButton.setText(I18nUtil.getMessage("main.deselect.all"));
+        invertSelectionButton.setText(I18nUtil.getMessage("main.invert.selection"));
+        deleteSelectedButton.setText(I18nUtil.getMessage("main.delete.selected"));
+        mainDelMergedButton.setText(I18nUtil.getMessage("main.delete.merged"));
+        mainDelUnmergedButton.setText(I18nUtil.getMessage("main.delete.unmerged"));
+        addToExclusionsButton.setText(I18nUtil.getMessage("main.add.to.exclusions"));
+
         logger.info("UI language updated successfully");
+    }
+
+    /**
+     * Recursively updates all labeled nodes in the scene with the new locale.
+     * This is necessary because FXML bindings don't automatically update when the locale changes.
+     * 
+     * @param node The root node to start the recursive update from
+     */
+    private void updateAllLabeledNodes(javafx.scene.Node node) {
+        // Handle Labeled nodes (Button, Label, etc.)
+        if (node instanceof javafx.scene.control.Labeled) {
+            javafx.scene.control.Labeled labeled = (javafx.scene.control.Labeled) node;
+            String text = labeled.getText();
+            if (text != null && text.startsWith("%")) {
+                String key = text.substring(1); // Remove the % prefix
+                labeled.setText(I18nUtil.getMessage(key));
+            }
+        }
+
+        // Handle TableView specially to update column headers
+        if (node instanceof javafx.scene.control.TableView) {
+            javafx.scene.control.TableView<?> tableView = (javafx.scene.control.TableView<?>) node;
+            for (javafx.scene.control.TableColumn<?, ?> column : tableView.getColumns()) {
+                String text = column.getText();
+                if (text != null && text.startsWith("%")) {
+                    String key = text.substring(1); // Remove the % prefix
+                    column.setText(I18nUtil.getMessage(key));
+                }
+            }
+        }
+
+        // Handle MenuBar specially since its items aren't in the children list
+        if (node instanceof javafx.scene.control.MenuBar) {
+            javafx.scene.control.MenuBar menuBar = (javafx.scene.control.MenuBar) node;
+            for (javafx.scene.control.Menu menu : menuBar.getMenus()) {
+                // Update the menu text
+                String menuText = menu.getText();
+                if (menuText != null && menuText.startsWith("%")) {
+                    String key = menuText.substring(1);
+                    menu.setText(I18nUtil.getMessage(key));
+                }
+
+                // Update all menu items
+                for (javafx.scene.control.MenuItem item : menu.getItems()) {
+                    if (item instanceof javafx.scene.control.SeparatorMenuItem) {
+                        continue; // Skip separators
+                    }
+
+                    String itemText = item.getText();
+                    if (itemText != null && itemText.startsWith("%")) {
+                        String key = itemText.substring(1);
+                        item.setText(I18nUtil.getMessage(key));
+                    }
+
+                    // If this is a submenu, recursively update its items
+                    if (item instanceof javafx.scene.control.Menu) {
+                        javafx.scene.control.Menu subMenu = (javafx.scene.control.Menu) item;
+                        for (javafx.scene.control.MenuItem subItem : subMenu.getItems()) {
+                            String subItemText = subItem.getText();
+                            if (subItemText != null && subItemText.startsWith("%")) {
+                                String key = subItemText.substring(1);
+                                subItem.setText(I18nUtil.getMessage(key));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Recursively process all children
+        if (node instanceof javafx.scene.Parent) {
+            javafx.scene.Parent parent = (javafx.scene.Parent) node;
+            for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+                updateAllLabeledNodes(child);
+            }
+        }
     }
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
