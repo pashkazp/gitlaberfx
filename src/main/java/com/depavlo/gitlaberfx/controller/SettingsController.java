@@ -65,6 +65,7 @@ public class SettingsController {
     private AppConfig config;
     private Stage stage;
     private boolean saved = false;
+    private boolean localeChanged = false;
     private Map<String, String> availableLocales = new HashMap<>();
 
     public void initialize(AppConfig config, Stage stage) {
@@ -304,14 +305,13 @@ public class SettingsController {
 
         // Save the selected locale
         String selectedLanguage = languageComboBox.getSelectionModel().getSelectedItem();
-        boolean localeChanged = false;
 
         if (selectedLanguage != null && availableLocales.containsKey(selectedLanguage)) {
             String localeCode = availableLocales.get(selectedLanguage);
             String currentLocale = config.getLocale();
 
             // Check if locale has changed
-            localeChanged = currentLocale != null && !currentLocale.equals(localeCode);
+            this.localeChanged = currentLocale != null && !currentLocale.equals(localeCode);
 
             config.setLocale(localeCode);
 
@@ -346,4 +346,8 @@ public class SettingsController {
     public boolean isSaved() {
         return saved;
     }
-} 
+
+    public boolean isLocaleChanged() {
+        return localeChanged;
+    }
+}
