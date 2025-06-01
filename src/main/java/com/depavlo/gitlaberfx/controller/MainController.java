@@ -61,107 +61,6 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     private static String NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
 
     /**
-     * Saves the current state of comboboxes.
-     * 
-     * @return A map containing the saved state of comboboxes
-     */
-    public ComboBoxState saveComboBoxStates() {
-        logger.info("Saving combobox states");
-
-        // Save current state and check if current values are NOT_SELECTED_ITEM
-        String currentProject = projectComboBox.getValue();
-        String currentDestBranch = destBranchComboBox.getValue();
-
-        // Save the current list of projects
-        ObservableList<String> currentProjects = projectComboBox.getItems();
-        ObservableList<String> currentBranches = destBranchComboBox.getItems();
-
-        boolean projectWasSelected = currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM);
-        boolean branchWasSelected = currentDestBranch != null && !currentDestBranch.equals(NOT_SELECTED_ITEM);
-
-        return new ComboBoxState(
-            currentProject, 
-            currentDestBranch, 
-            currentProjects, 
-            currentBranches, 
-            projectWasSelected, 
-            branchWasSelected
-        );
-    }
-
-    /**
-     * Restores the state of comboboxes.
-     * 
-     * @param newController The controller to restore the state to
-     * @param state The saved state of comboboxes
-     */
-    public void restoreComboBoxStates(MainController newController, ComboBoxState state) {
-        logger.info("Restoring combobox states");
-
-        // Update NOT_SELECTED_ITEM with new localized value
-        NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
-
-        // Preserve the project list but update the NOT_SELECTED_ITEM
-        if (!state.currentProjects.isEmpty()) {
-            state.currentProjects.set(0, NOT_SELECTED_ITEM);
-        }
-        newController.projectComboBox.setItems(state.currentProjects);
-
-        // Restore state based on previous selections
-        if (state.projectWasSelected) {
-            // If a project was selected, restore it
-            newController.projectComboBox.setValue(state.currentProject);
-        } else {
-            // If no project was selected or it was NOT_SELECTED_ITEM, set to the new localized NOT_SELECTED_ITEM
-            newController.projectComboBox.setValue(NOT_SELECTED_ITEM);
-        }
-
-        if (!state.currentBranches.isEmpty()) {
-            state.currentBranches.set(0, NOT_SELECTED_ITEM);
-        }
-        newController.destBranchComboBox.setItems(state.currentBranches);
-
-        if (state.branchWasSelected) {
-            // If a branch was selected, restore it regardless of project selection
-            newController.destBranchComboBox.setValue(state.currentDestBranch);
-            // Explicitly call onDestBranchSelected to update the UI based on the selected branch
-            newController.onDestBranchSelected();
-        } else {
-            // If no branch was selected or it was NOT_SELECTED_ITEM
-            // set to the new localized NOT_SELECTED_ITEM
-            newController.destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-        }
-    }
-
-    /**
-     * Class to hold the state of comboboxes.
-     */
-    public static class ComboBoxState {
-        private final String currentProject;
-        private final String currentDestBranch;
-        private final ObservableList<String> currentProjects;
-        private final ObservableList<String> currentBranches;
-        private final boolean projectWasSelected;
-        private final boolean branchWasSelected;
-
-        public ComboBoxState(
-            String currentProject, 
-            String currentDestBranch, 
-            ObservableList<String> currentProjects, 
-            ObservableList<String> currentBranches, 
-            boolean projectWasSelected, 
-            boolean branchWasSelected
-        ) {
-            this.currentProject = currentProject;
-            this.currentDestBranch = currentDestBranch;
-            this.currentProjects = currentProjects;
-            this.currentBranches = currentBranches;
-            this.projectWasSelected = projectWasSelected;
-            this.branchWasSelected = branchWasSelected;
-        }
-    }
-
-    /**
      * Updates the UI with the new locale.
      * This method is called when the locale changes.
      * 
@@ -183,10 +82,18 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                 // Shutdown executor service to prevent resource leaks
                 shutdownExecutor();
 
-                // Save combobox states to I18nUtil for potential use by SettingsController
-                ComboBoxState state = saveComboBoxStates();
-                I18nUtil.saveComboBoxState(state);
+//----------------------------------dual------------------------
+                // Save current state and check if current values are NOT_SELECTED_ITEM
+                String currentProject = projectComboBox.getValue();
+                String currentDestBranch = destBranchComboBox.getValue();
 
+                // Save the current list of projects
+                ObservableList<String> currentProjects = projectComboBox.getItems();
+                ObservableList<String> currentBranches = destBranchComboBox.getItems();
+
+                boolean projectWasSelected = currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM);
+                boolean branchWasSelected = currentDestBranch != null && !currentDestBranch.equals(NOT_SELECTED_ITEM);
+//---------------------------------------window-----------------------
                 // Create a new FXMLLoader with the current locale
                 FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
                 fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", newLocale));
@@ -203,16 +110,44 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                 // Initialize the new controller
                 newController.initialize(config, stage);
 
-                // Restore combobox states
-                // Use the state we just saved, or get it from I18nUtil if available
-                // This ensures we can restore state even if locale was changed from SettingsController
-                MainController.ComboBoxState stateToRestore = state;
-                MainController.ComboBoxState savedState = I18nUtil.getSavedComboBoxState();
-                if (savedState != null && savedState != state) {
-                    stateToRestore = savedState;
-                    logger.info("Using saved combobox state from I18nUtil");
+                // Update NOT_SELECTED_ITEM with new localized value
+                NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
+//------------------------------------projects---------------------------
+
+
+                // Preserve the project list but update the NOT_SELECTED_ITEM
+                if (!currentProjects.isEmpty()) {
+                    currentProjects.set(0, NOT_SELECTED_ITEM);
+                    // Set the updated project list in the new controller
                 }
-                restoreComboBoxStates(newController, stateToRestore);
+                newController.projectComboBox.setItems(currentProjects);
+
+                // Restore state based on previous selections
+                if (projectWasSelected) {
+                    // If a project was selected, restore it
+                    newController.projectComboBox.setValue(currentProject);
+                } else {
+                    // If no project was selected or it was NOT_SELECTED_ITEM, set to the new localized NOT_SELECTED_ITEM
+                    // This is handled automatically by the combobox initialization, but we make it explicit here
+                    newController.projectComboBox.setValue(NOT_SELECTED_ITEM);
+                }
+//--------------------------------------branches--------------------------------
+
+                if (!currentBranches.isEmpty()) {
+                    currentBranches.set(0, NOT_SELECTED_ITEM);
+                }
+                newController.destBranchComboBox.setItems(currentBranches);
+
+                if (branchWasSelected) {
+                    // If a branch was selected, restore it regardless of project selection
+                    newController.destBranchComboBox.setValue(currentDestBranch);
+                    // Explicitly call onDestBranchSelected to update the UI based on the selected branch
+                    newController.onDestBranchSelected();
+                } else {
+                    // If no branch was selected or it was NOT_SELECTED_ITEM
+                    // set to the new localized NOT_SELECTED_ITEM
+                    newController.destBranchComboBox.setValue(NOT_SELECTED_ITEM);
+                }
 
                 logger.info("Main window FXML reloaded successfully");
             } catch (Exception e) {

@@ -1,6 +1,5 @@
 package com.depavlo.gitlaberfx.util;
 
-import com.depavlo.gitlaberfx.controller.MainController;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -17,9 +16,6 @@ public class I18nUtil {
 
     // Observer pattern for locale changes
     private static final List<LocaleChangeListener> listeners = new ArrayList<>();
-
-    // Store combobox states for locale changes
-    private static MainController.ComboBoxState savedComboBoxState;
 
     /**
      * Interface for locale change listeners
@@ -90,24 +86,6 @@ public class I18nUtil {
      */
     public static Locale getCurrentLocale() {
         return currentLocale;
-    }
-
-    /**
-     * Saves the combobox states for later restoration.
-     * 
-     * @param state The combobox states to save
-     */
-    public static void saveComboBoxState(MainController.ComboBoxState state) {
-        savedComboBoxState = state;
-    }
-
-    /**
-     * Gets the saved combobox states.
-     * 
-     * @return The saved combobox states, or null if none were saved
-     */
-    public static MainController.ComboBoxState getSavedComboBoxState() {
-        return savedComboBoxState;
     }
 
     /**
