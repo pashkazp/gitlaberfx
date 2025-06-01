@@ -81,9 +81,6 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                 ObservableList<String> currentBranches = destBranchComboBox.getItems();
                 String oldNotSelectedItem = NOT_SELECTED_ITEM;
 
-                int oldNotSelectedItemProjectIndex = projectComboBox.getItems().indexOf(NOT_SELECTED_ITEM);
-                int oldNotSelectedItemBranchIndex = destBranchComboBox.getItems().indexOf(NOT_SELECTED_ITEM);
-
                 boolean projectWasSelected = currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM);
                 boolean branchWasSelected = currentMainBranch != null && !currentMainBranch.equals(NOT_SELECTED_ITEM);
 //---------------------------------------window-----------------------
@@ -110,7 +107,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
                 // Preserve the project list but update the NOT_SELECTED_ITEM
                 if (!currentProjects.isEmpty()) {
-                    currentProjects.set(oldNotSelectedItemProjectIndex, NOT_SELECTED_ITEM);
+                    currentProjects.set(0, NOT_SELECTED_ITEM);
                     // Set the updated project list in the new controller
                 }
                 newController.projectComboBox.setItems(currentProjects);
@@ -127,14 +124,14 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 //--------------------------------------branches--------------------------------
 
                 if (!currentBranches.isEmpty()) {
-                    currentBranches.set(oldNotSelectedItemBranchIndex, NOT_SELECTED_ITEM);
+                    currentBranches.set(0, NOT_SELECTED_ITEM);
                 }
                 newController.destBranchComboBox.setItems(currentBranches);
 
                 if (branchWasSelected && projectWasSelected) {
                     // If a branch was selected and a project was selected, restore the branch
                     newController.destBranchComboBox.setValue(currentMainBranch);
-                } else if (projectWasSelected) {
+                } else {
                     // If no branch was selected or it was NOT_SELECTED_ITEM, but a project was selected,
                     // set to the new localized NOT_SELECTED_ITEM
                     newController.destBranchComboBox.setValue(NOT_SELECTED_ITEM);
@@ -372,10 +369,15 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         initialItems.add(NOT_SELECTED_ITEM);
         destBranchComboBox.setItems(FXCollections.observableArrayList(initialItems));
         destBranchComboBox.setValue(NOT_SELECTED_ITEM);
+        destBranchComboBox.setOnAction(e -> onMainBranchSelected());
 
         // Налаштування комбобоксів
         projectComboBox.setOnAction(e -> onProjectSelected());
-        destBranchComboBox.setOnAction(e -> onMainBranchSelected());
+        initialItems = new ArrayList<>();
+        initialItems.add(NOT_SELECTED_ITEM);
+        projectComboBox.setItems(FXCollections.observableArrayList(initialItems));
+        projectComboBox.setValue(NOT_SELECTED_ITEM);
+        projectComboBox.setOnAction(e -> onMainBranchSelected());
 
         // Налаштування TableView для редагування
         branchesTableView.setEditable(true);
