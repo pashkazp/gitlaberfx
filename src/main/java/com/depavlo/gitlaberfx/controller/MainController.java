@@ -130,11 +130,11 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                 }
                 newController.destBranchComboBox.setItems(currentBranches);
 
-                if (branchWasSelected && projectWasSelected) {
-                    // If a branch was selected and a project was selected, restore the branch
+                if (branchWasSelected) {
+                    // If a branch was selected, restore it regardless of project selection
                     newController.destBranchComboBox.setValue(currentMainBranch);
                 } else {
-                    // If no branch was selected or it was NOT_SELECTED_ITEM, but a project was selected,
+                    // If no branch was selected or it was NOT_SELECTED_ITEM
                     // set to the new localized NOT_SELECTED_ITEM
                     newController.destBranchComboBox.setValue(NOT_SELECTED_ITEM);
                 }
