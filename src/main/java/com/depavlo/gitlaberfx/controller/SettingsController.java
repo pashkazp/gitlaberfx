@@ -299,12 +299,19 @@ public class SettingsController {
 
     @FXML
     private void save() {
+        // Save combobox states at the beginning
+        MainController.ComboBoxState savedState = null;
+        boolean localeChanged = false;
+
+        // Get the current state from any active MainController
+        // This will be null if no MainController has saved its state yet
+        savedState = I18nUtil.getSavedComboBoxState();
+
         config.setGitlabUrl(gitlabUrlField.getText());
         config.setApiKey(apiKeyField.getText());
 
         // Save the selected locale
         String selectedLanguage = languageComboBox.getSelectionModel().getSelectedItem();
-        boolean localeChanged = false;
 
         if (selectedLanguage != null && availableLocales.containsKey(selectedLanguage)) {
             String localeCode = availableLocales.get(selectedLanguage);
