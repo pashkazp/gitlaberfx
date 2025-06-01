@@ -37,6 +37,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.TableRow;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.io.IOException;
 import org.slf4j.Logger;
@@ -56,9 +57,133 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import com.depavlo.gitlaberfx.util.I18nUtil;
 
-public class MainController {
+public class MainController implements I18nUtil.LocaleChangeListener {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
     private static String NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
+
+    /**
+     * Called when the locale changes.
+     * Updates the UI with the new locale while preserving combobox states.
+     * 
+     * @param newLocale The new locale
+     */
+    @Override
+    public void onLocaleChanged(Locale newLocale) {
+        logger.info("Locale changed to: {}", newLocale);
+
+        // Save current state of comboboxes
+        String currentProject = projectComboBox.getValue();
+        String currentDestBranch = destBranchComboBox.getValue();
+
+        // Save the current list of projects and branches
+        ObservableList<String> currentProjects = projectComboBox.getItems();
+        ObservableList<String> currentBranches = destBranchComboBox.getItems();
+
+        // Check if current values are NOT_SELECTED_ITEM
+        boolean projectWasSelected = currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM);
+        boolean branchWasSelected = currentDestBranch != null && !currentDestBranch.equals(NOT_SELECTED_ITEM);
+
+        // Update NOT_SELECTED_ITEM with new localized value
+        NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
+
+        try {
+            // Save the current state of the table
+            List<BranchModel> branches = new ArrayList<>(branchesTableView.getItems());
+
+            // Reload the FXML with the new locale
+            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
+            fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", newLocale));
+
+            // Get the current scene and stage
+            Scene currentScene = projectComboBox.getScene();
+            Stage currentStage = (Stage) currentScene.getWindow();
+
+            // Load the new scene
+            Scene newScene = new Scene(fxmlLoader.load(), currentScene.getWidth(), currentScene.getHeight());
+
+            // Get the new controller
+            MainController newController = fxmlLoader.getController();
+
+            // Initialize the new controller with the same config and stage
+            newController.initialize(config, currentStage);
+
+            // Set the new scene on the stage
+            currentStage.setScene(newScene);
+
+            // Transfer the state to the new controller
+            Platform.runLater(() -> {
+                // Set the project combobox items and selection
+                newController.projectComboBox.setItems(currentProjects);
+                if (projectWasSelected) {
+                    newController.projectComboBox.setValue(currentProject);
+                } else {
+                    newController.projectComboBox.setValue(NOT_SELECTED_ITEM);
+                }
+
+                // Set the branch combobox items and selection
+                newController.destBranchComboBox.setItems(currentBranches);
+                if (branchWasSelected) {
+                    newController.destBranchComboBox.setValue(currentDestBranch);
+                    // Explicitly call onDestBranchSelected to update the UI based on the selected branch
+                    newController.onDestBranchSelected();
+                } else {
+                    newController.destBranchComboBox.setValue(NOT_SELECTED_ITEM);
+                }
+
+                // Restore the table data
+                newController.branchesTableView.setItems(FXCollections.observableArrayList(branches));
+
+                // Update branch counter
+                newController.updateBranchCounter();
+
+                // Set the current project ID
+                newController.currentProjectId = currentProjectId;
+
+                logger.info("UI reloaded successfully with new locale");
+            });
+
+            // Unregister this controller as a locale change listener
+            I18nUtil.removeLocaleChangeListener(this);
+
+            return;
+        } catch (IOException e) {
+            logger.error("Error reloading UI with new locale", e);
+            // Fall back to the old method if reloading fails
+        }
+
+        // If reloading fails, use the old method
+
+        // Preserve the project list but update the NOT_SELECTED_ITEM
+        if (!currentProjects.isEmpty()) {
+            currentProjects.set(0, NOT_SELECTED_ITEM);
+        }
+        projectComboBox.setItems(currentProjects);
+
+        // Restore project selection
+        if (projectWasSelected) {
+            projectComboBox.setValue(currentProject);
+        } else {
+            projectComboBox.setValue(NOT_SELECTED_ITEM);
+        }
+
+        // Preserve the branch list but update the NOT_SELECTED_ITEM
+        if (!currentBranches.isEmpty()) {
+            currentBranches.set(0, NOT_SELECTED_ITEM);
+        }
+        destBranchComboBox.setItems(currentBranches);
+
+        // Restore branch selection
+        if (branchWasSelected) {
+            destBranchComboBox.setValue(currentDestBranch);
+            // Explicitly call onDestBranchSelected to update the UI based on the selected branch
+            onDestBranchSelected();
+        } else {
+            destBranchComboBox.setValue(NOT_SELECTED_ITEM);
+        }
+
+        // Update all UI components with the new locale
+        updateUILanguage();
+    }
 
 
     /**
@@ -234,6 +359,9 @@ public class MainController {
     @FXML
     private Button rescanMergedButton;
 
+    @FXML
+    private VBox mainVBox;
+
     private AppConfig config;
     private GitLabService gitLabService;
     private Stage stage;
@@ -243,7 +371,8 @@ public class MainController {
         this.config = config;
         this.stage = stage;
 
-        // No longer register as a locale change listener - locale changes are handled in showSettings
+        // Register as a locale change listener
+        I18nUtil.addLocaleChangeListener(this);
 
         // Налаштування колонок таблиці
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
@@ -576,64 +705,14 @@ public class MainController {
     private void showSettings() {
         logger.debug("Showing settings dialog");
 
-        // Save current state of comboboxes before showing settings dialog
-        String currentProject = projectComboBox.getValue();
-        String currentDestBranch = destBranchComboBox.getValue();
-
-        // Save the current list of projects and branches
-        ObservableList<String> currentProjects = projectComboBox.getItems();
-        ObservableList<String> currentBranches = destBranchComboBox.getItems();
-
-        // Check if current values are NOT_SELECTED_ITEM
-        boolean projectWasSelected = currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM);
-        boolean branchWasSelected = currentDestBranch != null && !currentDestBranch.equals(NOT_SELECTED_ITEM);
-
         // Show settings dialog and get result
         DialogHelper.SettingsResult result = DialogHelper.showSettingsDialog(stage, config);
 
         if (result.isSaved()) {
             loadConfig();
 
-            // If locale was changed, we need to restore combobox states
-            if (result.isLocaleChanged()) {
-                logger.info("Locale changed, restoring combobox states");
-
-                // Update NOT_SELECTED_ITEM with new localized value
-                NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
-
-                // Preserve the project list but update the NOT_SELECTED_ITEM
-                if (!currentProjects.isEmpty()) {
-                    currentProjects.set(0, NOT_SELECTED_ITEM);
-                }
-                projectComboBox.setItems(currentProjects);
-
-                // Restore project selection
-                if (projectWasSelected) {
-                    projectComboBox.setValue(currentProject);
-                } else {
-                    projectComboBox.setValue(NOT_SELECTED_ITEM);
-                }
-
-                // Preserve the branch list but update the NOT_SELECTED_ITEM
-                if (!currentBranches.isEmpty()) {
-                    currentBranches.set(0, NOT_SELECTED_ITEM);
-                }
-                destBranchComboBox.setItems(currentBranches);
-
-                // Restore branch selection
-                if (branchWasSelected) {
-                    destBranchComboBox.setValue(currentDestBranch);
-                    // Explicitly call onDestBranchSelected to update the UI based on the selected branch
-                    onDestBranchSelected();
-                } else {
-                    destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-                }
-
-                // Update window title
-                if (stage != null) {
-                    stage.setTitle(I18nUtil.getMessage("app.title"));
-                }
-            }
+            // Note: Locale changes are now handled by the LocaleChangeListener mechanism
+            // The onLocaleChanged method will be called automatically if the locale is changed
         }
     }
 
@@ -653,7 +732,8 @@ public class MainController {
     public void shutdown() {
         logger.info("Exiting application");
 
-        // No longer need to unregister as a locale change listener
+        // Unregister as a locale change listener
+        I18nUtil.removeLocaleChangeListener(this);
 
         // Shutdown the executor service and cancel tasks
         shutdownExecutor();
