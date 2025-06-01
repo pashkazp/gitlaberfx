@@ -109,10 +109,6 @@ public class MainController implements I18nUtil.LocaleChangeListener {
             // Update all UI text elements with the new locale in the current scene
             updateUILanguage();
 
-            // Update all text elements that are bound to resource bundle keys in FXML
-            // This is done by updating the text property of all labeled nodes in the scene
-            updateAllLabeledNodes(currentScene.getRoot());
-
             // Update combobox items that contain the NOT_SELECTED_ITEM
             if (!currentProjects.isEmpty() && currentProjects.get(0).equals(NOT_SELECTED_ITEM) || 
                 (currentProjects.get(0).equals(currentProject) && !projectWasSelected)) {
@@ -194,8 +190,11 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         // Update NOT_SELECTED_ITEM
         NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
 
-        // Update menu items and labels
-        // These are bound to resource bundle keys in FXML, so they should update automatically
+        // Ensure menu items and labels are updated by calling updateAllLabeledNodes
+        // This will update all labeled nodes, including menu items and ComboBox labels
+        if (mainVBox != null && mainVBox.getScene() != null) {
+            updateAllLabeledNodes(mainVBox.getScene().getRoot());
+        }
 
         // Update tooltips
         playButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.play")));
@@ -268,39 +267,24 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
         // Handle MenuBar specially since its items aren't in the children list
         if (node instanceof javafx.scene.control.MenuBar) {
-            javafx.scene.control.MenuBar menuBar = (javafx.scene.control.MenuBar) node;
-            for (javafx.scene.control.Menu menu : menuBar.getMenus()) {
-                // Update the menu text
-                String menuText = menu.getText();
-                if (menuText != null && menuText.startsWith("%")) {
-                    String key = menuText.substring(1);
-                    menu.setText(I18nUtil.getMessage(key));
-                }
+            updateMenuBar((javafx.scene.control.MenuBar) node);
+        }
 
-                // Update all menu items
-                for (javafx.scene.control.MenuItem item : menu.getItems()) {
-                    if (item instanceof javafx.scene.control.SeparatorMenuItem) {
-                        continue; // Skip separators
-                    }
+        // Handle ComboBox labels - find parent container and update its Label child
+        if (node instanceof javafx.scene.control.ComboBox) {
+            javafx.scene.control.ComboBox<?> comboBox = (javafx.scene.control.ComboBox<?>) node;
+            javafx.scene.Parent parent = comboBox.getParent();
 
-                    String itemText = item.getText();
-                    if (itemText != null && itemText.startsWith("%")) {
-                        String key = itemText.substring(1);
-                        item.setText(I18nUtil.getMessage(key));
-                    }
+            // Look for the parent container that might contain the Label
+            while (parent != null && !(parent instanceof javafx.scene.layout.VBox || 
+                                      parent instanceof javafx.scene.layout.HBox || 
+                                      parent instanceof javafx.scene.layout.GridPane)) {
+                parent = parent.getParent();
+            }
 
-                    // If this is a submenu, recursively update its items
-                    if (item instanceof javafx.scene.control.Menu) {
-                        javafx.scene.control.Menu subMenu = (javafx.scene.control.Menu) item;
-                        for (javafx.scene.control.MenuItem subItem : subMenu.getItems()) {
-                            String subItemText = subItem.getText();
-                            if (subItemText != null && subItemText.startsWith("%")) {
-                                String key = subItemText.substring(1);
-                                subItem.setText(I18nUtil.getMessage(key));
-                            }
-                        }
-                    }
-                }
+            if (parent != null) {
+                // Search for Label in all children and their children recursively
+                updateLabelsRecursively(parent);
             }
         }
 
@@ -310,6 +294,78 @@ public class MainController implements I18nUtil.LocaleChangeListener {
             for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
                 updateAllLabeledNodes(child);
             }
+        }
+    }
+
+    /**
+     * Helper method to recursively update labels in a parent container
+     * 
+     * @param parent The parent container to search for labels
+     */
+    private void updateLabelsRecursively(javafx.scene.Parent parent) {
+        for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+            if (child instanceof javafx.scene.control.Label) {
+                javafx.scene.control.Label label = (javafx.scene.control.Label) child;
+                String text = label.getText();
+                if (text != null && text.startsWith("%")) {
+                    String key = text.substring(1); // Remove the % prefix
+                    label.setText(I18nUtil.getMessage(key));
+                }
+            }
+
+            // Recursively process children
+            if (child instanceof javafx.scene.Parent) {
+                updateLabelsRecursively((javafx.scene.Parent) child);
+            }
+        }
+    }
+
+    /**
+     * Helper method to update a MenuBar and all its menus and items
+     * 
+     * @param menuBar The MenuBar to update
+     */
+    private void updateMenuBar(javafx.scene.control.MenuBar menuBar) {
+        for (javafx.scene.control.Menu menu : menuBar.getMenus()) {
+            // Update the menu text
+            updateMenuItemText(menu);
+
+            // Update all menu items recursively
+            updateMenuItemsRecursively(menu);
+        }
+    }
+
+    /**
+     * Helper method to update menu items recursively
+     * 
+     * @param menu The menu to update items for
+     */
+    private void updateMenuItemsRecursively(javafx.scene.control.Menu menu) {
+        for (javafx.scene.control.MenuItem item : menu.getItems()) {
+            if (item instanceof javafx.scene.control.SeparatorMenuItem) {
+                continue; // Skip separators
+            }
+
+            // Update the item text
+            updateMenuItemText(item);
+
+            // If this is a submenu, recursively update its items
+            if (item instanceof javafx.scene.control.Menu) {
+                updateMenuItemsRecursively((javafx.scene.control.Menu) item);
+            }
+        }
+    }
+
+    /**
+     * Helper method to update a menu item's text
+     * 
+     * @param item The menu item to update
+     */
+    private void updateMenuItemText(javafx.scene.control.MenuItem item) {
+        String text = item.getText();
+        if (text != null && text.startsWith("%")) {
+            String key = text.substring(1);
+            item.setText(I18nUtil.getMessage(key));
         }
     }
 
