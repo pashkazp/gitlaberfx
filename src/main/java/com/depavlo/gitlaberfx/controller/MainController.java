@@ -756,7 +756,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                     projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
 
                     // Check if the current project still exists in the updated list
-                    if (currentProject != null && projectNames.contains(currentProject)) {
+                    if (currentProject != null && !currentProject.equalsIgnoreCase(NOT_SELECTED_ITEM) && projectNames.contains(currentProject)) {
                         // Restore the current project
                         projectComboBox.setValue(currentProject);
 
