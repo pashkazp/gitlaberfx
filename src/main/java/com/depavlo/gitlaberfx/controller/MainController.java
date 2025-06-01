@@ -74,6 +74,9 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                 // Unregister this controller from locale change listeners to prevent multiple calls
                 I18nUtil.removeLocaleChangeListener(this);
 
+                // Shutdown executor service to prevent resource leaks
+                shutdownExecutor();
+
 //----------------------------------dual------------------------
                 // Save current state and check if current values are NOT_SELECTED_ITEM
                 String currentProject = projectComboBox.getValue();
