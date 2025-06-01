@@ -175,7 +175,7 @@ public class GitLabService {
                     boolean canPush = branchNode.has("can_push") ? branchNode.get("can_push").asBoolean() : false;
                     boolean isDefault = branchNode.has("default") ? branchNode.get("default").asBoolean() : false;
                     boolean isMerged = branchNode.has("merged") ? branchNode.get("merged").asBoolean() : false;
-                    // Initialize merged flag to false, it will be updated when a main branch is selected
+                    // Initialize merged flag to false, it will be updated when a dest branch is selected
                     branches.add(new BranchModel(branchName, lastCommitDate, isMerged, isProtected,
                                                developersCanPush, developersCanMerge, canPush, isDefault));
                 }
@@ -203,11 +203,11 @@ public class GitLabService {
     }
 
 
-    public boolean isCommitInMainBranch(String projectId, String branchName, String mainBranch) throws IOException {
-        logger.debug("Checking if branch {} is merged into {}", branchName, mainBranch);
+    public boolean isCommitInDestBranch(String projectId, String branchName, String destBranch) throws IOException {
+        logger.debug("Checking if branch {} is merged into {}", branchName, destBranch);
 
         // Check if the source branch and target branch are the same
-        if (branchName.equals(mainBranch)) {
+        if (branchName.equals(destBranch)) {
             logger.debug("Source branch and target branch are the same, returning false");
             return false;
         }
@@ -220,15 +220,15 @@ public class GitLabService {
         }
 
         // Step 2: Get the SHA of the merge base between source and target branches
-        String mergeBaseSha = getMergeBaseSha(projectId, branchName, mainBranch);
+        String mergeBaseSha = getMergeBaseSha(projectId, branchName, destBranch);
         if (mergeBaseSha == null) {
-            logger.error("Failed to get merge base SHA between {} and {}", branchName, mainBranch);
+            logger.error("Failed to get merge base SHA between {} and {}", branchName, destBranch);
             return false;
         }
 
         // Step 3: Compare the SHAs - if they're identical, the source branch is merged into the target branch
         boolean isMerged = sourceBranchSha.equals(mergeBaseSha);
-        logger.debug("Branch {} is {} into {}", branchName, isMerged ? "merged" : "not merged", mainBranch);
+        logger.debug("Branch {} is {} into {}", branchName, isMerged ? "merged" : "not merged", destBranch);
         return isMerged;
     }
 

@@ -77,14 +77,14 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 //----------------------------------dual------------------------
                 // Save current state and check if current values are NOT_SELECTED_ITEM
                 String currentProject = projectComboBox.getValue();
-                String currentMainBranch = destBranchComboBox.getValue();
+                String currentDestBranch = destBranchComboBox.getValue();
 
                 // Save the current list of projects
                 ObservableList<String> currentProjects = projectComboBox.getItems();
                 ObservableList<String> currentBranches = destBranchComboBox.getItems();
 
                 boolean projectWasSelected = currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM);
-                boolean branchWasSelected = currentMainBranch != null && !currentMainBranch.equals(NOT_SELECTED_ITEM);
+                boolean branchWasSelected = currentDestBranch != null && !currentDestBranch.equals(NOT_SELECTED_ITEM);
 //---------------------------------------window-----------------------
                 // Create a new FXMLLoader with the current locale
                 FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
@@ -132,7 +132,9 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
                 if (branchWasSelected) {
                     // If a branch was selected, restore it regardless of project selection
-                    newController.destBranchComboBox.setValue(currentMainBranch);
+                    newController.destBranchComboBox.setValue(currentDestBranch);
+                    // Explicitly call onDestBranchSelected to update the UI based on the selected branch
+                    newController.onDestBranchSelected();
                 } else {
                     // If no branch was selected or it was NOT_SELECTED_ITEM
                     // set to the new localized NOT_SELECTED_ITEM
@@ -371,7 +373,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         initialItems.add(NOT_SELECTED_ITEM);
         destBranchComboBox.setItems(FXCollections.observableArrayList(initialItems));
         destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-        destBranchComboBox.setOnAction(e -> onMainBranchSelected());
+        destBranchComboBox.setOnAction(e -> onDestBranchSelected());
 
         // Налаштування комбобоксів
         initialItems = new ArrayList<>();
@@ -408,7 +410,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         pauseButton.setDisable(true);
         stopButton.setDisable(true);
 
-        // Initially disable rescan button until a main branch is selected
+        // Initially disable rescan button until a dest branch is selected
         rescanMergedButton.setDisable(true);
         rescanMergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.rescan")));
 
@@ -459,8 +461,8 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
     private void onProjectSelected() {
         String projectName = projectComboBox.getValue();
-        // Save current main branch selection before updating
-        String currentMainBranch = destBranchComboBox.getValue();
+        // Save current dest branch selection before updating
+        String currentDestBranch = destBranchComboBox.getValue();
 
         // Clear destBranchComboBox when a project is selected
         destBranchComboBox.getItems().clear();
@@ -528,9 +530,9 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
                             destBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranchNames));
 
-                            // Restore the previously selected main branch if it still exists in the updated list
-                            if (currentMainBranch != null && updatedBranchNames.contains(currentMainBranch)) {
-                                destBranchComboBox.setValue(currentMainBranch);
+                            // Restore the previously selected dest branch if it still exists in the updated list
+                            if (currentDestBranch != null && updatedBranchNames.contains(currentDestBranch)) {
+                                destBranchComboBox.setValue(currentDestBranch);
                             } else {
                                 destBranchComboBox.setValue(NOT_SELECTED_ITEM);
                             }
@@ -554,16 +556,16 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         }
     }
 
-    private void onMainBranchSelected() {
-        String mainBranch = destBranchComboBox.getValue();
-        if (mainBranch != null) {
-            // Set the initial state of the rescan button based on whether a main branch is selected
-            rescanMergedButton.setDisable(NOT_SELECTED_ITEM.equals(mainBranch));
+    private void onDestBranchSelected() {
+        String destBranch = destBranchComboBox.getValue();
+        if (destBranch != null) {
+            // Set the initial state of the rescan button based on whether a dest branch is selected
+            rescanMergedButton.setDisable(NOT_SELECTED_ITEM.equals(destBranch));
 
             ObservableList<BranchModel> branches = branchesTableView.getItems();
             if (branches != null) {
                 // If "not selected" item is selected, reset the "Merged" flag for all branches
-                if (NOT_SELECTED_ITEM.equals(mainBranch)) {
+                if (NOT_SELECTED_ITEM.equals(destBranch)) {
                     for (BranchModel branch : branches) {
                         branch.setMergedIntoTarget(false);
                     }
@@ -575,12 +577,12 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
                     // Create a copy of the branches list for thread safety
                     List<BranchModel> branchesCopy = new ArrayList<>(branches);
-                    String finalMainBranch = mainBranch;
+                    String finalDestBranch = destBranch;
                     final int totalBranches = branchesCopy.size();
 
                     submitTask(() -> {
                         try {
-                            // Check if branches have been merged into the selected main branch
+                            // Check if branches have been merged into the selected dest branch
                             int branchCounter = 0;
                             outerLoop: for (BranchModel branch : branchesCopy) {
                                 // Update progress
@@ -608,19 +610,19 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                                 }
 
                                 try {
-                                    // Skip checking the main branch itself
-                                    if (branch.getName().equals(finalMainBranch)) {
+                                    // Skip checking the dest branch itself
+                                    if (branch.getName().equals(finalDestBranch)) {
                                         Platform.runLater(() -> branch.setMergedIntoTarget(false));
                                         continue outerLoop;
                                     }
                                     updateStatus("Перевірка гілки: " + branch.getName());
-                                    boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+                                    boolean isMerged = gitLabService.isCommitInDestBranch(currentProjectId, branch.getName(), finalDestBranch);
 
                                     // Update UI in JavaFX thread
                                     final boolean finalIsMerged = isMerged;
                                     Platform.runLater(() -> branch.setMergedIntoTarget(finalIsMerged));
                                 } catch (IOException e) {
-                                    logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalMainBranch, e);
+                                    logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalDestBranch, e);
                                     Platform.runLater(() -> branch.setMergedIntoTarget(false));
                                 }
 
@@ -732,9 +734,9 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     public void refreshProjects() {
         logger.debug("Refreshing projects list from GitLab");
         if (!checkConfig()) return;
-        // Save current project and main branch selection before updating
+        // Save current project and dest branch selection before updating
         String currentProject = projectComboBox.getValue();
-        String currentMainBranch = destBranchComboBox.getValue();
+        String currentDestBranch = destBranchComboBox.getValue();
 
         // Update status bar
         updateStatus("Оновлення списку проєктів з GitLab...");
@@ -766,7 +768,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                         updateStatus("Оновлення гілок проєкту...");
 
                         // The onProjectSelected() method will be called automatically when the project is selected,
-                        // which will update the branches and restore the main branch if it still exists
+                        // which will update the branches and restore the dest branch if it still exists
                     } else {
                         // Reset both project and main branch to "not selected"
                         projectComboBox.setValue(NOT_SELECTED_ITEM);
@@ -898,8 +900,8 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     @FXML
     private void deleteMerged() {
         logger.debug("Checking merged branches");
-        String mainBranch = destBranchComboBox.getValue();
-        if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
+        String destBranch = destBranchComboBox.getValue();
+        if (destBranch == null || NOT_SELECTED_ITEM.equals(destBranch)) {
             showError(I18nUtil.getMessage("error.target.branch"), I18nUtil.getMessage("error.target.branch.message"));
             return;
         }
@@ -911,7 +913,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
             updateProgress(0.0);
 
             // Store final values for use in lambda
-            final String finalMainBranch = mainBranch;
+            final String finalDestBranch = destBranch;
             final LocalDate finalCutoffDate = cutoffDate;
 
             submitTask(() -> {
@@ -953,10 +955,10 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                             break outerLoop;
                         }
 
-                        // Check if the branch is merged into the main branch
+                        // Check if the branch is merged into the dest branch
                         try {
                             updateStatus("Перевірка гілки: " + branch.getName());
-                            boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+                            boolean isMerged = gitLabService.isCommitInDestBranch(currentProjectId, branch.getName(), finalDestBranch);
 
                             // If the branch is not merged, skip to the next branch
                             if (!isMerged) {
@@ -1144,10 +1146,10 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                             break outerLoop;
                         }
 
-                        // Check if the branch is merged into the main branch
+                        // Check if the branch is merged into the dest branch
                         try {
                             updateStatus("Перевірка гілки: " + branch.getName());
-                            boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+                            boolean isMerged = gitLabService.isCommitInDestBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                             // If the branch is merged, skip to the next branch (inverse of deleteMerged logic)
                             if (isMerged || branch.isProtected() || branch.getName().equalsIgnoreCase(finalMainBranch)) {
@@ -1350,7 +1352,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                             continue outerLoop;
                         }
                         updateStatus("Перевірка гілки: " + branch.getName());
-                        boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+                        boolean isMerged = gitLabService.isCommitInDestBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                         // Update UI in JavaFX thread
                         final boolean finalIsMerged = isMerged;
