@@ -109,6 +109,16 @@ public class MainController implements I18nUtil.LocaleChangeListener {
             // Update all UI text elements with the new locale in the current scene
             updateUILanguage();
 
+            // Explicitly update menu bar if it exists
+            if (mainVBox != null && mainVBox.getScene() != null) {
+                // Find and update the menu bar
+                mainVBox.getScene().getRoot().lookupAll(".menu-bar").forEach(node -> {
+                    if (node instanceof javafx.scene.control.MenuBar) {
+                        updateMenuBar((javafx.scene.control.MenuBar) node);
+                    }
+                });
+            }
+
             // Update combobox items that contain the NOT_SELECTED_ITEM
             if (!currentProjects.isEmpty() && currentProjects.get(0).equals(NOT_SELECTED_ITEM) || 
                 (currentProjects.get(0).equals(currentProject) && !projectWasSelected)) {
@@ -174,6 +184,16 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
             // Update all UI components with the new locale
             updateUILanguage();
+
+            // Explicitly update menu bar in fallback path as well
+            if (mainVBox != null && mainVBox.getScene() != null) {
+                // Find and update the menu bar
+                mainVBox.getScene().getRoot().lookupAll(".menu-bar").forEach(node -> {
+                    if (node instanceof javafx.scene.control.MenuBar) {
+                        updateMenuBar((javafx.scene.control.MenuBar) node);
+                    }
+                });
+            }
         }
     }
 
@@ -361,11 +381,126 @@ public class MainController implements I18nUtil.LocaleChangeListener {
      * 
      * @param item The menu item to update
      */
+    private static final String MESSAGE_KEY_PROPERTY = "messageKey";
+
     private void updateMenuItemText(javafx.scene.control.MenuItem item) {
-        String text = item.getText();
-        if (text != null && text.startsWith("%")) {
-            String key = text.substring(1);
+        // Check if we've already stored the key in properties
+        Object keyProperty = item.getProperties().get(MESSAGE_KEY_PROPERTY);
+        String key = null;
+
+        if (keyProperty instanceof String) {
+            // Use the stored key
+            key = (String) keyProperty;
+        } else {
+            // First time processing this item, check if text starts with %
+            String text = item.getText();
+            if (text != null && text.startsWith("%")) {
+                key = text.substring(1);
+            } else {
+                // Try to find the key by reverse lookup in the current resource bundle
+                key = findKeyForText(text);
+            }
+
+            // Store the key in properties for future locale changes if found
+            if (key != null) {
+                item.getProperties().put(MESSAGE_KEY_PROPERTY, key);
+            }
+        }
+
+        // Update the text if we have a key
+        if (key != null) {
             item.setText(I18nUtil.getMessage(key));
+        }
+    }
+
+    /**
+     * Tries to find a message key for the given text by checking all keys in the resource bundle.
+     * This is a fallback method for items that have already been localized.
+     * 
+     * @param text The text to find a key for
+     * @return The key if found, null otherwise
+     */
+    private String findKeyForText(String text) {
+        if (text == null || text.isEmpty()) {
+            return null;
+        }
+
+        // Get the current resource bundle
+        ResourceBundle bundle = ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale());
+
+        // Check all keys in the bundle
+        for (String key : bundle.keySet()) {
+            String value = bundle.getString(key);
+            if (text.equals(value)) {
+                return key;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Recursively stores message keys for all menu items in the scene.
+     * This is called during initialization to ensure all menu items have their keys stored
+     * for future locale changes.
+     * 
+     * @param node The root node to start the recursive search from
+     */
+    private void storeMenuItemKeys(javafx.scene.Node node) {
+        // Handle MenuBar specially
+        if (node instanceof javafx.scene.control.MenuBar) {
+            storeMenuBarKeys((javafx.scene.control.MenuBar) node);
+        }
+
+        // Recursively process all children
+        if (node instanceof javafx.scene.Parent) {
+            for (javafx.scene.Node child : ((javafx.scene.Parent) node).getChildrenUnmodifiable()) {
+                storeMenuItemKeys(child);
+            }
+        }
+    }
+
+    /**
+     * Stores message keys for all menus in a MenuBar.
+     * 
+     * @param menuBar The MenuBar to process
+     */
+    private void storeMenuBarKeys(javafx.scene.control.MenuBar menuBar) {
+        for (javafx.scene.control.Menu menu : menuBar.getMenus()) {
+            // Store the key for the menu
+            String text = menu.getText();
+            if (text != null && text.startsWith("%")) {
+                String key = text.substring(1);
+                menu.getProperties().put(MESSAGE_KEY_PROPERTY, key);
+            }
+
+            // Store keys for all menu items recursively
+            storeMenuItemKeysRecursively(menu);
+        }
+    }
+
+    /**
+     * Recursively stores message keys for all items in a menu.
+     * 
+     * @param menu The menu to process
+     */
+    private void storeMenuItemKeysRecursively(javafx.scene.control.Menu menu) {
+        for (javafx.scene.control.MenuItem item : menu.getItems()) {
+            if (item instanceof javafx.scene.control.SeparatorMenuItem) {
+                continue; // Skip separators
+            }
+
+            // Store the key for the item
+            String text = item.getText();
+            if (text != null && text.startsWith("%")) {
+                String key = text.substring(1);
+                item.getProperties().put(MESSAGE_KEY_PROPERTY, key);
+            }
+
+            // If this is a submenu, recursively store keys for its items
+            if (item instanceof javafx.scene.control.Menu) {
+                storeMenuItemKeysRecursively((javafx.scene.control.Menu) item);
+            }
         }
     }
 
@@ -517,6 +652,11 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
         // Register as a locale change listener
         I18nUtil.addLocaleChangeListener(this);
+
+        // Store message keys for all menu items
+        if (mainVBox != null && mainVBox.getScene() != null) {
+            storeMenuItemKeys(mainVBox.getScene().getRoot());
+        }
 
         // Налаштування колонок таблиці
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
