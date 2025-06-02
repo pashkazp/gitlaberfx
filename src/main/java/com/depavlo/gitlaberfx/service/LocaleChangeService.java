@@ -39,6 +39,20 @@ public class LocaleChangeService {
         List<Integer> selectedBranchIndices;
         BranchModel scrollToItem = null;
         String currentProjectId;
+
+        @Override
+        public String toString() {
+            return "UIState{" +
+                    "destBranchesItems=" + destBranchesItems +
+                    ", projectItems=" + projectItems +
+                    ", selectedProjectIndex=" + selectedProjectIndex +
+                    ", selectedDestBranchIndex=" + selectedDestBranchIndex +
+                    ", branchModels=" + branchModels +
+                    ", selectedBranchIndices=" + selectedBranchIndices +
+                    ", scrollToItem=" + scrollToItem +
+                    ", currentProjectId='" + currentProjectId + '\'' +
+                    '}';
+        }
     }
 
     /**
