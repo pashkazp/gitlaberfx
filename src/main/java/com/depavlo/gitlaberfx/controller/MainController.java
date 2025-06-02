@@ -343,7 +343,7 @@ public class MainController {
         // If "not selected" is chosen, clear the branch list and return
         if (projectName == null || NOT_SELECTED_ITEM.equals(projectName)) {
             branchesTableView.setItems(FXCollections.observableArrayList());
-            updateStatus("app.ready");
+            updateStatus("Готово");
             updateProgress(0.0);
             updateBranchCounter();
             return;
@@ -404,12 +404,12 @@ public class MainController {
                                 destBranchComboBox.setValue(NOT_SELECTED_ITEM);
                             }
 
-                            updateStatus("app.ready");
+                            updateStatus("Готово");
                             updateBranchCounter();
                         });
                     } else {
                         Platform.runLater(() -> {
-                            updateStatus("app.ready");
+                            updateStatus("Готово");
                         });
                     }
                 } catch (Exception e) {
@@ -506,7 +506,7 @@ public class MainController {
                                     try {
                                         Thread.sleep(500);
                                         Platform.runLater(() -> {
-                                            updateStatus("app.ready");
+                                            updateStatus("Готово");
                                             updateBranchCounter();
                                         });
                                     } catch (InterruptedException e) {
@@ -641,7 +641,7 @@ public class MainController {
                         // Clear the branches table
                         branchesTableView.setItems(FXCollections.observableArrayList());
 
-                        updateStatus("app.ready");
+                        updateStatus("Готово");
                     }
                 });
             } catch (Exception e) {
@@ -861,7 +861,7 @@ public class MainController {
                     // Update UI in JavaFX thread
                     Platform.runLater(() -> {
                         // Update status bar before showing confirmation dialog
-                        updateStatus("app.ready");
+                        updateStatus("Готово");
 
                         if (!mergedBranches.isEmpty()) {
                             List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, mergedBranches);
@@ -935,7 +935,7 @@ public class MainController {
                                 });
                             }
                         } else {
-                            updateStatus("app.ready");
+                            updateStatus("Готово");
                             showInfo("Інформація", "Не знайдено змерджених гілок, які старіші за вказану дату");
                         }
                     });
@@ -1051,7 +1051,7 @@ public class MainController {
                     // Update UI in JavaFX thread
                     Platform.runLater(() -> {
                         // Update status bar before showing confirmation dialog
-                        updateStatus("app.ready");
+                        updateStatus("Готово");
 
                         if (!unmergedBranches.isEmpty()) {
                             List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, unmergedBranches);
@@ -1125,7 +1125,7 @@ public class MainController {
                                 });
                             }
                         } else {
-                            updateStatus("app.ready");
+                            updateStatus("Готово");
                             showInfo("Інформація", "Не знайдено не змерджених гілок, які старіші за вказану дату");
                         }
                     });
