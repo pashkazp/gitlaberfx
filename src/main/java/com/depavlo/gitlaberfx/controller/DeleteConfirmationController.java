@@ -40,6 +40,7 @@ import javafx.geometry.Pos;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.depavlo.gitlaberfx.util.I18nUtil;
 
 import java.util.List;
 
@@ -113,13 +114,13 @@ public class DeleteConfirmationController {
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
 
         // Setup boolean columns with icon display
-        setupBooleanColumn(mergedColumn, "merged", "Змерджено");
-        setupBooleanColumn(mergeToDestColumn, "mergedIntoTarget", "Змерджено в цільову");
-        setupBooleanColumn(protectedColumn, "protected", "Захищена");
-        setupBooleanColumn(developersCanPushColumn, "developersCanPush", "Розробник може пушити");
-        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", "Розробник може мержити");
-        setupBooleanColumn(canPushColumn, "canPush", "Можно пушити");
-        setupBooleanColumn(defaultColumn, "default", "Гілка по замовченю");
+        setupBooleanColumn(mergedColumn, "merged", I18nUtil.getMessage("column.tooltip.merged"));
+        setupBooleanColumn(mergeToDestColumn, "mergedIntoTarget", I18nUtil.getMessage("column.tooltip.merged.into.target"));
+        setupBooleanColumn(protectedColumn, "protected", I18nUtil.getMessage("column.tooltip.protected"));
+        setupBooleanColumn(developersCanPushColumn, "developersCanPush", I18nUtil.getMessage("column.tooltip.developers.can.push"));
+        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", I18nUtil.getMessage("column.tooltip.developers.can.merge"));
+        setupBooleanColumn(canPushColumn, "canPush", I18nUtil.getMessage("column.tooltip.can.push"));
+        setupBooleanColumn(defaultColumn, "default", I18nUtil.getMessage("column.tooltip.default"));
 
         // Налаштування TableView для редагування
         branchesTableView.setEditable(true);

@@ -252,7 +252,7 @@ public class SettingsController {
 
             // Try to get language names from resource bundles
             String englishName = "English"; // Default fallback
-            String ukrainianName = "Українська"; // Default fallback
+            String ukrainianName = I18nUtil.getMessage("settings.language.ukrainian"); // Default fallback
 
             try {
                 ResourceBundle enBundle = ResourceBundle.getBundle(I18nUtil.getBundleBaseName(), new Locale("en", "US"));
