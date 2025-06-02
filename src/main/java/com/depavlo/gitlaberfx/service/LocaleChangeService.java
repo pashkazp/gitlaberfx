@@ -78,6 +78,7 @@ public class LocaleChangeService {
     }
 
     private static UIState saveUIState(MainController controller) {
+        logger.info("Saving UI state");
         UIState state = new UIState();
 
         // Save the state of ComboBoxes
@@ -100,12 +101,13 @@ public class LocaleChangeService {
 
         // Save other relevant state
         state.currentProjectId = controller.getCurrentProjectId();
-
+        logger.debug("Saved state: {}", state);
         return state;
     }
 
     private static void restoreUIState(MainController controller, UIState state) {
-
+        logger.info("Restoring UI state");
+        logger.debug("Restored state: {}", state);
         controller.getProjectComboBox().setItems(state.projectItems);
         controller.getDestBranchComboBox().setItems(state.destBranchesItems);
         state.projectItems.set(0, I18nUtil.getMessage("app.not.selected"));
@@ -147,6 +149,7 @@ public class LocaleChangeService {
     }
 
     private static MainController reloadUI(Stage stage, AppConfig config) throws IOException {
+        logger.info("Reloading UI");
         // Load the FXML with the new locale
         FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));
         fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
