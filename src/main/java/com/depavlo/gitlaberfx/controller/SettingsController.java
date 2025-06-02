@@ -68,6 +68,16 @@ public class SettingsController {
     private Stage stage;
     private boolean saved = false;
     private Map<String, String> availableLocales = new HashMap<>();
+    private MainController mainController;
+
+    /**
+     * Sets the main controller reference.
+     * 
+     * @param mainController The main controller
+     */
+    public void setMainController(MainController mainController) {
+        this.mainController = mainController;
+    }
 
     public void initialize(AppConfig config, Stage stage) {
         this.config = config;
@@ -318,28 +328,42 @@ public class SettingsController {
             // Check if locale has changed
             localeChanged = currentLocale != null && !currentLocale.equals(localeCode);
 
-            config.setLocale(localeCode);
+            if (localeChanged) {
+                // Parse the locale code
+                String[] localeParts = localeCode.split("_");
+                if (localeParts.length == 2) {
+                    Locale newLocale = new Locale(localeParts[0], localeParts[1]);
 
-            // Update the application locale
-            String[] localeParts = localeCode.split("_");
-            if (localeParts.length == 2) {
-                Locale newLocale = new Locale(localeParts[0], localeParts[1]);
-                I18nUtil.setLocale(newLocale);
+                    // Save other settings first
+                    config.setLocale(localeCode);
+                    config.save();
+                    saved = true;
+
+                    // Close the settings dialog
+                    stage.close();
+
+                    // Change locale dynamically
+                    if (mainController != null) {
+                        mainController.changeLocale(newLocale);
+                    } else {
+                        logger.error("MainController reference is null, cannot change locale dynamically");
+                        // Fallback to old behavior
+                        I18nUtil.setLocale(newLocale);
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle(I18nUtil.getMessage("app.info"));
+                        alert.setHeaderText(null);
+                        alert.setContentText(I18nUtil.getMessage("settings.locale.restart"));
+                        alert.showAndWait();
+                    }
+
+                    return;
+                }
             }
         }
 
+        // If locale didn't change or couldn't be parsed, just save and close
         config.save();
         saved = true;
-
-        // Show restart message if locale was changed
-        if (localeChanged) {
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle(I18nUtil.getMessage("app.info"));
-            alert.setHeaderText(null);
-            alert.setContentText(I18nUtil.getMessage("settings.locale.restart"));
-            alert.showAndWait();
-        }
-
         stage.close();
     }
 

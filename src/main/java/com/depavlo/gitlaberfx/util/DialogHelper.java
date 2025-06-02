@@ -136,7 +136,15 @@ public class DialogHelper {
         }
     }
 
-    public static boolean showSettingsDialog(Stage parentStage, AppConfig config) {
+    /**
+     * Shows the settings dialog.
+     * 
+     * @param parentStage The parent stage
+     * @param config The application configuration
+     * @param mainController The main controller (can be null if not available)
+     * @return true if settings were saved, false otherwise
+     */
+    public static boolean showSettingsDialog(Stage parentStage, AppConfig config, com.depavlo.gitlaberfx.controller.MainController mainController) {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/settings.fxml"));
             loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
@@ -151,12 +159,28 @@ public class DialogHelper {
             SettingsController controller = loader.getController();
             controller.initialize(config, stage);
 
+            // Set the main controller reference if provided
+            if (mainController != null) {
+                controller.setMainController(mainController);
+            }
+
             stage.showAndWait();
             return controller.isSaved();
         } catch (IOException e) {
             logger.error("Error showing settings dialog", e);
             return false;
         }
+    }
+
+    /**
+     * Shows the settings dialog (overloaded method for backward compatibility).
+     * 
+     * @param parentStage The parent stage
+     * @param config The application configuration
+     * @return true if settings were saved, false otherwise
+     */
+    public static boolean showSettingsDialog(Stage parentStage, AppConfig config) {
+        return showSettingsDialog(parentStage, config, null);
     }
 
     public static List<BranchModel> showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches) {

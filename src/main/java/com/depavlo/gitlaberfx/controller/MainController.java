@@ -45,6 +45,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -525,7 +526,7 @@ public class MainController {
     @FXML
     private void showSettings() {
         logger.debug("Showing settings dialog");
-        if (DialogHelper.showSettingsDialog(stage, config)) {
+        if (DialogHelper.showSettingsDialog(stage, config, this)) {
             loadConfig();
         }
     }
@@ -1523,5 +1524,83 @@ public class MainController {
         Future<?> future = executorService.submit(wrappedTask);
         currentTasks.add(future);
         return future;
+    }
+
+    /**
+     * Gets the project ComboBox.
+     * 
+     * @return The project ComboBox
+     */
+    public ComboBox<String> getProjectComboBox() {
+        return projectComboBox;
+    }
+
+    /**
+     * Gets the destination branch ComboBox.
+     * 
+     * @return The destination branch ComboBox
+     */
+    public ComboBox<String> getDestBranchComboBox() {
+        return destBranchComboBox;
+    }
+
+    /**
+     * Gets the branches TableView.
+     * 
+     * @return The branches TableView
+     */
+    public TableView<BranchModel> getBranchesTableView() {
+        return branchesTableView;
+    }
+
+    /**
+     * Gets the current project ID.
+     * 
+     * @return The current project ID
+     */
+    public String getCurrentProjectId() {
+        return currentProjectId;
+    }
+
+    /**
+     * Sets the current project ID.
+     * 
+     * @param projectId The project ID to set
+     */
+    public void setCurrentProjectId(String projectId) {
+        this.currentProjectId = projectId;
+    }
+
+    /**
+     * Sets the branch models in the TableView.
+     * 
+     * @param branchModels The branch models to set
+     */
+    public void setBranchModels(ObservableList<BranchModel> branchModels) {
+        branchesTableView.setItems(branchModels);
+    }
+
+    /**
+     * Public wrapper for updateBranchCounter to make it accessible from outside.
+     */
+    public void refreshBranchCounter() {
+        updateBranchCounter();
+    }
+
+    /**
+     * Changes the application locale and reloads the UI.
+     * 
+     * @param newLocale The new locale to set
+     */
+    public void changeLocale(Locale newLocale) {
+        logger.info("Changing locale to: {}", newLocale);
+
+        try {
+            // Use the LocaleChangeService to change the locale
+            com.depavlo.gitlaberfx.service.LocaleChangeService.changeLocale(newLocale, config, stage, this);
+        } catch (Exception e) {
+            logger.error("Error changing locale", e);
+            showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("error.locale.change", e.getMessage()));
+        }
     }
 }
