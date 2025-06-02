@@ -43,10 +43,12 @@ public class LocaleChangeService {
         @Override
         public String toString() {
             return "UIState{" +
-                    "destBranchesItems=" + destBranchesItems +
-                    ", projectItems=" + projectItems +
-                    ", selectedProjectIndex=" + selectedProjectIndex +
+                    "firstDestBranchesItems=" + destBranchesItems.get(0) +
                     ", selectedDestBranchIndex=" + selectedDestBranchIndex +
+                    ", destBranchesItemsSize=" + projectItems.size() +
+                    ", firstProjectItem=" + projectItems.get(0) +
+                    ", selectedProjectIndex=" + selectedProjectIndex +
+                    ", projectItemsSize=" + projectItems.size() +
                     ", branchModels=" + branchModels +
                     ", selectedBranchIndices=" + selectedBranchIndices +
                     ", scrollToItem=" + scrollToItem +
