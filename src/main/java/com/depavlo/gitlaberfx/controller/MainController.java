@@ -239,6 +239,12 @@ public class MainController {
         destBranchComboBox.setItems(FXCollections.observableArrayList(initialItems));
         destBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
+        // Initialize destBranchComboBox with "not selected" item
+        initialItems = new ArrayList<>();
+        initialItems.add(NOT_SELECTED_ITEM);
+        projectComboBox.setItems(FXCollections.observableArrayList(initialItems));
+        projectComboBox.setValue(NOT_SELECTED_ITEM);
+
         // Налаштування комбобоксів
         projectComboBox.setOnAction(e -> onProjectSelected());
         destBranchComboBox.setOnAction(e -> onMainBranchSelected());

@@ -28,6 +28,20 @@ public class LocaleChangeService {
     private static final Logger logger = LoggerFactory.getLogger(LocaleChangeService.class);
 
     /**
+     * Class to hold the UI state during locale change
+     */
+    private static class UIState {
+        ObservableList<String> destBranchesItems;
+        ObservableList<String> projectItems;
+        int selectedProjectIndex = -1;
+        int selectedDestBranchIndex = -1;
+        ObservableList<BranchModel> branchModels;
+        List<Integer> selectedBranchIndices;
+        BranchModel scrollToItem = null;
+        String currentProjectId;
+    }
+
+    /**
      * Changes the application locale and reloads the UI.
      * 
      * @param newLocale The new locale to set
@@ -69,6 +83,8 @@ public class LocaleChangeService {
         // Save the state of ComboBoxes
         state.selectedProjectIndex = controller.getProjectComboBox().getSelectionModel().getSelectedIndex();
         state.selectedDestBranchIndex = controller.getDestBranchComboBox().getSelectionModel().getSelectedIndex();
+        state.projectItems = controller.getProjectComboBox().getItems();
+        state.destBranchesItems = controller.getDestBranchComboBox().getItems();
 
         // Save the state of TableView
         state.branchModels = controller.getBranchesTableView().getItems();
@@ -88,28 +104,12 @@ public class LocaleChangeService {
         return state;
     }
 
-    private static MainController reloadUI(Stage stage, AppConfig config) throws IOException {
-        // Load the FXML with the new locale
-        FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));
-        fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
-
-        Parent root = fxmlLoader.load();
-        Scene scene = new Scene(root, stage.getScene().getWidth(), stage.getScene().getHeight());
-
-        // Update the stage title
-        stage.setTitle(I18nUtil.getMessage("app.title"));
-
-        // Set the new scene
-        stage.setScene(scene);
-
-        // Get the new controller
-        MainController controller = fxmlLoader.getController();
-        controller.initialize(config, stage);
-
-        return controller;
-    }
-
     private static void restoreUIState(MainController controller, UIState state) {
+
+        controller.getProjectComboBox().setItems(state.projectItems);
+        controller.getDestBranchComboBox().setItems(state.destBranchesItems);
+        state.projectItems.set(0, I18nUtil.getMessage("app.not.selected"));
+        state.destBranchesItems.set(0, I18nUtil.getMessage("app.not.selected"));
         // Restore project selection
         if (state.selectedProjectIndex >= 0 && state.selectedProjectIndex < controller.getProjectComboBox().getItems().size()) {
             controller.getProjectComboBox().getSelectionModel().select(state.selectedProjectIndex);
@@ -146,15 +146,26 @@ public class LocaleChangeService {
         controller.refreshBranchCounter();
     }
 
-    /**
-     * Class to hold the UI state during locale change
-     */
-    private static class UIState {
-        int selectedProjectIndex = -1;
-        int selectedDestBranchIndex = -1;
-        ObservableList<BranchModel> branchModels;
-        List<Integer> selectedBranchIndices;
-        BranchModel scrollToItem = null;
-        String currentProjectId;
+    private static MainController reloadUI(Stage stage, AppConfig config) throws IOException {
+        // Load the FXML with the new locale
+        FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));
+        fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
+
+        Parent root = fxmlLoader.load();
+        Scene scene = new Scene(root, stage.getScene().getWidth(), stage.getScene().getHeight());
+
+        // Update the stage title
+        stage.setTitle(I18nUtil.getMessage("app.title"));
+
+        // Set the new scene
+        stage.setScene(scene);
+
+        // Get the new controller
+        MainController controller = fxmlLoader.getController();
+        controller.initialize(config, stage);
+
+        return controller;
     }
+
+
 }
