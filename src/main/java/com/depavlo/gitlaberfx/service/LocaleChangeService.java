@@ -49,7 +49,7 @@ public class LocaleChangeService {
                     ", firstProjectItem=" + projectItems.get(0) +
                     ", selectedProjectIndex=" + selectedProjectIndex +
                     ", projectItemsSize=" + projectItems.size() +
-                    ", branchModels=" + branchModels +
+                    ", branchModelsSize=" + branchModels.size() +
                     ", selectedBranchIndices=" + selectedBranchIndices +
                     ", scrollToItem=" + scrollToItem +
                     ", currentProjectId='" + currentProjectId + '\'' +
