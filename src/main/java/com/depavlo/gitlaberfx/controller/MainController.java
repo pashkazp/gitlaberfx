@@ -343,7 +343,7 @@ public class MainController {
         // If "not selected" is chosen, clear the branch list and return
         if (projectName == null || NOT_SELECTED_ITEM.equals(projectName)) {
             branchesTableView.setItems(FXCollections.observableArrayList());
-            updateStatus("Готово");
+            updateStatus(I18nUtil.getMessage("app.ready"));
             updateProgress(0.0);
             updateBranchCounter();
             return;
@@ -351,7 +351,7 @@ public class MainController {
 
         if (projectName != null) {
             // Update status bar
-            updateStatus("Завантаження гілок проєкту...");
+            updateStatus(I18nUtil.getMessage("main.status.loading.branches"));
 
             submitTask(() -> {
                 try {
@@ -404,12 +404,12 @@ public class MainController {
                                 destBranchComboBox.setValue(NOT_SELECTED_ITEM);
                             }
 
-                            updateStatus("Готово");
+                            updateStatus(I18nUtil.getMessage("app.ready"));
                             updateBranchCounter();
                         });
                     } else {
                         Platform.runLater(() -> {
-                            updateStatus("Готово");
+                            updateStatus(I18nUtil.getMessage("app.ready"));
                         });
                     }
                 } catch (Exception e) {
@@ -482,7 +482,7 @@ public class MainController {
                                         Platform.runLater(() -> branch.setMergedIntoTarget(false));
                                         continue outerLoop;
                                     }
-                                    updateStatus("Перевірка гілки: " + branch.getName());
+                                    updateStatus(I18nUtil.getMessage("main.status.checking.branch", branch.getName()));
                                     boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                                     // Update UI in JavaFX thread
@@ -506,7 +506,7 @@ public class MainController {
                                     try {
                                         Thread.sleep(500);
                                         Platform.runLater(() -> {
-                                            updateStatus("Готово");
+                                            updateStatus(I18nUtil.getMessage("app.ready"));
                                             updateBranchCounter();
                                         });
                                     } catch (InterruptedException e) {
@@ -603,7 +603,7 @@ public class MainController {
         String currentMainBranch = destBranchComboBox.getValue();
 
         // Update status bar
-        updateStatus("Оновлення списку проєктів з GitLab...");
+        updateStatus(I18nUtil.getMessage("main.status.updating.projects"));
 
         submitTask(() -> {
             try {
@@ -629,7 +629,7 @@ public class MainController {
                         projectComboBox.setValue(currentProject);
 
                         // Get the branches for the current project
-                        updateStatus("Оновлення гілок проєкту...");
+                        updateStatus(I18nUtil.getMessage("main.status.updating.project.branches"));
 
                         // The onProjectSelected() method will be called automatically when the project is selected,
                         // which will update the branches and restore the main branch if it still exists
@@ -742,7 +742,7 @@ public class MainController {
 
                         // Update status bar before refreshing branches
                         Platform.runLater(() -> {
-                            updateStatus("Оновлення списку гілок...");
+                            updateStatus(I18nUtil.getMessage("main.status.updating.branches"));
                             // refreshBranches() will update the status bar
                             refreshBranches();
                             // updateBranchCounter will be called by onProjectSelected
@@ -926,26 +926,26 @@ public class MainController {
                                         Platform.runLater(() -> {
                                             logger.error("Error deleting merged branches", e);
                                             // Update status bar in case of error
-                                            updateStatus("Помилка видалення гілок");
+                                            updateStatus(I18nUtil.getMessage("main.error.deleting.branches"));
                                             updateProgress(0.0);
-                                            showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                                            showError(I18nUtil.getMessage("main.error.deleting"), I18nUtil.getMessage("error.deleting.message", e.getMessage()));
                                             updateBranchCounter();
                                         });
                                     }
                                 });
                             }
                         } else {
-                            updateStatus("Готово");
-                            showInfo("Інформація", "Не знайдено змерджених гілок, які старіші за вказану дату");
+                            updateStatus(I18nUtil.getMessage("app.ready"));
+                            showInfo(I18nUtil.getMessage("info.title"), I18nUtil.getMessage("info.no.merged.branches"));
                         }
                     });
                 } catch (Exception e) {
                     Platform.runLater(() -> {
                         logger.error("Error checking merged branches", e);
                         // Update status bar in case of error
-                        updateStatus("Помилка перевірки гілок");
+                        updateStatus(I18nUtil.getMessage("error.checking.branches"));
                         updateProgress(0.0);
-                        showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
+                        showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("error.checking.branches", e.getMessage()));
                     });
                 }
             });
@@ -964,7 +964,7 @@ public class MainController {
         LocalDate cutoffDate = DialogHelper.showDatePickerDialog(stage);
         if (cutoffDate != null) {
             // Update status bar
-            updateStatus("Перевірка не змерджених гілок...");
+            updateStatus(I18nUtil.getMessage("main.status.checking.unmerged"));
             updateProgress(0.0);
 
             // Store final values for use in lambda
