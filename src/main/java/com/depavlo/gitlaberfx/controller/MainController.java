@@ -439,7 +439,7 @@ public class MainController {
                     updateBranchCounter();
                 } else {
                     // Update status bar
-                    updateStatus("Перевірка злиття гілок...");
+                    updateStatus(I18nUtil.getMessage("main.status.checking.merges"));
                     updateProgress(0.0);
 
                     // Create a copy of the branches list for thread safety
@@ -641,7 +641,7 @@ public class MainController {
                         // Clear the branches table
                         branchesTableView.setItems(FXCollections.observableArrayList());
 
-                        updateStatus("Готово");
+                        updateStatus(I18nUtil.getMessage("app.ready"));
                     }
                 });
             } catch (Exception e) {
@@ -694,7 +694,7 @@ public class MainController {
             List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, selectedBranches);
             if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
                 // Update status bar and initialize progress bar
-                updateStatus("Видалення вибраних гілок...");
+                updateStatus(I18nUtil.getMessage("main.status.deleting.selected"));
                 updateProgress(0.0);
 
                 // Create a copy of the confirmed branches list for thread safety
@@ -730,7 +730,7 @@ public class MainController {
                                 break outerLoop;
                             }
 
-                            updateStatus("Видалення гілки: " + branch.getName());
+                            updateStatus(I18nUtil.getMessage("main.status.deleting.branch", branch.getName()));
                             gitLabService.deleteBranch(currentProjectId, branch.getName());
 
                             // Increment branch counter
@@ -773,7 +773,7 @@ public class MainController {
         LocalDate cutoffDate = DialogHelper.showDatePickerDialog(stage);
         if (cutoffDate != null) {
             // Update status bar
-            updateStatus("Перевірка змерджених гілок...");
+            updateStatus(I18nUtil.getMessage("main.status.checking"));
             updateProgress(0.0);
 
             // Store final values for use in lambda
@@ -821,7 +821,7 @@ public class MainController {
 
                         // Check if the branch is merged into the main branch
                         try {
-                            updateStatus("Перевірка гілки: " + branch.getName());
+                            updateStatus(I18nUtil.getMessage("main.status.checking.branch", branch.getName()));
                             boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                             // If the branch is not merged, skip to the next branch
@@ -861,13 +861,13 @@ public class MainController {
                     // Update UI in JavaFX thread
                     Platform.runLater(() -> {
                         // Update status bar before showing confirmation dialog
-                        updateStatus("Готово");
+                        updateStatus(I18nUtil.getMessage("app.ready"));
 
                         if (!mergedBranches.isEmpty()) {
                             List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, mergedBranches);
                             if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
                                 // Update status bar for deletion
-                                updateStatus("Видалення змерджених гілок...");
+                                updateStatus(I18nUtil.getMessage("main.status.deleting.merged"));
                                 updateProgress(0.0);
 
                                 // Create a copy of the confirmed branches list for thread safety
@@ -904,7 +904,7 @@ public class MainController {
                                                 break outerLoop;
                                             }
 
-                                            updateStatus("Видалення гілки: " + branch.getName());
+                                            updateStatus(I18nUtil.getMessage("main.status.deleting.branch", branch.getName()));
                                             gitLabService.deleteBranch(currentProjectId, branch.getName());
 
                                             // Increment delete counter
@@ -917,7 +917,7 @@ public class MainController {
                                         // Update UI in JavaFX thread
                                         Platform.runLater(() -> {
                                             // Update status bar before refreshing branches
-                                            updateStatus("Оновлення списку гілок...");
+                                            updateStatus(I18nUtil.getMessage("main.status.updating.branches"));
                                             // refreshBranches() will update the status bar
                                             refreshBranches();
                                             // updateBranchCounter will be called by onProjectSelected
@@ -1012,7 +1012,7 @@ public class MainController {
 
                         // Check if the branch is merged into the main branch
                         try {
-                            updateStatus("Перевірка гілки: " + branch.getName());
+                            updateStatus(I18nUtil.getMessage("main.status.checking.branch", branch.getName()));
                             boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                             // If the branch is merged, skip to the next branch (inverse of deleteMerged logic)
@@ -1051,13 +1051,13 @@ public class MainController {
                     // Update UI in JavaFX thread
                     Platform.runLater(() -> {
                         // Update status bar before showing confirmation dialog
-                        updateStatus("Готово");
+                        updateStatus(I18nUtil.getMessage("app.ready"));
 
                         if (!unmergedBranches.isEmpty()) {
                             List<BranchModel> confirmedBranches = DialogHelper.showDeleteConfirmationDialog(stage, unmergedBranches);
                             if (confirmedBranches != null && !confirmedBranches.isEmpty()) {
                                 // Update status bar for deletion
-                                updateStatus("Видалення не змерджених гілок...");
+                                updateStatus(I18nUtil.getMessage("main.status.deleting.unmerged"));
                                 updateProgress(0.0);
 
                                 // Create a copy of the confirmed branches list for thread safety
@@ -1094,7 +1094,7 @@ public class MainController {
                                                 break outerLoop;
                                             }
 
-                                            updateStatus("Видалення гілки: " + branch.getName());
+                                            updateStatus(I18nUtil.getMessage("main.status.deleting.branch", branch.getName()));
                                             gitLabService.deleteBranch(currentProjectId, branch.getName());
 
                                             // Increment delete counter
@@ -1107,7 +1107,7 @@ public class MainController {
                                         // Update UI in JavaFX thread
                                         Platform.runLater(() -> {
                                             // Update status bar before refreshing branches
-                                            updateStatus("Оновлення списку гілок...");
+                                            updateStatus(I18nUtil.getMessage("main.status.updating.branches"));
                                             // refreshBranches() will update the status bar
                                             refreshBranches();
                                             // updateBranchCounter will be called by onProjectSelected
@@ -1116,26 +1116,26 @@ public class MainController {
                                         Platform.runLater(() -> {
                                             logger.error("Error deleting unmerged branches", e);
                                             // Update status bar in case of error
-                                            updateStatus("Помилка видалення гілок");
+                                            updateStatus(I18nUtil.getMessage("main.error.deleting.branches"));
                                             updateProgress(0.0);
-                                            showError("Помилка видалення", "Не вдалося видалити гілки: " + e.getMessage());
+                                            showError(I18nUtil.getMessage("main.error.deleting"), I18nUtil.getMessage("main.error.deleting.message", e.getMessage()));
                                             updateBranchCounter();
                                         });
                                     }
                                 });
                             }
                         } else {
-                            updateStatus("Готово");
-                            showInfo("Інформація", "Не знайдено не змерджених гілок, які старіші за вказану дату");
+                            updateStatus(I18nUtil.getMessage("app.ready"));
+                            showInfo(I18nUtil.getMessage("info.title"), I18nUtil.getMessage("info.no.unmerged.branches"));
                         }
                     });
                 } catch (Exception e) {
                     Platform.runLater(() -> {
                         logger.error("Error checking unmerged branches", e);
                         // Update status bar in case of error
-                        updateStatus("Помилка перевірки гілок");
+                        updateStatus(I18nUtil.getMessage("error.checking.branches"));
                         updateProgress(0.0);
-                        showError("Помилка", "Не вдалося перевірити гілки: " + e.getMessage());
+                        showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("error.checking.branches", e.getMessage()));
                     });
                 }
             });
@@ -1156,7 +1156,7 @@ public class MainController {
                             .collect(Collectors.toList())
             );
             config.save();
-            showInfo("Інформація", "Гілки додано до виключень");
+            showInfo(I18nUtil.getMessage("info.title"), I18nUtil.getMessage("info.branches.added.to.exclusions"));
         }
     }
 
@@ -1173,12 +1173,12 @@ public class MainController {
 
         ObservableList<BranchModel> branches = branchesTableView.getItems();
         if (branches == null || branches.isEmpty()) {
-            showInfo("Інформація", "Немає гілок для перевірки");
+            showInfo(I18nUtil.getMessage("info.title"), I18nUtil.getMessage("info.no.branches"));
             return;
         }
 
         // Update status bar
-        updateStatus("Перевірка злиття гілок...");
+        updateStatus(I18nUtil.getMessage("main.status.checking.merges"));
 
         // Create a copy of the branches list for thread safety
         List<BranchModel> branchesCopy = new ArrayList<>(branches);
@@ -1215,7 +1215,7 @@ public class MainController {
                             Platform.runLater(() -> branch.setMergedIntoTarget(false));
                             continue outerLoop;
                         }
-                        updateStatus("Перевірка гілки: " + branch.getName());
+                        updateStatus(I18nUtil.getMessage("main.status.checking.branch", branch.getName()));
                         boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                         // Update UI in JavaFX thread
@@ -1266,7 +1266,7 @@ public class MainController {
     /**
      * Updates the status label with the given message.
      * This method is safe to call from any thread.
-     * If the message is "Готово", it also resets the progress bar to 0.0.
+     * If the message is equivalent to I18nUtil.getMessage("app.ready"), it also resets the progress bar to 0.0.
      * 
      * @param message The message to display
      */
