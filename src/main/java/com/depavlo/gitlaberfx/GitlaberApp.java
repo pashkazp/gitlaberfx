@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.ResourceBundle;
 
 public class GitlaberApp extends Application {
@@ -51,13 +52,13 @@ public class GitlaberApp extends Application {
         // Set the application locale from config
         String localeCode = config.getLocale();
         if (localeCode != null && !localeCode.isEmpty()) {
-            String[] localeParts = localeCode.split("_");
+            String[] localeParts = localeCode.replace('-', '_').split("_");
             if (localeParts.length == 2) {
-                com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new java.util.Locale(localeParts[0], localeParts[1]));
+                com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new Locale(localeParts[0], localeParts[1]));
             }
         } else {
             // Default to English if no locale is specified
-            com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new java.util.Locale("en", "US"));
+            com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new Locale("en", "US"));
         }
 
         // Завантаження головного вікна
@@ -75,43 +76,23 @@ public class GitlaberApp extends Application {
 
         // Add a close request handler to ensure proper cleanup
         stage.setOnCloseRequest(event -> {
+            logger.info("Stage is closing, shutting down controller.");
             controller.shutdown();
         });
 
-        // Add a shutdown hook to ensure background tasks are terminated
-        // when the application exits abnormally
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Application shutdown hook triggered");
-            if (controller != null) {
-                // Run on JavaFX thread if possible, otherwise run directly
-                if (Platform.isFxApplicationThread()) {
-                    controller.shutdownExecutor();
-                } else {
-                    try {
-                        Platform.runLater(controller::shutdownExecutor);
-                        // Give a short time for the runLater to execute
-                        Thread.sleep(200);
-                    } catch (Exception e) {
-                        // If Platform is already shutdown, call directly
-                        controller.shutdownExecutor();
-                    }
-                }
-            }
-        }));
-
         stage.show();
-        controller.refreshProjects();
+        // Initial data load is now handled inside the controller's initialize method
     }
 
     @Override
     public void stop() {
-        logger.info("JavaFX stop method called");
+        logger.info("JavaFX stop method called. Ensuring controller is shutdown.");
         if (controller != null) {
-            controller.shutdownExecutor();
+            controller.shutdown();
         }
     }
 
     public static void main(String[] args) {
-        launch();
+        launch(args);
     }
 }

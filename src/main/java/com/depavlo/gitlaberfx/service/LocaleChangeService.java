@@ -1,190 +1,137 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 Pavlo Dehtiarov
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 package com.depavlo.gitlaberfx.service;
 
 import com.depavlo.gitlaberfx.GitlaberApp;
 import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.controller.MainController;
-import com.depavlo.gitlaberfx.model.BranchModel;
+import com.depavlo.gitlaberfx.model.UIStateModel;
 import com.depavlo.gitlaberfx.util.I18nUtil;
-import javafx.collections.ObservableList;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.TableView;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
  * Service for handling dynamic locale changes in the application.
- * Provides functionality to change the locale and reload the UI without restarting the application.
  */
 public class LocaleChangeService {
     private static final Logger logger = LoggerFactory.getLogger(LocaleChangeService.class);
 
-    /**
-     * Class to hold the UI state during locale change
-     */
-    private static class UIState {
-        ObservableList<String> destBranchesItems;
-        ObservableList<String> projectItems;
-        int selectedProjectIndex = -1;
-        int selectedDestBranchIndex = -1;
-        ObservableList<BranchModel> branchModels;
-        List<Integer> selectedBranchIndices;
-        BranchModel scrollToItem = null;
-        String currentProjectId;
-
-        @Override
-        public String toString() {
-            return "UIState{" +
-                    "firstDestBranchesItems=" + destBranchesItems.get(0) +
-                    ", selectedDestBranchIndex=" + selectedDestBranchIndex +
-                    ", destBranchesItemsSize=" + projectItems.size() +
-                    ", firstProjectItem=" + projectItems.get(0) +
-                    ", selectedProjectIndex=" + selectedProjectIndex +
-                    ", projectItemsSize=" + projectItems.size() +
-                    ", branchModelsSize=" + branchModels.size() +
-                    ", selectedBranchIndices=" + selectedBranchIndices +
-                    ", scrollToItem=" + scrollToItem +
-                    ", currentProjectId='" + currentProjectId + '\'' +
-                    '}';
-        }
+    private static class SavedState {
+        String projectName;
+        String targetBranchName;
     }
 
-    /**
-     * Changes the application locale and reloads the UI.
-     * 
-     * @param newLocale The new locale to set
-     * @param config The application configuration
-     * @param stage The main application stage
-     * @param currentController The current MainController instance
-     * @return The new MainController instance
-     */
-    public static MainController changeLocale(Locale newLocale, AppConfig config, Stage stage, MainController currentController) {
+    public static void changeLocale(Locale newLocale, AppConfig config, Stage stage, MainController currentController) {
         logger.info("Changing locale to: {}", newLocale);
 
         try {
-            // Step 1: Save the current UI state
-            UIState uiState = saveUIState(currentController);
+            // 1. Save current state from the model
+            SavedState state = saveState(currentController.getUiStateModel());
 
-            // Update the locale in I18nUtil
+            // 2. Update locale in config and util
             I18nUtil.setLocale(newLocale);
-
-            // Update the locale in config
-            config.setLocale(newLocale.getLanguage() + "_" + newLocale.getCountry());
+            config.setLocale(newLocale.toLanguageTag().replace('-', '_')); // Store as uk_UA
             config.save();
 
-            // Step 2: Reload the UI with the new locale
+            // 3. Reload UI
             MainController newController = reloadUI(stage, config);
 
-            // Step 3: Restore the UI state
-            restoreUIState(newController, uiState);
+            // 4. Restore state by re-triggering the application logic
+            restoreState(newController, state);
 
-            return newController;
         } catch (Exception e) {
             logger.error("Error changing locale", e);
             throw new RuntimeException("Failed to change locale", e);
         }
     }
 
-    private static UIState saveUIState(MainController controller) {
-        logger.info("Saving UI state");
-        UIState state = new UIState();
-
-        // Save the state of ComboBoxes
-        state.selectedProjectIndex = controller.getProjectComboBox().getSelectionModel().getSelectedIndex();
-        state.selectedDestBranchIndex = controller.getDestBranchComboBox().getSelectionModel().getSelectedIndex();
-        state.projectItems = controller.getProjectComboBox().getItems();
-        state.destBranchesItems = controller.getDestBranchComboBox().getItems();
-
-        // Save the state of TableView
-        state.branchModels = controller.getBranchesTableView().getItems();
-        state.selectedBranchIndices = controller.getBranchesTableView().getSelectionModel().getSelectedIndices();
-
-        // Save the first selected item for scroll position restoration
-        if (!state.selectedBranchIndices.isEmpty()) {
-            int firstSelectedIndex = state.selectedBranchIndices.get(0);
-            if (firstSelectedIndex >= 0 && firstSelectedIndex < state.branchModels.size()) {
-                state.scrollToItem = state.branchModels.get(firstSelectedIndex);
-            }
-        }
-
-        // Save other relevant state
-        state.currentProjectId = controller.getCurrentProjectId();
-        logger.debug("Saved state: {}", state);
+    private static SavedState saveState(UIStateModel model) {
+        logger.debug("Saving UI state from model");
+        SavedState state = new SavedState();
+        state.projectName = model.getCurrentProjectNameProperty().get();
+        state.targetBranchName = model.getCurrentTargetBranchNameProperty().get();
+        logger.debug("Saved state: Project='{}', TargetBranch='{}'", state.projectName, state.targetBranchName);
         return state;
     }
 
-    private static void restoreUIState(MainController controller, UIState state) {
-        logger.info("Restoring UI state");
-        logger.debug("Restored state: {}", state);
-        controller.getProjectComboBox().setItems(state.projectItems);
-        state.projectItems.set(0, I18nUtil.getMessage("app.not.selected"));
-        // Restore project selection
-        if (state.selectedProjectIndex >= 0 && state.selectedProjectIndex < controller.getProjectComboBox().getItems().size()) {
-            controller.getProjectComboBox().getSelectionModel().select(state.selectedProjectIndex);
-
-            // This will trigger onProjectSelected() which will load branches
-            // We need to wait for this to complete before continuing
-
-            // Set the current project ID
-            controller.setCurrentProjectId(state.currentProjectId);
-
-            // Restore destination branch selection
-            if (state.selectedDestBranchIndex >= 0 && 
-                state.selectedDestBranchIndex < controller.getDestBranchComboBox().getItems().size()) {
-                controller.getDestBranchComboBox().setItems(state.destBranchesItems);
-                state.destBranchesItems.set(0, I18nUtil.getMessage("app.not.selected"));
-                controller.getDestBranchComboBox().getSelectionModel().select(state.selectedDestBranchIndex);
-                // This will trigger onMainBranchSelected()
-            }
+    private static void restoreState(MainController controller, SavedState state) {
+        logger.debug("Attempting to restore UI state: Project='{}'", state.projectName);
+        if (state.projectName != null && !state.projectName.isEmpty()) {
+            // We can't set value directly as items are loaded asynchronously.
+            // We add a listener that will set the value once the project list is populated.
+            controller.getProjectComboBox().getItems().addListener((javafx.collections.ListChangeListener.Change<? extends String> c) -> {
+                logger.debug("Project list updated in new controller. Attempting to select '{}'", state.projectName);
+                if (controller.getProjectComboBox().getItems().contains(state.projectName)) {
+                    Platform.runLater(() -> {
+                        controller.getProjectComboBox().setValue(state.projectName);
+                        logger.debug("Successfully set project to '{}'. Now restoring target branch.", state.projectName);
+                        restoreTargetBranch(controller, state);
+                    });
+                }
+            });
         }
+    }
 
-        // Restore TableView state
-        // This needs to be done after the branches are loaded
-        controller.setBranchModels(state.branchModels);
-
-        // Restore selection
-        for (Integer index : state.selectedBranchIndices) {
-            controller.getBranchesTableView().getSelectionModel().select(index);
+    private static void restoreTargetBranch(MainController controller, SavedState state) {
+        if (state.targetBranchName != null && !state.targetBranchName.isEmpty()) {
+            // Similar to projects, we wait for the branch list to be populated.
+            controller.getDestBranchComboBox().getItems().addListener((javafx.collections.ListChangeListener.Change<? extends String> c) -> {
+                logger.debug("Branch list updated for project '{}'. Attempting to select target branch '{}'", state.projectName, state.targetBranchName);
+                if (controller.getDestBranchComboBox().getItems().contains(state.targetBranchName)) {
+                    Platform.runLater(() -> {
+                        controller.getDestBranchComboBox().setValue(state.targetBranchName);
+                        logger.debug("Successfully set target branch to '{}'", state.targetBranchName);
+                    });
+                }
+            });
         }
-
-        // Restore scroll position
-        if (state.scrollToItem != null) {
-            controller.getBranchesTableView().scrollTo(state.scrollToItem);
-        }
-
-        // Update branch counter
-        controller.refreshBranchCounter();
     }
 
     private static MainController reloadUI(Stage stage, AppConfig config) throws IOException {
-        logger.info("Reloading UI");
-        // Load the FXML with the new locale
+        logger.info("Reloading UI with new locale");
         FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));
         fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
 
         Parent root = fxmlLoader.load();
         Scene scene = new Scene(root, stage.getScene().getWidth(), stage.getScene().getHeight());
 
-        // Update the stage title
         stage.setTitle(I18nUtil.getMessage("app.title"));
-
-        // Set the new scene
         stage.setScene(scene);
 
-        // Get the new controller
         MainController controller = fxmlLoader.getController();
+        // The initialize method will be called automatically by FXMLLoader
+        // but we pass dependencies manually after it's loaded.
         controller.initialize(config, stage);
-
         return controller;
     }
-
-
 }
