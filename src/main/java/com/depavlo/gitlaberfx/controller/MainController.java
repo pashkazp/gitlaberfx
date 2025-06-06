@@ -157,6 +157,14 @@ public class MainController {
     //</editor-fold>
 
     //<editor-fold desc="Core Logic: Project and Branch Loading">
+    public CompletableFuture<Void> startInitialLoad() {
+        if (!gitLabService.hasRequiredConfig()) {
+            showWarning("warning.missing.settings", "warning.missing.settings.message");
+            return CompletableFuture.completedFuture(null);
+        }
+        return refreshProjects();
+    }
+
     @FXML
     public CompletableFuture<Void> refreshProjects() {
         CompletableFuture<Void> completionFuture = new CompletableFuture<>();
@@ -193,7 +201,7 @@ public class MainController {
                 .findFirst()
                 .ifPresent(project -> {
                     uiStateModel.setCurrentProjectId(String.valueOf(project.getId()));
-                    uiStateModel.setCurrentProjectName(project.getName());
+                    uiStateModel.setCurrentProjectName(project.getPathName()); // Use full path name
                     this.branchLoadFuture = loadBranchesForProject(String.valueOf(project.getId()));
                 });
     }

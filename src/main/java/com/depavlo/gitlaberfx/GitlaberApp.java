@@ -25,8 +25,8 @@ package com.depavlo.gitlaberfx;
 
 import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.controller.MainController;
+import com.depavlo.gitlaberfx.util.I18nUtil;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -46,10 +46,8 @@ public class GitlaberApp extends Application {
     public void start(Stage stage) throws IOException {
         logger.info("Starting application");
 
-        // Завантаження налаштувань
         AppConfig config = AppConfig.load();
 
-        // Set the application locale from config
         String localeCode = config.getLocale();
         if (localeCode != null && !localeCode.isEmpty()) {
             String[] localeParts = localeCode.replace('-', '_').split("_");
@@ -57,31 +55,28 @@ public class GitlaberApp extends Application {
                 com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new Locale(localeParts[0], localeParts[1]));
             }
         } else {
-            // Default to English if no locale is specified
             com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new Locale("en", "US"));
         }
 
-        // Завантаження головного вікна
         FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));
         fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", com.depavlo.gitlaberfx.util.I18nUtil.getCurrentLocale()));
         Scene scene = new Scene(fxmlLoader.load(), 800, 600);
 
-        // Налаштування головного вікна
-        stage.setTitle(com.depavlo.gitlaberfx.util.I18nUtil.getMessage("app.title"));
+        stage.setTitle(I18nUtil.getMessage("app.title"));
         stage.setScene(scene);
 
-        // Ініціалізація контролера
         controller = fxmlLoader.getController();
         controller.initialize(config, stage);
 
-        // Add a close request handler to ensure proper cleanup
         stage.setOnCloseRequest(event -> {
             logger.info("Stage is closing, shutting down controller.");
             controller.shutdown();
         });
 
         stage.show();
-        // Initial data load is now handled inside the controller's initialize method
+
+        // Trigger the initial data load after the UI is visible.
+        controller.startInitialLoad();
     }
 
     @Override
