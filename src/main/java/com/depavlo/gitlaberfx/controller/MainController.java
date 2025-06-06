@@ -164,24 +164,29 @@ public class MainController {
             showWarning("warning.missing.settings", "warning.missing.settings.message");
             return;
         }
-        loadProjects();
+        refreshProjects();
     }
     //</editor-fold>
 
     //<editor-fold desc="Core Logic: Project and Branch Loading">
     @FXML
-    public void loadProjects() {
+    public void refreshProjects() {
         submitTask(I18nUtil.getMessage("main.status.loading.project.branches"), () -> {
-            List<GitLabService.Project> projects = gitLabService.getProjects();
-            List<String> projectNames = new ArrayList<>();
-            projectNames.add(getNotSelectedItemText());
-            projectNames.addAll(projects.stream().map(GitLabService.Project::getPathName).sorted(String.CASE_INSENSITIVE_ORDER).collect(Collectors.toList()));
+            try {
+                List<GitLabService.Project> projects = gitLabService.getProjects();
+                List<String> projectNames = new ArrayList<>();
+                projectNames.add(getNotSelectedItemText());
+                projectNames.addAll(projects.stream().map(GitLabService.Project::getPathName).sorted(String.CASE_INSENSITIVE_ORDER).collect(Collectors.toList()));
 
-            Platform.runLater(() -> {
-                uiStateModel.setAllProjects(projects);
-                projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
-                projectComboBox.setValue(getNotSelectedItemText());
-            });
+                Platform.runLater(() -> {
+                    uiStateModel.setAllProjects(projects);
+                    projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
+                    projectComboBox.setValue(getNotSelectedItemText());
+                });
+            } catch (IOException e) {
+                logger.error("Failed to load projects", e);
+                Platform.runLater(() -> showError("app.error", e.getMessage()));
+            }
         });
     }
 
@@ -203,13 +208,18 @@ public class MainController {
 
     private void loadBranchesForProject(String projectId) {
         submitTask(I18nUtil.getMessage("main.status.updating.project.branches"), () -> {
-            List<BranchModel> branches = gitLabService.getBranches(projectId);
-            branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
+            try {
+                List<BranchModel> branches = gitLabService.getBranches(projectId);
+                branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
 
-            Platform.runLater(() -> {
-                uiStateModel.setCurrentProjectBranches(branches);
-                updateTargetBranchSelector();
-            });
+                Platform.runLater(() -> {
+                    uiStateModel.setCurrentProjectBranches(branches);
+                    updateTargetBranchSelector();
+                });
+            } catch (IOException e) {
+                logger.error("Failed to load branches for project {}", projectId, e);
+                Platform.runLater(() -> showError("app.error", e.getMessage()));
+            }
         });
     }
 
@@ -221,12 +231,12 @@ public class MainController {
         } else {
             uiStateModel.setCurrentTargetBranchName(targetBranchName);
             rescanMergedButton.setDisable(false);
-            checkBranchesMergeStatus();
+            rescanMerged();
         }
     }
 
     @FXML
-    private void checkBranchesMergeStatus() {
+    private void rescanMerged() {
         String targetBranchName = uiStateModel.getCurrentTargetBranchName();
         if(targetBranchName == null) return;
 
@@ -438,7 +448,7 @@ public class MainController {
     @FXML private void showSettings() {
         if (DialogHelper.showSettingsDialog(stage, config, this)) {
             this.gitLabService = new GitLabService(config);
-            loadProjects();
+            refreshProjects();
         }
     }
 
@@ -517,12 +527,12 @@ public class MainController {
     //</editor-fold>
 
     //<editor-fold desc="Dialogs">
-    private void showError(String titleKey, String messageKey) {
+    private void showError(String titleKey, String message) {
         Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle(I18nUtil.getMessage(titleKey));
             alert.setHeaderText(null);
-            alert.setContentText(I18nUtil.getMessage(messageKey));
+            alert.setContentText(message);
             alert.showAndWait();
         });
     }

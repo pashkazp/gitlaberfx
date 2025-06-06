@@ -78,8 +78,8 @@ public class LocaleChangeService {
     private static SavedState saveState(UIStateModel model) {
         logger.debug("Saving UI state from model");
         SavedState state = new SavedState();
-        state.projectName = model.getCurrentProjectNameProperty().get();
-        state.targetBranchName = model.getCurrentTargetBranchNameProperty().get();
+        state.projectName = model.getCurrentProjectName();
+        state.targetBranchName = model.getCurrentTargetBranchName();
         logger.debug("Saved state: Project='{}', TargetBranch='{}'", state.projectName, state.targetBranchName);
         return state;
     }
