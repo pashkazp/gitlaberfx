@@ -64,6 +64,8 @@ public class MainController {
     // Task Management
     private final List<Future<?>> currentTasks = new ArrayList<>();
     private final AtomicBoolean pauseRequested = new AtomicBoolean(false);
+    private CompletableFuture<Void> branchLoadFuture = CompletableFuture.completedFuture(null);
+
 
     // FXML Fields
     @FXML private ComboBox<String> projectComboBox;
@@ -86,7 +88,6 @@ public class MainController {
         setupBindings();
         setupEventListeners();
         setupTableColumns();
-        loadInitialData();
     }
 
     //<editor-fold desc="Initialization & Setup">
@@ -100,7 +101,6 @@ public class MainController {
         projectComboBox.valueProperty().addListener((obs, oldVal, newVal) -> handleProjectSelection(newVal));
         destBranchComboBox.valueProperty().addListener((obs, oldVal, newVal) -> handleTargetBranchSelection(newVal));
 
-        // Add listeners to branch selection changes to update the counter
         uiStateModel.getCurrentProjectBranches().addListener((javafx.collections.ListChangeListener.Change<? extends BranchModel> c) -> {
             while (c.next()) {
                 if (c.wasAdded()) {
@@ -123,11 +123,7 @@ public class MainController {
     private void setupTableColumns() {
         branchesTableView.setEditable(true);
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
-        selectedColumn.setCellFactory(column -> {
-            CheckBoxTableCell<BranchModel, Boolean> cell = new CheckBoxTableCell<>();
-            cell.setEditable(true);
-            return cell;
-        });
+        selectedColumn.setCellFactory(column -> new CheckBoxTableCell<>());
 
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         lastCommitColumn.setCellValueFactory(new PropertyValueFactory<>("lastCommit"));
@@ -158,19 +154,12 @@ public class MainController {
             }
         });
     }
-
-    private void loadInitialData() {
-        if (!gitLabService.hasRequiredConfig()) {
-            showWarning("warning.missing.settings", "warning.missing.settings.message");
-            return;
-        }
-        refreshProjects();
-    }
     //</editor-fold>
 
     //<editor-fold desc="Core Logic: Project and Branch Loading">
     @FXML
-    public void refreshProjects() {
+    public CompletableFuture<Void> refreshProjects() {
+        CompletableFuture<Void> completionFuture = new CompletableFuture<>();
         submitTask(I18nUtil.getMessage("main.status.loading.project.branches"), () -> {
             try {
                 List<GitLabService.Project> projects = gitLabService.getProjects();
@@ -182,12 +171,15 @@ public class MainController {
                     uiStateModel.setAllProjects(projects);
                     projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
                     projectComboBox.setValue(getNotSelectedItemText());
+                    completionFuture.complete(null);
                 });
             } catch (IOException e) {
                 logger.error("Failed to load projects", e);
                 Platform.runLater(() -> showError("app.error", e.getMessage()));
+                completionFuture.completeExceptionally(e);
             }
         });
+        return completionFuture;
     }
 
     private void handleProjectSelection(String selectedProjectName) {
@@ -202,11 +194,12 @@ public class MainController {
                 .ifPresent(project -> {
                     uiStateModel.setCurrentProjectId(String.valueOf(project.getId()));
                     uiStateModel.setCurrentProjectName(project.getName());
-                    loadBranchesForProject(String.valueOf(project.getId()));
+                    this.branchLoadFuture = loadBranchesForProject(String.valueOf(project.getId()));
                 });
     }
 
-    private void loadBranchesForProject(String projectId) {
+    private CompletableFuture<Void> loadBranchesForProject(String projectId) {
+        CompletableFuture<Void> completionFuture = new CompletableFuture<>();
         submitTask(I18nUtil.getMessage("main.status.updating.project.branches"), () -> {
             try {
                 List<BranchModel> branches = gitLabService.getBranches(projectId);
@@ -215,12 +208,15 @@ public class MainController {
                 Platform.runLater(() -> {
                     uiStateModel.setCurrentProjectBranches(branches);
                     updateTargetBranchSelector();
+                    completionFuture.complete(null);
                 });
             } catch (IOException e) {
                 logger.error("Failed to load branches for project {}", projectId, e);
                 Platform.runLater(() -> showError("app.error", e.getMessage()));
+                completionFuture.completeExceptionally(e);
             }
         });
+        return completionFuture;
     }
 
     private void handleTargetBranchSelection(String targetBranchName) {
@@ -562,5 +558,6 @@ public class MainController {
     public UIStateModel getUiStateModel() { return uiStateModel; }
     public ComboBox<String> getProjectComboBox() { return projectComboBox; }
     public ComboBox<String> getDestBranchComboBox() { return destBranchComboBox; }
+    public CompletableFuture<Void> getBranchLoadFuture() { return branchLoadFuture; }
     //</editor-fold>
 }
