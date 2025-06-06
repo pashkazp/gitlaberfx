@@ -125,9 +125,7 @@ public class LocaleChangeService {
         logger.info("Restoring UI state");
         logger.debug("Restored state: {}", state);
         controller.getProjectComboBox().setItems(state.projectItems);
-        controller.getDestBranchComboBox().setItems(state.destBranchesItems);
         state.projectItems.set(0, I18nUtil.getMessage("app.not.selected"));
-        state.destBranchesItems.set(0, I18nUtil.getMessage("app.not.selected"));
         // Restore project selection
         if (state.selectedProjectIndex >= 0 && state.selectedProjectIndex < controller.getProjectComboBox().getItems().size()) {
             controller.getProjectComboBox().getSelectionModel().select(state.selectedProjectIndex);
@@ -141,6 +139,8 @@ public class LocaleChangeService {
             // Restore destination branch selection
             if (state.selectedDestBranchIndex >= 0 && 
                 state.selectedDestBranchIndex < controller.getDestBranchComboBox().getItems().size()) {
+                controller.getDestBranchComboBox().setItems(state.destBranchesItems);
+                state.destBranchesItems.set(0, I18nUtil.getMessage("app.not.selected"));
                 controller.getDestBranchComboBox().getSelectionModel().select(state.selectedDestBranchIndex);
                 // This will trigger onMainBranchSelected()
             }

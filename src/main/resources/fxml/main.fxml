@@ -38,7 +38,7 @@
     </HBox>
 
     <HBox spacing="10">
-        <Button fx:id="refreshBranchesButton" onAction="#refreshBranches" text="%main.refresh.list" />
+        <Button fx:id="refreshBranchesButton" onAction="#refreshBranches" text="%main.refresh.lists" />
         <Button fx:id="selectAllButton" onAction="#selectAll" text="%main.select.all" />
         <Button fx:id="deselectAllButton" onAction="#deselectAll" text="%main.deselect.all" />
         <Button fx:id="invertSelectionButton" onAction="#invertSelection" text="%main.invert.selection" />

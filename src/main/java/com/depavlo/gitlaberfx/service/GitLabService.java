@@ -102,8 +102,6 @@ public class GitLabService {
             throw new IOException("Required GitLab configuration is missing. Please check GitLab URL and API key in settings.");
         }
         logger.info("Connecting to GitLab at {}", config.getGitlabUrl());
-        // Тест з'єднання - спробуємо отримати список проєктів
-//        getProjects();
     }
 
     public List<Project> getProjects() throws IOException {

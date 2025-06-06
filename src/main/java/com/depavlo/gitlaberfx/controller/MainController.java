@@ -53,52 +53,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import com.depavlo.gitlaberfx.util.I18nUtil;
 
+import static java.util.Objects.isNull;
+
 public class MainController {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
     private static final String NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
-    /**
-     * Parses a date string in various formats to a LocalDate.
-     * Tries multiple parsing strategies to handle different date formats.
-     *
-     * @param dateStr The date string to parse
-     * @return The parsed LocalDate
-     * @throws DateTimeParseException if the date string cannot be parsed
-     */
-    private LocalDate parseDate(String dateStr) throws DateTimeParseException {
-        if (dateStr == null || dateStr.isEmpty()) {
-            throw new DateTimeParseException("Date string is null or empty", dateStr, 0);
-        }
-
-        // Try multiple parsing strategies to handle different date formats
-        if (dateStr.length() >= 10) {
-            // First try to parse just the date part (YYYY-MM-DD)
-            try {
-                return LocalDate.parse(dateStr.substring(0, 10));
-            } catch (DateTimeParseException e1) {
-                // If that fails, try with a specific formatter for ISO format
-                try {
-                    DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_DATE_TIME;
-                    return LocalDate.from(isoFormatter.parse(dateStr));
-                } catch (DateTimeParseException e2) {
-                    // Try with a custom formatter as a fallback
-                    try {
-                        DateTimeFormatter customFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                        return LocalDate.from(customFormatter.parse(dateStr));
-                    } catch (DateTimeParseException e3) {
-                        // If all parsing attempts fail, throw an exception
-                        throw new DateTimeParseException("Failed to parse date after multiple attempts: " + dateStr, dateStr, 0);
-                    }
-                }
-            }
-        } else {
-            // If the string is too short, try a more lenient approach
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            return LocalDate.parse(dateStr, formatter);
-        }
-    }
 
     // Fields to track task state
     private List<Future<?>> currentTasks = new ArrayList<>();
@@ -197,6 +159,7 @@ public class MainController {
     private String currentProjectId;
 
     public void initialize(AppConfig config, Stage stage) {
+        logger.debug("Initialize");
         this.config = config;
         this.stage = stage;
 
@@ -236,6 +199,7 @@ public class MainController {
         // Initialize destBranchComboBox with "not selected" item
         List<String> initialItems = new ArrayList<>();
         initialItems.add(NOT_SELECTED_ITEM);
+        logger.debug("destBranchComboBox.setItems(FXCollections.observableArrayList(initialItems));");
         destBranchComboBox.setItems(FXCollections.observableArrayList(initialItems));
         destBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
@@ -246,8 +210,10 @@ public class MainController {
         projectComboBox.setValue(NOT_SELECTED_ITEM);
 
         // Налаштування комбобоксів
-        projectComboBox.setOnAction(e -> onProjectSelected());
-        destBranchComboBox.setOnAction(e -> onMainBranchSelected());
+        logger.debug("projectComboBox.setOnAction(e -> refreshAllInfo());");
+        projectComboBox.setOnAction(e -> refreshAllInfo());
+        logger.debug("destBranchComboBox.setOnAction(e -> onDestBranchSelected());");
+        destBranchComboBox.setOnAction(e -> onDestBranchSelected());
 
         // Налаштування TableView для редагування
         branchesTableView.setEditable(true);
@@ -289,6 +255,7 @@ public class MainController {
     }
 
     public boolean checkConfig(){
+        logger.debug("Check config");
         // Check if required configuration is present
         if (!gitLabService.hasRequiredConfig()) {
             logger.warn("Missing required GitLab configuration");
@@ -300,7 +267,51 @@ public class MainController {
 
     }
 
+    /**
+     * Parses a date string in various formats to a LocalDate.
+     * Tries multiple parsing strategies to handle different date formats.
+     *
+     * @param dateStr The date string to parse
+     * @return The parsed LocalDate
+     * @throws DateTimeParseException if the date string cannot be parsed
+     */
+    private LocalDate parseDate(String dateStr) throws DateTimeParseException {
+        logger.debug("Parse Date");
+        if (dateStr == null || dateStr.isEmpty()) {
+            throw new DateTimeParseException("Date string is null or empty", dateStr, 0);
+        }
+
+        // Try multiple parsing strategies to handle different date formats
+        if (dateStr.length() >= 10) {
+            // First try to parse just the date part (YYYY-MM-DD)
+            try {
+                return LocalDate.parse(dateStr.substring(0, 10));
+            } catch (DateTimeParseException e1) {
+                // If that fails, try with a specific formatter for ISO format
+                try {
+                    DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_DATE_TIME;
+                    return LocalDate.from(isoFormatter.parse(dateStr));
+                } catch (DateTimeParseException e2) {
+                    // Try with a custom formatter as a fallback
+                    try {
+                        DateTimeFormatter customFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+                        return LocalDate.from(customFormatter.parse(dateStr));
+                    } catch (DateTimeParseException e3) {
+                        // If all parsing attempts fail, throw an exception
+                        throw new DateTimeParseException("Failed to parse date after multiple attempts: " + dateStr, dateStr, 0);
+                    }
+                }
+            }
+        } else {
+            // If the string is too short, try a more lenient approach
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            return LocalDate.parse(dateStr, formatter);
+        }
+    }
+
+
     private void loadConfig() {
+        logger.debug("Load Config");
         gitLabService = new GitLabService(config);
 
         // Check if required configuration is present
@@ -311,129 +322,120 @@ public class MainController {
         try {
             gitLabService.connect();
 
-//            List<GitLabService.Project> projects = gitLabService.getProjects();
-//            List<String> projectNames = new ArrayList<>();
-//            projectNames.add(NOT_SELECTED_ITEM);
-//            projectNames.addAll(projects.stream()
-//                    .map(GitLabService.Project::getPathName)
-//                    .sorted(String.CASE_INSENSITIVE_ORDER)
-//                    .collect(Collectors.toList()));
-//            projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
-//            projectComboBox.setValue(NOT_SELECTED_ITEM);
         } catch (IOException e) {
             logger.error("Error loading configuration", e);
             showError(I18nUtil.getMessage("error.loading"), I18nUtil.getMessage("error.loading.message", e.getMessage()));
         }
     }
 
-    private void onProjectSelected() {
+    private void refreshAllInfo() {
+        logger.debug("Refresh all info");
         String projectName = projectComboBox.getValue();
         // Save current main branch selection before updating
-        String currentMainBranch = destBranchComboBox.getValue();
+        String currentDestBranch = destBranchComboBox.getValue();
 
         // Clear destBranchComboBox when a project is selected
         destBranchComboBox.getItems().clear();
 
         // Always add "not selected" item as the first option
-        List<String> branchNames = new ArrayList<>();
-        branchNames.add(NOT_SELECTED_ITEM);
-        destBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
+        List<String> destBranchNames = new ArrayList<>();
+        destBranchNames.add(NOT_SELECTED_ITEM);
+        destBranchComboBox.setItems(FXCollections.observableArrayList(destBranchNames));
         destBranchComboBox.setValue(NOT_SELECTED_ITEM);
 
         // If "not selected" is chosen, clear the branch list and return
-        if (projectName == null || NOT_SELECTED_ITEM.equals(projectName)) {
+        if (NOT_SELECTED_ITEM.equals(projectName)) {
             branchesTableView.setItems(FXCollections.observableArrayList());
             updateStatus(I18nUtil.getMessage("app.ready"));
             updateProgress(0.0);
             updateBranchCounter();
-            return;
         }
 
-        if (projectName != null) {
-            // Update status bar
-            updateStatus(I18nUtil.getMessage("main.status.loading.branches"));
+        updateStatus(I18nUtil.getMessage("main.status.loading.project.branches"));
 
-            submitTask(() -> {
+        submitTask("refreshAllInfo: getProjects", () -> {
+            try {
+                // Виконання довготривалих операцій у фоновому потоці
+                List<GitLabService.Project> projects = null;
                 try {
-                    // Виконання довготривалих операцій у фоновому потоці
-                    List<GitLabService.Project> projects = null;
-                    try {
-                        projects = gitLabService.getProjects();
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                    // Extract project by matching subgroup/name format
-                    GitLabService.Project selectedProject = projects.stream()
-                            .filter(p -> p.getPathName().equals(projectName))
-                            .findFirst()
-                            .orElse(null);
-
-                    if (selectedProject != null) {
-                        String projectId = String.valueOf(selectedProject.getId());
-
-                        List<BranchModel> branches = gitLabService.getBranches(projectId);
-                        // Сортування гілок за назвою (не чутливо до регістру)
-                        branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
-
-                        // Create a copy of branchNames for thread safety
-                        List<String> updatedBranchNames = new ArrayList<>(branchNames);
-                        updatedBranchNames.addAll(
-                                branches.stream()
-                                        .map(BranchModel::getName)
-                                        .sorted(String.CASE_INSENSITIVE_ORDER)
-                                        .collect(Collectors.toList())
-                        );
-
-                        // Оновлення UI в потоці JavaFX
-                        Platform.runLater(() -> {
-                            currentProjectId = projectId;
-                            config.save();
-
-                            ObservableList<BranchModel> branchItems = FXCollections.observableArrayList(branches);
-                            branchesTableView.setItems(branchItems);
-
-                            // Add listeners to branch selection changes
-                            addBranchSelectionListeners(branchItems);
-
-                            destBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranchNames));
-
-                            // Restore the previously selected main branch if it still exists in the updated list
-                            if (currentMainBranch != null && updatedBranchNames.contains(currentMainBranch)) {
-                                destBranchComboBox.setValue(currentMainBranch);
-                            } else {
-                                destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-                            }
-
-                            updateStatus(I18nUtil.getMessage("app.ready"));
-                            updateBranchCounter();
-                        });
-                    } else {
-                        Platform.runLater(() -> {
-                            updateStatus(I18nUtil.getMessage("app.ready"));
-                        });
-                    }
-                } catch (Exception e) {
-                    Platform.runLater(() -> {
-                        logger.error("Error loading project branches", e);
-                        showError(I18nUtil.getMessage("error.loading"), I18nUtil.getMessage("error.loading.branches", e.getMessage()));
-                        updateStatus(I18nUtil.getMessage("error.loading"));
-                    });
+                    projects = gitLabService.getProjects();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            });
-        }
+                updateStatus(I18nUtil.getMessage("main.status.loading.dest.branches"));
+                // Extract project by matching subgroup/name format
+                GitLabService.Project selectedProject = projects.stream()
+                        .filter(p -> p.getPathName().equals(projectName))
+                        .findFirst()
+                        .orElse(null);
+                if (isNull(selectedProject)) {
+                    Platform.runLater(() -> {
+                        updateStatus(I18nUtil.getMessage("app.ready"));
+                    });
+                    return;
+                }
+                
+                String projectId = String.valueOf(selectedProject.getId());
+
+                List<BranchModel> viewBranches = gitLabService.getBranches(projectId);
+                // Сортування гілок за назвою (не чутливо до регістру)
+                viewBranches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
+
+                // Create a copy of destBranchNames for thread safety
+                List<String> updatedBranchNames = new ArrayList<>(destBranchNames);
+                updatedBranchNames.addAll(
+                        viewBranches.stream()
+                                .map(BranchModel::getName)
+                                .sorted(String.CASE_INSENSITIVE_ORDER)
+                                .collect(Collectors.toList())
+                );
+
+                // Оновлення UI в потоці JavaFX
+                logger.debug("refreshAllInfo.Platform.runLater(");
+                Platform.runLater(() -> {
+                    currentProjectId = projectId;
+                    config.save();
+
+                    ObservableList<BranchModel> branchItems = FXCollections.observableArrayList(viewBranches);
+                    branchesTableView.setItems(branchItems);
+
+                    // Add listeners to branch selection changes
+                    addBranchSelectionListeners(branchItems);
+
+                    destBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranchNames));
+
+                    // Restore the previously selected main branch if it still exists in the updated list
+                    if ( updatedBranchNames.contains(currentDestBranch)) {
+                        destBranchComboBox.setValue(currentDestBranch);
+                    } else {
+                        destBranchComboBox.setValue(NOT_SELECTED_ITEM);
+                    }
+
+                    updateStatus(I18nUtil.getMessage("app.ready"));
+                    updateBranchCounter();
+                });
+            } catch (Exception e) {
+                Platform.runLater(() -> {
+                    logger.error("Error loading project branches", e);
+                    showError(I18nUtil.getMessage("error.loading"), I18nUtil.getMessage("error.loading.branches", e.getMessage()));
+                    updateStatus(I18nUtil.getMessage("error.loading"));
+                });
+            }
+        });
     }
 
-    private void onMainBranchSelected() {
-        String mainBranch = destBranchComboBox.getValue();
-        if (mainBranch != null) {
+    private void onDestBranchSelected() {
+        logger.debug("On Dest Branch Selected");
+        String destBranch = destBranchComboBox.getValue();
+        if (destBranch != null) {
             // Set the initial state of the rescan button based on whether a main branch is selected
-            rescanMergedButton.setDisable(NOT_SELECTED_ITEM.equals(mainBranch));
+            rescanMergedButton.setDisable(NOT_SELECTED_ITEM.equals(destBranch));
 
-            ObservableList<BranchModel> branches = branchesTableView.getItems();
-            if (branches != null) {
-                // If "not selected" item is selected, reset the "Merged" flag for all branches
-                if (NOT_SELECTED_ITEM.equals(mainBranch)) {
-                    for (BranchModel branch : branches) {
+            ObservableList<BranchModel> viewBranches = branchesTableView.getItems();
+            if (viewBranches != null) {
+                // If "not selected" item is selected, reset the "Merged" flag for all viewBranches
+                if (NOT_SELECTED_ITEM.equals(destBranch)) {
+                    for (BranchModel branch : viewBranches) {
                         branch.setMergedIntoTarget(false);
                     }
                     updateBranchCounter();
@@ -442,18 +444,18 @@ public class MainController {
                     updateStatus(I18nUtil.getMessage("main.status.checking.merges"));
                     updateProgress(0.0);
 
-                    // Create a copy of the branches list for thread safety
-                    List<BranchModel> branchesCopy = new ArrayList<>(branches);
-                    String finalMainBranch = mainBranch;
-                    final int totalBranches = branchesCopy.size();
+                    // Create a copy of the viewBranches list for thread safety
+                    List<BranchModel> viewBranchesCopy = new ArrayList<>(viewBranches);
+                    String finalDestBranch = destBranch;
+                    final int totalViewBranches = viewBranchesCopy.size();
 
-                    submitTask(() -> {
+                    submitTask("onDestBranchSelected", () -> {
                         try {
-                            // Check if branches have been merged into the selected main branch
+                            // Check if viewBranches have been merged into the selected main branch
                             int branchCounter = 0;
-                            outerLoop: for (BranchModel branch : branchesCopy) {
+                            outerLoop: for (BranchModel branch : viewBranchesCopy) {
                                 // Update progress
-                                final double progress = (double) branchCounter / totalBranches;
+                                final double progress = (double) branchCounter / totalViewBranches;
                                 updateProgress(progress);
                                 // Check if pause is requested
                                 while (pauseRequested.get()) {
@@ -478,18 +480,18 @@ public class MainController {
 
                                 try {
                                     // Skip checking the main branch itself
-                                    if (branch.getName().equals(finalMainBranch)) {
+                                    if (branch.getName().equals(finalDestBranch)) {
                                         Platform.runLater(() -> branch.setMergedIntoTarget(false));
                                         continue outerLoop;
                                     }
                                     updateStatus(I18nUtil.getMessage("main.status.checking.branch", branch.getName()));
-                                    boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
+                                    boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalDestBranch);
 
                                     // Update UI in JavaFX thread
                                     final boolean finalIsMerged = isMerged;
                                     Platform.runLater(() -> branch.setMergedIntoTarget(finalIsMerged));
                                 } catch (IOException e) {
-                                    logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalMainBranch, e);
+                                    logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalDestBranch, e);
                                     Platform.runLater(() -> branch.setMergedIntoTarget(false));
                                 }
 
@@ -498,6 +500,7 @@ public class MainController {
                             }
 
                             // Update status bar and progress bar in JavaFX thread
+                            logger.debug("onDestBranchSelected.Platform.runLater(");
                             Platform.runLater(() -> {
                                 // Set progress to 1.0 to indicate completion
                                 progressBar.setProgress(1.0);
@@ -533,12 +536,14 @@ public class MainController {
     private void showSettings() {
         logger.debug("Showing settings dialog");
         if (DialogHelper.showSettingsDialog(stage, config, this)) {
-            loadConfig();
+            refreshAllInfo();
+//            loadConfig();
         }
     }
 
     @FXML
     private void exit() {
+        logger.debug("Exit");
         shutdown();
     }
 
@@ -591,7 +596,7 @@ public class MainController {
     private void refreshBranches() {
         logger.debug("Refreshing branches list");
         // onProjectSelected() already shows and hides the loading dialog
-        onProjectSelected();
+        refreshAllInfo();
     }
 
     @FXML
@@ -601,11 +606,12 @@ public class MainController {
         // Save current project and main branch selection before updating
         String currentProject = projectComboBox.getValue();
         String currentMainBranch = destBranchComboBox.getValue();
-
+        int selectedProjectIndex = projectComboBox.getSelectionModel().getSelectedIndex();
+        int selectedDestBranchIndex = destBranchComboBox.getSelectionModel().getSelectedIndex();
         // Update status bar
         updateStatus(I18nUtil.getMessage("main.status.updating.projects"));
 
-        submitTask(() -> {
+        submitTask("refreshProjects", () -> {
             try {
                 // Get projects from GitLab
                 List<GitLabService.Project> projects = gitLabService.getProjects();
@@ -621,6 +627,7 @@ public class MainController {
                 // Update UI in JavaFX thread
                 Platform.runLater(() -> {
                     // Update the project combobox
+                    logger.debug("refreshProjects.Platform.runLater(() ->");
                     projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
 
                     // Check if the current project still exists in the updated list
@@ -630,9 +637,12 @@ public class MainController {
 
                         // Get the branches for the current project
                         updateStatus(I18nUtil.getMessage("main.status.updating.project.branches"));
-
+                        progressBar.setProgress(0.0);
                         // The onProjectSelected() method will be called automatically when the project is selected,
                         // which will update the branches and restore the main branch if it still exists
+                        if (currentMainBranch != null && selectedDestBranchIndex > 0){
+//                            refresh(); ??????????????????????????????????????????
+                        }
                     } else {
                         // Reset both project and main branch to "not selected"
                         projectComboBox.setValue(NOT_SELECTED_ITEM);
@@ -701,7 +711,7 @@ public class MainController {
                 List<BranchModel> branchesToDelete = new ArrayList<>(confirmedBranches);
                 final int totalBranches = branchesToDelete.size();
 
-                submitTask(() -> {
+                submitTask("deleteSelected", () -> {
                     try {
                         int branchCounter = 0;
                         outerLoop: for (BranchModel branch : branchesToDelete) {
@@ -780,7 +790,7 @@ public class MainController {
             final String finalMainBranch = mainBranch;
             final LocalDate finalCutoffDate = cutoffDate;
 
-            submitTask(() -> {
+            submitTask("deleteMerged", () -> {
                 try {
                     // Create a copy of the branches list for thread safety
                     List<BranchModel> branchesCopy = new ArrayList<>(branchesTableView.getItems());
@@ -875,7 +885,7 @@ public class MainController {
                                 final int totalBranchesToDelete = branchesToDelete.size();
 
                                 // Submit a new task for deletion
-                                submitTask(() -> {
+                                submitTask("deleteMerged.deleteMerged", () -> {
                                     try {
                                         int deleteCounter = 0;
                                         outerLoop: for (BranchModel branch : branchesToDelete) {
@@ -971,7 +981,7 @@ public class MainController {
             final String finalMainBranch = mainBranch;
             final LocalDate finalCutoffDate = cutoffDate;
 
-            submitTask(() -> {
+            submitTask("deleteUnmerged", () -> {
                 try {
                     // Create a copy of the branches list for thread safety
                     List<BranchModel> branchesCopy = new ArrayList<>(branchesTableView.getItems());
@@ -1065,7 +1075,7 @@ public class MainController {
                                 final int totalBranchesToDelete = branchesToDelete.size();
 
                                 // Submit a new task for deletion
-                                submitTask(() -> {
+                                submitTask("deleteUnmerged.deleteUnmerged", () -> {
                                     try {
                                         int deleteCounter = 0;
                                         outerLoop: for (BranchModel branch : branchesToDelete) {
@@ -1184,7 +1194,7 @@ public class MainController {
         List<BranchModel> branchesCopy = new ArrayList<>(branches);
         String finalMainBranch = mainBranch;
 
-        submitTask(() -> {
+        submitTask("rescanMerged", () -> {
             try {
                 // Check if branches have been merged into the selected main branch
                 outerLoop: for (BranchModel branch : branchesCopy) {
@@ -1240,6 +1250,7 @@ public class MainController {
     }
 
     private void showError(String title, String message) {
+        logger.debug("showError. Title: {} Message: {}", title, message);
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setHeaderText(null);
@@ -1248,6 +1259,7 @@ public class MainController {
     }
 
     private void showInfo(String title, String message) {
+        logger.debug("showInfo. Title: {} Message: {}", title, message);
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
         alert.setHeaderText(null);
@@ -1256,6 +1268,7 @@ public class MainController {
     }
 
     private void showWarning(String title, String message) {
+        logger.debug("showWarning. Title: {} Message: {}", title, message);
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle(title);
         alert.setHeaderText(null);
@@ -1271,6 +1284,7 @@ public class MainController {
      * @param message The message to display
      */
     private void updateStatus(String message) {
+        logger.debug("updateStatus. Message: {}", message);
         if (Platform.isFxApplicationThread()) {
             statusLabel.setText(message);
             // Reset progress bar when status is "Ready"
@@ -1353,6 +1367,7 @@ public class MainController {
      * @param branches The list of branches to add listeners to
      */
     private void addBranchSelectionListeners(List<BranchModel> branches) {
+        logger.debug("addBranchSelectionListeners");
         if (branches == null) return;
 
         for (BranchModel branch : branches) {
@@ -1426,17 +1441,6 @@ public class MainController {
     }
 
     /**
-     * Submits a task to the ExecutorService with support for pausing and stopping.
-     * Note: The actual pause handling is implemented in the tasks themselves.
-     * 
-     * @param task The task to submit
-     * @return The Future representing the submitted task
-     */
-    private Future<?> submitTask(Runnable task) {
-        return submitTasks(List.of(task));
-    }
-
-    /**
      * Enables or disables UI elements during background operations.
      * 
      * @param disable true to disable UI elements, false to enable them
@@ -1475,10 +1479,10 @@ public class MainController {
      * Tasks are executed sequentially in the order they are provided.
      * Note: The actual pause handling is implemented in the tasks themselves.
      * 
-     * @param tasks The list of tasks to submit
-     * @return The Future representing the submitted tasks
+     * @param task The list of tasks to submit
      */
-    private Future<?> submitTasks(List<Runnable> tasks) {
+    private void submitTask(String name, Runnable task) {
+        logger.debug("submitTask: {}", name);
         // Reset pause flag
         pauseRequested.set(false);
 
@@ -1496,22 +1500,17 @@ public class MainController {
         Runnable wrappedTask = () -> {
             try {
                 // Run each task in sequence
-                for (Runnable task : tasks) {
-                    if (Thread.currentThread().isInterrupted()) {
-                        break;
-                    }
 
-                    try {
-                        // Run the actual task
-                        task.run();
-                    } catch (Exception e) {
-                        logger.error("Task execution error", e);
-                        Platform.runLater(() -> {
-                            updateStatus(I18nUtil.getMessage("error.execution"));
-                            showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("error.execution.message", e.getMessage()));
-                        });
-                        // Continue with the next task even if this one fails
-                    }
+                try {
+                    // Run the actual task
+                    task.run();
+                } catch (Exception e) {
+                    logger.error("Task execution error", e);
+                    Platform.runLater(() -> {
+                        updateStatus(I18nUtil.getMessage("error.execution"));
+                        showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("error.execution.message", e.getMessage()));
+                    });
+                    // Continue with the next task even if this one fails
                 }
             } finally {
                 // Disable control buttons when all tasks are done
@@ -1529,7 +1528,6 @@ public class MainController {
         // Submit the wrapped task
         Future<?> future = executorService.submit(wrappedTask);
         currentTasks.add(future);
-        return future;
     }
 
     /**
