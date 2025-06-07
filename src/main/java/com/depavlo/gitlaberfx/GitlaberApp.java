@@ -27,6 +27,7 @@ import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.controller.MainController;
 import com.depavlo.gitlaberfx.util.I18nUtil;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -75,8 +76,12 @@ public class GitlaberApp extends Application {
 
         stage.show();
 
-        // Trigger the initial data load after the UI is visible.
-        controller.startInitialLoad();
+        // Trigger the initial data load and set the default selection when it's done.
+        // This ensures the UI correctly displays the "not selected" state after async loading.
+        controller.startInitialLoad().thenRunAsync(
+            controller::selectInitialProject,
+            Platform::runLater
+        );
     }
 
     @Override

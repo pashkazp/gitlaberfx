@@ -165,32 +165,35 @@ public class MainController {
     //</editor-fold>
 
     //<editor-fold desc="Core Logic: Project and Branch Loading">
-    public void startInitialLoad() {
+    public CompletableFuture<Void> startInitialLoad() {
         if (!gitLabService.hasRequiredConfig()) {
             showWarning("warning.missing.settings", "warning.missing.settings.message");
-            return;
+            return CompletableFuture.completedFuture(null);
         }
-        refreshProjects();
+        return refreshProjects();
     }
 
     @FXML
-    public void refreshProjects() {
+    public CompletableFuture<Void> refreshProjects() {
+        CompletableFuture<Void> completionFuture = new CompletableFuture<>();
         submitTask(I18nUtil.getMessage("main.status.loading.project.branches"), () -> {
             try {
                 List<GitLabService.Project> projects = gitLabService.getProjects();
                 Platform.runLater(() -> {
                     uiStateModel.setAllProjects(projects);
                     populateProjectComboBoxFromModel();
+                    completionFuture.complete(null);
                 });
             } catch (IOException e) {
                 logger.error("Failed to load projects", e);
                 Platform.runLater(() -> showError("app.error", e.getMessage()));
+                completionFuture.completeExceptionally(e);
             }
         });
+        return completionFuture;
     }
 
     private void handleProjectSelection(String selectedProjectName) {
-        // Prevent action if the selection is cleared during repopulation
         if (selectedProjectName == null) return;
 
         if (selectedProjectName.equals(getNotSelectedItemText())) {
@@ -317,7 +320,7 @@ public class MainController {
         Platform.runLater(() -> {
             projectComboBox.setDisable(isBusy);
             destBranchComboBox.setDisable(isBusy);
-            branchesTableView.setDisable(false);
+            branchesTableView.setDisable(isBusy);
             refreshProjectsButton.setDisable(isBusy);
             refreshBranchesButton.setDisable(isBusy);
             selectAllButton.setDisable(isBusy);
@@ -353,15 +356,12 @@ public class MainController {
 
     //<editor-fold desc="State Restoration for Locale Change">
     public void repopulateFromState(UIStateModel existingModel, LocaleChangeService.SavedState savedState) {
-        // Set the internal model to the existing one
         this.uiStateModel.setAllProjects(existingModel.getAllProjects());
         this.uiStateModel.setCurrentProjectBranches(existingModel.getCurrentProjectBranches());
 
-        // Repopulate UI components from the model
         populateProjectComboBoxFromModel();
         populateBranchComboBoxFromModel();
 
-        // Restore selections
         if (savedState.projectName != null && projectComboBox.getItems().contains(savedState.projectName)) {
             projectComboBox.setValue(savedState.projectName);
         } else {
@@ -373,6 +373,10 @@ public class MainController {
         } else {
             destBranchComboBox.setValue(getNotSelectedItemText());
         }
+    }
+
+    public void selectInitialProject() {
+        projectComboBox.setValue(getNotSelectedItemText());
     }
     //</editor-fold>
 
@@ -605,5 +609,6 @@ public class MainController {
 
     //<editor-fold desc="Getters for LocaleChangeService">
     public UIStateModel getUiStateModel() { return uiStateModel; }
+    public CompletableFuture<Void> getBranchLoadFuture() { return branchLoadFuture; }
     //</editor-fold>
 }
