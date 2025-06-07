@@ -45,12 +45,15 @@ public class AppConfig {
 
     // For testing purposes only
     static void setConfigPaths(String configDir, String configFile, String oldConfigDir, String oldConfigFile) {
+        logger.debug("setConfigPaths: configDir={}, configFile={}, oldConfigDir={}, oldConfigFile={}", 
+                configDir, configFile, oldConfigDir, oldConfigFile);
         CONFIG_DIR = configDir;
         CONFIG_FILE = configFile;
     }
 
     // For testing purposes only
     static void resetConfigPaths() {
+        logger.debug("resetConfigPaths");
         CONFIG_DIR = System.getProperty("user.home") + "/.config/gitlaberfx";
         CONFIG_FILE = CONFIG_DIR + "/config.properties";
     }
@@ -64,10 +67,12 @@ public class AppConfig {
     private String locale;
 
     public AppConfig() {
+        logger.debug("AppConfig constructor");
         this.excludedBranches = new ArrayList<>();
     }
 
     public static AppConfig load() {
+        logger.debug("load");
         try {
             createConfigDirIfNotExists();
             File configFile = new File(CONFIG_FILE);
@@ -103,6 +108,7 @@ public class AppConfig {
     }
 
     public void save() {
+        logger.debug("save");
         try {
             createConfigDirIfNotExists();
 
@@ -130,6 +136,7 @@ public class AppConfig {
     }
 
     private static void createConfigDirIfNotExists() throws IOException {
+        logger.debug("createConfigDirIfNotExists");
         Path configPath = Paths.get(CONFIG_DIR);
         if (!Files.exists(configPath)) {
             Files.createDirectories(configPath);
@@ -138,43 +145,53 @@ public class AppConfig {
 
     // Getters and setters
     public String getGitlabUrl() {
+        logger.debug("getGitlabUrl");
         return gitlabUrl;
     }
 
     public void setGitlabUrl(String gitlabUrl) {
+        logger.debug("setGitlabUrl: gitlabUrl={}", gitlabUrl);
         this.gitlabUrl = gitlabUrl;
     }
 
     public String getApiKey() {
+        logger.debug("getApiKey");
         return apiKey;
     }
 
     public void setApiKey(String apiKey) {
+        logger.debug("setApiKey: apiKey={}", apiKey != null ? "not null" : "null");
         this.apiKey = apiKey;
     }
 
     public String getUsername() {
+        logger.debug("getUsername");
         return username;
     }
 
     public void setUsername(String username) {
+        logger.debug("setUsername: username={}", username);
         this.username = username;
     }
 
 
     public List<String> getExcludedBranches() {
+        logger.debug("getExcludedBranches");
         return excludedBranches;
     }
 
     public void setExcludedBranches(List<String> excludedBranches) {
+        logger.debug("setExcludedBranches: excludedBranches.size={}", excludedBranches != null ? excludedBranches.size() : "null");
         this.excludedBranches = excludedBranches;
     }
 
     public String getLocale() {
+        logger.debug("getLocale");
         return locale;
     }
 
     public void setLocale(String locale) {
+        logger.debug("setLocale: locale={}", locale);
         this.locale = locale;
     }
 } 

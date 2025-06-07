@@ -41,6 +41,7 @@ public class DatePickerController {
     private LocalDate selectedDate;
 
     public void initialize(Stage stage) {
+        logger.debug("initialize: stage={}", stage != null ? "not null" : "null");
         this.stage = stage;
         datePicker.setValue(LocalDate.now());
     }
@@ -60,6 +61,7 @@ public class DatePickerController {
     }
 
     public LocalDate getSelectedDate() {
+        logger.debug("getSelectedDate: selectedDate={}", selectedDate);
         return selectedDate;
     }
 } 

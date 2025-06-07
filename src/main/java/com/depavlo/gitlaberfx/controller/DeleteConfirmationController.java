@@ -87,6 +87,9 @@ public class DeleteConfirmationController {
     private List<BranchModel> selectedBranches;
 
     public void initialize(List<BranchModel> branches, Stage stage) {
+        logger.debug("initialize: branches.size={}, stage={}", 
+                branches != null ? branches.size() : "null", 
+                stage != null ? "not null" : "null");
         this.stage = stage;
 
         // Налаштування колонок таблиці
@@ -196,6 +199,8 @@ public class DeleteConfirmationController {
     }
 
     public List<BranchModel> getSelectedBranches() {
+        logger.debug("getSelectedBranches: selectedBranches.size={}", 
+                selectedBranches != null ? selectedBranches.size() : "null");
         return selectedBranches;
     }
 
@@ -204,6 +209,7 @@ public class DeleteConfirmationController {
      * This method is safe to call from any thread.
      */
     private void updateBranchCounter() {
+        logger.debug("updateBranchCounter");
         int totalBranches = branchesTableView.getItems().size();
         int selectedBranches = (int) branchesTableView.getItems().stream()
                 .filter(BranchModel::isSelected)
@@ -223,6 +229,7 @@ public class DeleteConfirmationController {
      * @param branches The list of branches to add listeners to
      */
     private void addBranchSelectionListeners(List<BranchModel> branches) {
+        logger.debug("addBranchSelectionListeners: branches.size={}", branches != null ? branches.size() : "null");
         if (branches == null) return;
 
         for (BranchModel branch : branches) {
@@ -243,6 +250,7 @@ public class DeleteConfirmationController {
      */
     private void setupBooleanColumn(TableColumn<BranchModel, Boolean> column, String propertyName, 
                                    String trueTooltip) {
+        logger.debug("setupBooleanColumn: propertyName={}, trueTooltip={}", propertyName, trueTooltip);
         column.setCellValueFactory(new PropertyValueFactory<>(propertyName));
         column.setCellFactory(col -> new TableCell<BranchModel, Boolean>() {
             @Override
