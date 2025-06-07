@@ -301,7 +301,7 @@ public class MainController {
         Platform.runLater(() -> {
             projectComboBox.setDisable(isBusy);
             destBranchComboBox.setDisable(isBusy);
-            branchesTableView.setDisable(isBusy);
+            branchesTableView.setDisable(false);
             refreshProjectsButton.setDisable(isBusy);
             refreshBranchesButton.setDisable(isBusy);
             selectAllButton.setDisable(isBusy);
