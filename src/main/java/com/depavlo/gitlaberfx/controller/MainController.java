@@ -213,6 +213,10 @@ public class MainController {
                 .filter(p -> p.getPathName().equals(selectedProjectName))
                 .findFirst()
                 .ifPresent(project -> {
+                    // This is the key change: explicitly clear the target branch from the model
+                    // when a new project is selected. This makes the state consistent.
+                    uiStateModel.setCurrentTargetBranchName(null);
+
                     uiStateModel.setCurrentProjectId(String.valueOf(project.getId()));
                     uiStateModel.setCurrentProjectName(project.getPathName());
                     this.branchLoadFuture = loadBranchesForProject(String.valueOf(project.getId()));
@@ -229,6 +233,7 @@ public class MainController {
                 Platform.runLater(() -> {
                     uiStateModel.setCurrentProjectBranches(branches);
 
+                    // Elegantly reset the branch ComboBox without triggering the listener
                     destBranchComboBox.valueProperty().removeListener(targetBranchListener);
                     populateBranchComboBoxFromModel();
                     destBranchComboBox.valueProperty().addListener(targetBranchListener);
@@ -248,8 +253,11 @@ public class MainController {
         if (targetBranchName == null) return;
 
         if (targetBranchName.equals(getNotSelectedItemText())) {
-            uiStateModel.getCurrentProjectBranches().forEach(b -> b.setMergedIntoTarget(false));
-            uiStateModel.setCurrentTargetBranchName(null);
+            // Only update model state if it's a real user action, not a programmatic reset.
+            if (uiStateModel.getCurrentTargetBranchName() != null) {
+                uiStateModel.getCurrentProjectBranches().forEach(b -> b.setMergedIntoTarget(false));
+                uiStateModel.setCurrentTargetBranchName(null);
+            }
             rescanMergedButton.setDisable(true);
         } else {
             uiStateModel.setCurrentTargetBranchName(targetBranchName);
@@ -295,6 +303,7 @@ public class MainController {
         uiStateModel.clearProjectBranches();
         uiStateModel.setCurrentProjectId(null);
         uiStateModel.setCurrentProjectName(null);
+        uiStateModel.setCurrentTargetBranchName(null);
         populateBranchComboBoxFromModel();
     }
     //</editor-fold>
