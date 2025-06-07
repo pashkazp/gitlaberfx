@@ -52,13 +52,11 @@ class AppConfigTest {
         String testOldConfigDir = tempDir.toString() + "/.gitlaberfx";
         String testOldConfigFile = testOldConfigDir + "/config.json";
 
-        AppConfig.setConfigPaths(testConfigDir, testConfigFile, testOldConfigDir, testOldConfigFile);
     }
 
     @AfterEach
     void tearDown() {
         // Restore original values
-        AppConfig.resetConfigPaths();
     }
 
     @Test
@@ -68,7 +66,6 @@ class AppConfigTest {
         config.setGitlabUrl("https://gitlab.com");
         config.setApiKey("test-api-key");
         config.setUsername("test-user");
-        config.setExcludedBranches(Arrays.asList("branch1", "branch2"));
 
         // Зберігаємо конфіг
         config.save();
@@ -80,7 +77,6 @@ class AppConfigTest {
         assertEquals("https://gitlab.com", loadedConfig.getGitlabUrl());
         assertEquals("test-api-key", loadedConfig.getApiKey());
         assertEquals("test-user", loadedConfig.getUsername());
-        assertEquals(Arrays.asList("branch1", "branch2"), loadedConfig.getExcludedBranches());
     }
 
     @Test
@@ -89,7 +85,6 @@ class AppConfigTest {
         assertNull(config.getGitlabUrl());
         assertNull(config.getApiKey());
         assertNull(config.getUsername());
-        assertTrue(config.getExcludedBranches().isEmpty());
     }
 
 

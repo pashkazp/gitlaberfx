@@ -31,8 +31,12 @@ import com.depavlo.gitlaberfx.service.LocaleChangeService;
 import com.depavlo.gitlaberfx.util.DialogHelper;
 import com.depavlo.gitlaberfx.util.I18nUtil;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.BooleanBinding;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
@@ -60,9 +64,6 @@ public class MainController {
     private GitLabService gitLabService;
     private Stage stage;
     private final UIStateModel uiStateModel = new UIStateModel();
-
-    // The ExecutorService now uses a ThreadFactory to create daemon threads.
-    // This is a robust way to ensure background tasks don't prevent the application from exiting.
     private final ExecutorService executorService = Executors.newCachedThreadPool(r -> {
         Thread thread = Executors.defaultThreadFactory().newThread(r);
         thread.setDaemon(true);
@@ -78,7 +79,6 @@ public class MainController {
     private ChangeListener<String> projectSelectionListener;
     private ChangeListener<String> targetBranchListener;
 
-
     // FXML Fields
     @FXML private ComboBox<String> projectComboBox;
     @FXML private ComboBox<String> destBranchComboBox;
@@ -90,7 +90,7 @@ public class MainController {
     @FXML private Label statusLabel, branchCounterLabel;
     @FXML private ProgressBar progressBar;
     @FXML private Button playButton, pauseButton, stopButton, rescanMergedButton;
-    @FXML private Button refreshProjectsButton, refreshBranchesButton, selectAllButton, deselectAllButton, invertSelectionButton, deleteSelectedButton, mainDelMergedButton, mainDelUnmergedButton, addToExclusionsButton;
+    @FXML private Button refreshProjectsButton, refreshBranchesButton, selectAllButton, deselectAllButton, invertSelectionButton, deleteSelectedButton, mainDelMergedButton, mainDelUnmergedButton;
 
     public void initialize(AppConfig config, Stage stage) {
         this.config = config;
@@ -100,13 +100,14 @@ public class MainController {
         setupBindings();
         setupEventListeners();
         setupTableColumns();
+        setupButtonBindings(); // Elegantly set up button disable logic
     }
 
     //<editor-fold desc="Initialization & Setup">
     private void setupBindings() {
         statusLabel.textProperty().bind(uiStateModel.statusMessageProperty());
         branchesTableView.setItems(uiStateModel.getCurrentProjectBranches());
-        uiStateModel.getCurrentProjectBranches().addListener((javafx.collections.ListChangeListener.Change<? extends BranchModel> c) -> updateBranchCounter());
+        uiStateModel.getCurrentProjectBranches().addListener((ListChangeListener<BranchModel>) c -> updateBranchCounter());
     }
 
     private void setupEventListeners() {
@@ -124,10 +125,11 @@ public class MainController {
         };
         destBranchComboBox.valueProperty().addListener(targetBranchListener);
 
-        uiStateModel.getCurrentProjectBranches().addListener((javafx.collections.ListChangeListener.Change<? extends BranchModel> c) -> {
+        // This listener ensures that if any branch's "selected" state changes, the counter updates.
+        uiStateModel.getCurrentProjectBranches().addListener((ListChangeListener<BranchModel>) c -> {
             while (c.next()) {
                 if (c.wasAdded()) {
-                    c.getAddedSubList().forEach(branch -> branch.selectedProperty().addListener((o) -> updateBranchCounter()));
+                    c.getAddedSubList().forEach(branch -> branch.selectedProperty().addListener((o, ov, nv) -> updateBranchCounter()));
                 }
             }
         });
@@ -141,6 +143,32 @@ public class MainController {
                 }
             }
         });
+    }
+
+    private void setupButtonBindings() {
+        // Condition for when no project is selected or the branch list is empty
+        BooleanBinding noProjectOrBranches = uiStateModel.currentProjectIdProperty().isNull()
+                .or(Bindings.isEmpty(uiStateModel.getCurrentProjectBranches()));
+
+        // Condition for when no target branch is selected
+        BooleanBinding noTargetBranch = uiStateModel.currentTargetBranchNameProperty().isNull();
+
+        // 2. Disable "Delete Selected" if no project/branches OR no branches are selected
+        BooleanBinding noBranchSelected = Bindings.createBooleanBinding(() ->
+                        uiStateModel.getCurrentProjectBranches().stream().noneMatch(BranchModel::isSelected),
+                uiStateModel.getCurrentProjectBranches()
+        );
+        deleteSelectedButton.disableProperty().bind(noProjectOrBranches.or(noBranchSelected));
+
+        // 3. Disable "Delete Merged" if no project/target OR no branches are marked as merged
+        BooleanBinding noMergedBranches = Bindings.createBooleanBinding(() ->
+                        uiStateModel.getCurrentProjectBranches().stream().noneMatch(BranchModel::isMergedIntoTarget),
+                uiStateModel.getCurrentProjectBranches()
+        );
+        mainDelMergedButton.disableProperty().bind(noProjectOrBranches.or(noTargetBranch).or(noMergedBranches));
+
+        // 4. Disable "Delete Unmerged" if no project/target branch
+        mainDelUnmergedButton.disableProperty().bind(noProjectOrBranches.or(noTargetBranch));
     }
 
     private void setupTableColumns() {
@@ -236,9 +264,9 @@ public class MainController {
                 branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
 
                 Platform.runLater(() -> {
-                    uiStateModel.setCurrentProjectBranches(branches);
-
+                    // This clever trick prevents the listener from firing on a programmatic change
                     destBranchComboBox.valueProperty().removeListener(targetBranchListener);
+                    uiStateModel.setCurrentProjectBranches(branches);
                     populateBranchComboBoxFromModel();
                     destBranchComboBox.valueProperty().addListener(targetBranchListener);
 
@@ -344,16 +372,17 @@ public class MainController {
         Platform.runLater(() -> {
             projectComboBox.setDisable(isBusy);
             destBranchComboBox.setDisable(isBusy);
-            branchesTableView.setDisable(false);
+            branchesTableView.setDisable(isBusy);
             refreshProjectsButton.setDisable(isBusy);
             refreshBranchesButton.setDisable(isBusy);
             selectAllButton.setDisable(isBusy);
             deselectAllButton.setDisable(isBusy);
             invertSelectionButton.setDisable(isBusy);
-            deleteSelectedButton.setDisable(isBusy);
-            mainDelMergedButton.setDisable(isBusy);
-            mainDelUnmergedButton.setDisable(isBusy);
-            addToExclusionsButton.setDisable(isBusy);
+
+            // Let the bindings handle the delete buttons
+            // deleteSelectedButton.setDisable(isBusy);
+            // mainDelMergedButton.setDisable(isBusy);
+            // mainDelUnmergedButton.setDisable(isBusy);
 
             boolean targetSelected = destBranchComboBox.getValue() != null && !destBranchComboBox.getValue().equals(getNotSelectedItemText());
             rescanMergedButton.setDisable(isBusy || !targetSelected);
@@ -514,20 +543,6 @@ public class MainController {
     @FXML private void selectAll() { uiStateModel.getCurrentProjectBranches().forEach(b -> b.setSelected(!b.isProtected())); }
     @FXML private void deselectAll() { uiStateModel.getCurrentProjectBranches().forEach(b -> b.setSelected(false)); }
     @FXML private void invertSelection() { uiStateModel.getCurrentProjectBranches().forEach(b -> { if(!b.isProtected()) b.setSelected(!b.isSelected()); }); }
-
-    @FXML
-    private void addToExclusions() {
-        List<String> selectedNames = uiStateModel.getCurrentProjectBranches().stream()
-                .filter(BranchModel::isSelected)
-                .map(BranchModel::getName)
-                .collect(Collectors.toList());
-
-        if (!selectedNames.isEmpty()) {
-            config.getExcludedBranches().addAll(selectedNames);
-            config.save();
-            showInfo("info.title", "info.branches.added.to.exclusions");
-        }
-    }
 
     @FXML private void showSettings() {
         if (DialogHelper.showSettingsDialog(stage, config, this)) {
