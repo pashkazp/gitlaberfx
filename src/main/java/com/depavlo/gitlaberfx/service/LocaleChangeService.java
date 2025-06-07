@@ -26,7 +26,6 @@ package com.depavlo.gitlaberfx.service;
 import com.depavlo.gitlaberfx.GitlaberApp;
 import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.controller.MainController;
-import com.depavlo.gitlaberfx.model.BranchModel;
 import com.depavlo.gitlaberfx.model.UIStateModel;
 import com.depavlo.gitlaberfx.util.I18nUtil;
 import javafx.application.Platform;
@@ -38,7 +37,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -49,6 +47,7 @@ public class LocaleChangeService {
     private static final Logger logger = LoggerFactory.getLogger(LocaleChangeService.class);
 
     public static class SavedState {
+        public String projectId;
         public String projectName;
         public String targetBranchName;
     }
@@ -59,6 +58,7 @@ public class LocaleChangeService {
             // 1. Get the entire state model from the current controller
             UIStateModel existingModel = currentController.getUiStateModel();
             SavedState savedSelections = new SavedState();
+            savedSelections.projectId = existingModel.getCurrentProjectId();
             savedSelections.projectName = existingModel.getCurrentProjectName();
             savedSelections.targetBranchName = existingModel.getCurrentTargetBranchName();
 

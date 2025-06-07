@@ -368,31 +368,37 @@ public class MainController {
 
     //<editor-fold desc="State Restoration for Locale Change">
     public void repopulateFromState(UIStateModel existingModel, LocaleChangeService.SavedState savedState) {
+        // First, update the new controller's model to be the single source of truth
         this.uiStateModel.setAllProjects(existingModel.getAllProjects());
         this.uiStateModel.setCurrentProjectBranches(existingModel.getCurrentProjectBranches());
+        this.uiStateModel.setCurrentProjectId(savedState.projectId);
+        this.uiStateModel.setCurrentProjectName(savedState.projectName);
+        this.uiStateModel.setCurrentTargetBranchName(savedState.targetBranchName);
 
-        // Temporarily disable listeners
+        // Temporarily disable listeners to prevent unwanted side effects during programmatic UI updates
         projectComboBox.valueProperty().removeListener(projectSelectionListener);
         destBranchComboBox.valueProperty().removeListener(targetBranchListener);
 
-        // Repopulate UI components with existing data
+        // Repopulate UI components with existing data from the now-updated model
         populateProjectComboBoxFromModel();
         populateBranchComboBoxFromModel();
 
-        // Restore selections without triggering listeners
-        if (savedState.projectName != null && projectComboBox.getItems().contains(savedState.projectName)) {
-            projectComboBox.setValue(savedState.projectName);
+        // Restore selections to the UI ComboBoxes from the model's state
+        String projectToSelect = this.uiStateModel.getCurrentProjectName();
+        if (projectToSelect != null && projectComboBox.getItems().contains(projectToSelect)) {
+            projectComboBox.setValue(projectToSelect);
         } else {
             projectComboBox.setValue(getNotSelectedItemText());
         }
 
-        if (savedState.targetBranchName != null && destBranchComboBox.getItems().contains(savedState.targetBranchName)) {
-            destBranchComboBox.setValue(savedState.targetBranchName);
+        String branchToSelect = this.uiStateModel.getCurrentTargetBranchName();
+        if (branchToSelect != null && destBranchComboBox.getItems().contains(branchToSelect)) {
+            destBranchComboBox.setValue(branchToSelect);
         } else {
             destBranchComboBox.setValue(getNotSelectedItemText());
         }
 
-        // Re-enable listeners
+        // Re-enable listeners for user interactions
         projectComboBox.valueProperty().addListener(projectSelectionListener);
         destBranchComboBox.valueProperty().addListener(targetBranchListener);
     }
