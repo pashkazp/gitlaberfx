@@ -31,6 +31,7 @@ import com.depavlo.gitlaberfx.service.LocaleChangeService;
 import com.depavlo.gitlaberfx.util.DialogHelper;
 import com.depavlo.gitlaberfx.util.I18nUtil;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -65,6 +66,9 @@ public class MainController {
     private final List<Future<?>> currentTasks = new ArrayList<>();
     private final AtomicBoolean pauseRequested = new AtomicBoolean(false);
     private CompletableFuture<Void> branchLoadFuture = CompletableFuture.completedFuture(null);
+
+    // Listeners
+    private ChangeListener<String> targetBranchListener;
 
 
     // FXML Fields
@@ -103,11 +107,14 @@ public class MainController {
                 handleProjectSelection(newVal);
             }
         });
-        destBranchComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+
+        // Create and store the listener to be able to remove and add it back
+        targetBranchListener = (obs, oldVal, newVal) -> {
             if (newVal != null) {
                 handleTargetBranchSelection(newVal);
             }
-        });
+        };
+        destBranchComboBox.valueProperty().addListener(targetBranchListener);
 
         uiStateModel.getCurrentProjectBranches().addListener((javafx.collections.ListChangeListener.Change<? extends BranchModel> c) -> {
             while (c.next()) {
@@ -220,7 +227,12 @@ public class MainController {
 
                 Platform.runLater(() -> {
                     uiStateModel.setCurrentProjectBranches(branches);
+
+                    // Elegantly reset the branch ComboBox without triggering the listener
+                    destBranchComboBox.valueProperty().removeListener(targetBranchListener);
                     populateBranchComboBoxFromModel();
+                    destBranchComboBox.valueProperty().addListener(targetBranchListener);
+
                     completionFuture.complete(null);
                 });
             } catch (IOException e) {
@@ -360,7 +372,6 @@ public class MainController {
         this.uiStateModel.setCurrentProjectBranches(existingModel.getCurrentProjectBranches());
 
         populateProjectComboBoxFromModel();
-        populateBranchComboBoxFromModel();
 
         if (savedState.projectName != null && projectComboBox.getItems().contains(savedState.projectName)) {
             projectComboBox.setValue(savedState.projectName);
@@ -368,6 +379,8 @@ public class MainController {
             projectComboBox.setValue(getNotSelectedItemText());
         }
 
+        // The branch combo box is populated as a result of the project selection change listener
+        // We just need to restore the selection if applicable
         if (savedState.targetBranchName != null && destBranchComboBox.getItems().contains(savedState.targetBranchName)) {
             destBranchComboBox.setValue(savedState.targetBranchName);
         } else {
