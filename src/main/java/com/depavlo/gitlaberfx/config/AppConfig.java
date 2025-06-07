@@ -23,12 +23,13 @@
  */
 package com.depavlo.gitlaberfx.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,12 +40,8 @@ public class AppConfig {
     private static String CONFIG_DIR = System.getProperty("user.home") + "/.config/gitlaberfx";
     private static String CONFIG_FILE = CONFIG_DIR + "/config.properties";
 
-    private static final ObjectMapper objectMapper = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
-
     private String gitlabUrl;
     private String apiKey;
-    private String username;
     private String locale;
 
     public AppConfig() {
@@ -64,7 +61,6 @@ public class AppConfig {
 
                 config.setGitlabUrl(properties.getProperty("gitlabUrl"));
                 config.setApiKey(properties.getProperty("apiKey"));
-                config.setUsername(properties.getProperty("username"));
                 config.setLocale(properties.getProperty("locale", "en_US"));
 
                 return config;
@@ -84,7 +80,6 @@ public class AppConfig {
 
             if (gitlabUrl != null) properties.setProperty("gitlabUrl", gitlabUrl);
             if (apiKey != null) properties.setProperty("apiKey", apiKey);
-            if (username != null) properties.setProperty("username", username);
             if (locale != null) properties.setProperty("locale", locale);
 
             try (FileOutputStream fos = new FileOutputStream(new File(CONFIG_FILE))) {
@@ -117,14 +112,6 @@ public class AppConfig {
 
     public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 
     public String getLocale() {
