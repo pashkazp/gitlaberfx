@@ -68,6 +68,7 @@ public class MainController {
     private CompletableFuture<Void> branchLoadFuture = CompletableFuture.completedFuture(null);
 
     // Listeners
+    private ChangeListener<String> projectSelectionListener;
     private ChangeListener<String> targetBranchListener;
 
 
@@ -102,13 +103,13 @@ public class MainController {
     }
 
     private void setupEventListeners() {
-        projectComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+        projectSelectionListener = (obs, oldVal, newVal) -> {
             if (newVal != null) {
                 handleProjectSelection(newVal);
             }
-        });
+        };
+        projectComboBox.valueProperty().addListener(projectSelectionListener);
 
-        // Create and store the listener to be able to remove and add it back
         targetBranchListener = (obs, oldVal, newVal) -> {
             if (newVal != null) {
                 handleTargetBranchSelection(newVal);
@@ -228,7 +229,6 @@ public class MainController {
                 Platform.runLater(() -> {
                     uiStateModel.setCurrentProjectBranches(branches);
 
-                    // Elegantly reset the branch ComboBox without triggering the listener
                     destBranchComboBox.valueProperty().removeListener(targetBranchListener);
                     populateBranchComboBoxFromModel();
                     destBranchComboBox.valueProperty().addListener(targetBranchListener);
@@ -371,21 +371,30 @@ public class MainController {
         this.uiStateModel.setAllProjects(existingModel.getAllProjects());
         this.uiStateModel.setCurrentProjectBranches(existingModel.getCurrentProjectBranches());
 
-        populateProjectComboBoxFromModel();
+        // Temporarily disable listeners
+        projectComboBox.valueProperty().removeListener(projectSelectionListener);
+        destBranchComboBox.valueProperty().removeListener(targetBranchListener);
 
+        // Repopulate UI components with existing data
+        populateProjectComboBoxFromModel();
+        populateBranchComboBoxFromModel();
+
+        // Restore selections without triggering listeners
         if (savedState.projectName != null && projectComboBox.getItems().contains(savedState.projectName)) {
             projectComboBox.setValue(savedState.projectName);
         } else {
             projectComboBox.setValue(getNotSelectedItemText());
         }
 
-        // The branch combo box is populated as a result of the project selection change listener
-        // We just need to restore the selection if applicable
         if (savedState.targetBranchName != null && destBranchComboBox.getItems().contains(savedState.targetBranchName)) {
             destBranchComboBox.setValue(savedState.targetBranchName);
         } else {
             destBranchComboBox.setValue(getNotSelectedItemText());
         }
+
+        // Re-enable listeners
+        projectComboBox.valueProperty().addListener(projectSelectionListener);
+        destBranchComboBox.valueProperty().addListener(targetBranchListener);
     }
 
     public void selectInitialProject() {
