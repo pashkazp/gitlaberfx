@@ -98,8 +98,16 @@ public class MainController {
     }
 
     private void setupEventListeners() {
-        projectComboBox.valueProperty().addListener((obs, oldVal, newVal) -> handleProjectSelection(newVal));
-        destBranchComboBox.valueProperty().addListener((obs, oldVal, newVal) -> handleTargetBranchSelection(newVal));
+        projectComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                handleProjectSelection(newVal);
+            }
+        });
+        destBranchComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                handleTargetBranchSelection(newVal);
+            }
+        });
 
         uiStateModel.getCurrentProjectBranches().addListener((javafx.collections.ListChangeListener.Change<? extends BranchModel> c) -> {
             while (c.next()) {
@@ -157,41 +165,35 @@ public class MainController {
     //</editor-fold>
 
     //<editor-fold desc="Core Logic: Project and Branch Loading">
-    public CompletableFuture<Void> startInitialLoad() {
+    public void startInitialLoad() {
         if (!gitLabService.hasRequiredConfig()) {
             showWarning("warning.missing.settings", "warning.missing.settings.message");
-            return CompletableFuture.completedFuture(null);
+            return;
         }
-        return refreshProjects();
+        refreshProjects();
     }
 
     @FXML
-    public CompletableFuture<Void> refreshProjects() {
-        CompletableFuture<Void> completionFuture = new CompletableFuture<>();
+    public void refreshProjects() {
         submitTask(I18nUtil.getMessage("main.status.loading.project.branches"), () -> {
             try {
                 List<GitLabService.Project> projects = gitLabService.getProjects();
-                List<String> projectNames = new ArrayList<>();
-                projectNames.add(getNotSelectedItemText());
-                projectNames.addAll(projects.stream().map(GitLabService.Project::getPathName).sorted(String.CASE_INSENSITIVE_ORDER).collect(Collectors.toList()));
-
                 Platform.runLater(() -> {
                     uiStateModel.setAllProjects(projects);
-                    projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
-                    projectComboBox.setValue(getNotSelectedItemText());
-                    completionFuture.complete(null);
+                    populateProjectComboBoxFromModel();
                 });
             } catch (IOException e) {
                 logger.error("Failed to load projects", e);
                 Platform.runLater(() -> showError("app.error", e.getMessage()));
-                completionFuture.completeExceptionally(e);
             }
         });
-        return completionFuture;
     }
 
     private void handleProjectSelection(String selectedProjectName) {
-        if (selectedProjectName == null || selectedProjectName.equals(getNotSelectedItemText())) {
+        // Prevent action if the selection is cleared during repopulation
+        if (selectedProjectName == null) return;
+
+        if (selectedProjectName.equals(getNotSelectedItemText())) {
             clearBranchView();
             return;
         }
@@ -201,7 +203,7 @@ public class MainController {
                 .findFirst()
                 .ifPresent(project -> {
                     uiStateModel.setCurrentProjectId(String.valueOf(project.getId()));
-                    uiStateModel.setCurrentProjectName(project.getPathName()); // Use full path name
+                    uiStateModel.setCurrentProjectName(project.getPathName());
                     this.branchLoadFuture = loadBranchesForProject(String.valueOf(project.getId()));
                 });
     }
@@ -215,7 +217,7 @@ public class MainController {
 
                 Platform.runLater(() -> {
                     uiStateModel.setCurrentProjectBranches(branches);
-                    updateTargetBranchSelector();
+                    populateBranchComboBoxFromModel();
                     completionFuture.complete(null);
                 });
             } catch (IOException e) {
@@ -228,7 +230,9 @@ public class MainController {
     }
 
     private void handleTargetBranchSelection(String targetBranchName) {
-        if (targetBranchName == null || targetBranchName.equals(getNotSelectedItemText())) {
+        if (targetBranchName == null) return;
+
+        if (targetBranchName.equals(getNotSelectedItemText())) {
             uiStateModel.getCurrentProjectBranches().forEach(b -> b.setMergedIntoTarget(false));
             uiStateModel.setCurrentTargetBranchName(null);
             rescanMergedButton.setDisable(true);
@@ -276,16 +280,28 @@ public class MainController {
         uiStateModel.clearProjectBranches();
         uiStateModel.setCurrentProjectId(null);
         uiStateModel.setCurrentProjectName(null);
-        updateTargetBranchSelector();
+        populateBranchComboBoxFromModel();
     }
     //</editor-fold>
 
     //<editor-fold desc="UI Update & Helper Methods">
-    private void updateTargetBranchSelector() {
+    private void populateProjectComboBoxFromModel() {
+        List<String> projectNames = new ArrayList<>();
+        projectNames.add(getNotSelectedItemText());
+        projectNames.addAll(uiStateModel.getAllProjects().stream()
+                .map(GitLabService.Project::getPathName)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .collect(Collectors.toList()));
+        projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
+    }
+
+    private void populateBranchComboBoxFromModel() {
         List<String> branchNames = new ArrayList<>();
         branchNames.add(getNotSelectedItemText());
         if (!uiStateModel.getCurrentProjectBranches().isEmpty()) {
-            branchNames.addAll(uiStateModel.getCurrentProjectBranches().stream().map(BranchModel::getName).collect(Collectors.toList()));
+            branchNames.addAll(uiStateModel.getCurrentProjectBranches().stream()
+                    .map(BranchModel::getName)
+                    .collect(Collectors.toList()));
         }
         destBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
         destBranchComboBox.setValue(getNotSelectedItemText());
@@ -332,6 +348,31 @@ public class MainController {
 
     private String getNotSelectedItemText() {
         return I18nUtil.getMessage("app.not.selected");
+    }
+    //</editor-fold>
+
+    //<editor-fold desc="State Restoration for Locale Change">
+    public void repopulateFromState(UIStateModel existingModel, LocaleChangeService.SavedState savedState) {
+        // Set the internal model to the existing one
+        this.uiStateModel.setAllProjects(existingModel.getAllProjects());
+        this.uiStateModel.setCurrentProjectBranches(existingModel.getCurrentProjectBranches());
+
+        // Repopulate UI components from the model
+        populateProjectComboBoxFromModel();
+        populateBranchComboBoxFromModel();
+
+        // Restore selections
+        if (savedState.projectName != null && projectComboBox.getItems().contains(savedState.projectName)) {
+            projectComboBox.setValue(savedState.projectName);
+        } else {
+            projectComboBox.setValue(getNotSelectedItemText());
+        }
+
+        if (savedState.targetBranchName != null && destBranchComboBox.getItems().contains(savedState.targetBranchName)) {
+            destBranchComboBox.setValue(savedState.targetBranchName);
+        } else {
+            destBranchComboBox.setValue(getNotSelectedItemText());
+        }
     }
     //</editor-fold>
 
@@ -564,8 +605,5 @@ public class MainController {
 
     //<editor-fold desc="Getters for LocaleChangeService">
     public UIStateModel getUiStateModel() { return uiStateModel; }
-    public ComboBox<String> getProjectComboBox() { return projectComboBox; }
-    public ComboBox<String> getDestBranchComboBox() { return destBranchComboBox; }
-    public CompletableFuture<Void> getBranchLoadFuture() { return branchLoadFuture; }
     //</editor-fold>
 }

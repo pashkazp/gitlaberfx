@@ -26,6 +26,7 @@ package com.depavlo.gitlaberfx.service;
 import com.depavlo.gitlaberfx.GitlaberApp;
 import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.controller.MainController;
+import com.depavlo.gitlaberfx.model.BranchModel;
 import com.depavlo.gitlaberfx.model.UIStateModel;
 import com.depavlo.gitlaberfx.util.I18nUtil;
 import javafx.application.Platform;
@@ -37,9 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Service for handling dynamic locale changes in the application.
@@ -47,65 +48,35 @@ import java.util.concurrent.CompletableFuture;
 public class LocaleChangeService {
     private static final Logger logger = LoggerFactory.getLogger(LocaleChangeService.class);
 
-    private static class SavedState {
-        String projectName;
-        String targetBranchName;
+    public static class SavedState {
+        public String projectName;
+        public String targetBranchName;
     }
 
     public static void changeLocale(Locale newLocale, AppConfig config, Stage stage, MainController currentController) {
         logger.info("Changing locale to: {}", newLocale);
         try {
-            SavedState state = saveState(currentController.getUiStateModel());
+            // 1. Get the entire state model from the current controller
+            UIStateModel existingModel = currentController.getUiStateModel();
+            SavedState savedSelections = new SavedState();
+            savedSelections.projectName = existingModel.getCurrentProjectName();
+            savedSelections.targetBranchName = existingModel.getCurrentTargetBranchName();
 
+            // 2. Update locale globally
             I18nUtil.setLocale(newLocale);
             config.setLocale(newLocale.toLanguageTag().replace('-', '_'));
             config.save();
 
+            // 3. Reload UI, which creates a new controller
             MainController newController = reloadUI(stage, config);
-            restoreState(newController, state);
+
+            // 4. Repopulate the new controller with the existing data
+            newController.repopulateFromState(existingModel, savedSelections);
 
         } catch (Exception e) {
             logger.error("Error changing locale", e);
             throw new RuntimeException("Failed to change locale", e);
         }
-    }
-
-    private static SavedState saveState(UIStateModel model) {
-        logger.debug("Saving UI state from model");
-        SavedState state = new SavedState();
-        // Corrected method calls to use standard getters
-        state.projectName = model.getCurrentProjectName();
-        state.targetBranchName = model.getCurrentTargetBranchName();
-        logger.debug("Saved state: Project='{}', TargetBranch='{}'", state.projectName, state.targetBranchName);
-        return state;
-    }
-
-    private static void restoreState(MainController controller, SavedState state) {
-        logger.debug("Orchestrating state restoration for project: '{}', target: '{}'", state.projectName, state.targetBranchName);
-
-        CompletableFuture<Void> projectsReadyFuture = controller.startInitialLoad();
-
-        projectsReadyFuture.thenAcceptAsync(v -> {
-            if (state.projectName != null && !state.projectName.isEmpty()) {
-                if (controller.getProjectComboBox().getItems().contains(state.projectName)) {
-                    logger.debug("Projects loaded. Programmatically setting project to '{}'", state.projectName);
-                    controller.getProjectComboBox().setValue(state.projectName);
-
-                    controller.getBranchLoadFuture().thenAcceptAsync(v2 -> {
-                        if (state.targetBranchName != null && !state.targetBranchName.isEmpty()) {
-                            if (controller.getDestBranchComboBox().getItems().contains(state.targetBranchName)) {
-                                logger.debug("Branches loaded. Programmatically setting target branch to '{}'", state.targetBranchName);
-                                controller.getDestBranchComboBox().setValue(state.targetBranchName);
-                            } else {
-                                logger.warn("Saved target branch '{}' not found in the list for project '{}'", state.targetBranchName, state.projectName);
-                            }
-                        }
-                    }, Platform::runLater);
-                } else {
-                    logger.warn("Saved project '{}' not found in the reloaded list.", state.projectName);
-                }
-            }
-        }, Platform::runLater);
     }
 
     private static MainController reloadUI(Stage stage, AppConfig config) throws IOException {
