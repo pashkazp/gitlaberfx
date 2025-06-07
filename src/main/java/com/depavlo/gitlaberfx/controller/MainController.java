@@ -60,7 +60,14 @@ public class MainController {
     private GitLabService gitLabService;
     private Stage stage;
     private final UIStateModel uiStateModel = new UIStateModel();
-    private final ExecutorService executorService = Executors.newCachedThreadPool();
+
+    // The ExecutorService now uses a ThreadFactory to create daemon threads.
+    // This is a robust way to ensure background tasks don't prevent the application from exiting.
+    private final ExecutorService executorService = Executors.newCachedThreadPool(r -> {
+        Thread thread = Executors.defaultThreadFactory().newThread(r);
+        thread.setDaemon(true);
+        return thread;
+    });
 
     // Task Management
     private final List<Future<?>> currentTasks = new ArrayList<>();
@@ -213,8 +220,6 @@ public class MainController {
                 .filter(p -> p.getPathName().equals(selectedProjectName))
                 .findFirst()
                 .ifPresent(project -> {
-                    // This is the key change: explicitly clear the target branch from the model
-                    // when a new project is selected. This makes the state consistent.
                     uiStateModel.setCurrentTargetBranchName(null);
 
                     uiStateModel.setCurrentProjectId(String.valueOf(project.getId()));
@@ -233,7 +238,6 @@ public class MainController {
                 Platform.runLater(() -> {
                     uiStateModel.setCurrentProjectBranches(branches);
 
-                    // Elegantly reset the branch ComboBox without triggering the listener
                     destBranchComboBox.valueProperty().removeListener(targetBranchListener);
                     populateBranchComboBoxFromModel();
                     destBranchComboBox.valueProperty().addListener(targetBranchListener);
@@ -253,7 +257,6 @@ public class MainController {
         if (targetBranchName == null) return;
 
         if (targetBranchName.equals(getNotSelectedItemText())) {
-            // Only update model state if it's a real user action, not a programmatic reset.
             if (uiStateModel.getCurrentTargetBranchName() != null) {
                 uiStateModel.getCurrentProjectBranches().forEach(b -> b.setMergedIntoTarget(false));
                 uiStateModel.setCurrentTargetBranchName(null);
@@ -341,7 +344,7 @@ public class MainController {
         Platform.runLater(() -> {
             projectComboBox.setDisable(isBusy);
             destBranchComboBox.setDisable(isBusy);
-            branchesTableView.setDisable(isBusy);
+            branchesTableView.setDisable(false);
             refreshProjectsButton.setDisable(isBusy);
             refreshBranchesButton.setDisable(isBusy);
             selectAllButton.setDisable(isBusy);
@@ -377,22 +380,18 @@ public class MainController {
 
     //<editor-fold desc="State Restoration for Locale Change">
     public void repopulateFromState(UIStateModel existingModel, LocaleChangeService.SavedState savedState) {
-        // First, update the new controller's model to be the single source of truth
         this.uiStateModel.setAllProjects(existingModel.getAllProjects());
         this.uiStateModel.setCurrentProjectBranches(existingModel.getCurrentProjectBranches());
         this.uiStateModel.setCurrentProjectId(savedState.projectId);
         this.uiStateModel.setCurrentProjectName(savedState.projectName);
         this.uiStateModel.setCurrentTargetBranchName(savedState.targetBranchName);
 
-        // Temporarily disable listeners to prevent unwanted side effects during programmatic UI updates
         projectComboBox.valueProperty().removeListener(projectSelectionListener);
         destBranchComboBox.valueProperty().removeListener(targetBranchListener);
 
-        // Repopulate UI components with existing data from the now-updated model
         populateProjectComboBoxFromModel();
         populateBranchComboBoxFromModel();
 
-        // Restore selections to the UI ComboBoxes from the model's state
         String projectToSelect = this.uiStateModel.getCurrentProjectName();
         if (projectToSelect != null && projectComboBox.getItems().contains(projectToSelect)) {
             projectComboBox.setValue(projectToSelect);
@@ -407,7 +406,6 @@ public class MainController {
             destBranchComboBox.setValue(getNotSelectedItemText());
         }
 
-        // Re-enable listeners for user interactions
         projectComboBox.valueProperty().addListener(projectSelectionListener);
         destBranchComboBox.valueProperty().addListener(targetBranchListener);
     }
