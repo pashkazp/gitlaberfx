@@ -145,30 +145,34 @@ public class MainController {
     }
 
     private void setupButtonBindings() {
-        // Condition: No project selected OR branch list is empty.
+        BooleanBinding isBusy = uiStateModel.busyProperty().not();
+
         BooleanBinding noProjectOrBranches = uiStateModel.currentProjectIdProperty().isNull()
                 .or(Bindings.isEmpty(uiStateModel.getCurrentProjectBranches()));
 
-        // Condition: No target branch is selected.
         BooleanBinding noTargetBranch = uiStateModel.currentTargetBranchNameProperty().isNull();
 
-        // 2. "Delete Selected" is disabled if no project/branches OR no branches are selected by the user.
         BooleanBinding noBranchSelected = Bindings.createBooleanBinding(() ->
                         uiStateModel.getCurrentProjectBranches().stream().noneMatch(BranchModel::isSelected),
                 uiStateModel.getCurrentProjectBranches()
         );
-        deleteSelectedButton.disableProperty().bind(noProjectOrBranches.or(noBranchSelected));
+        deleteSelectedButton.disableProperty().bind(isBusy.or(noProjectOrBranches).or(noBranchSelected));
 
-        // 3. "Delete Merged" is disabled if no project/target branch OR no branches are marked as merged into the target.
-        // Thanks to the extractor, this binding now correctly re-evaluates when a branch's 'mergedIntoTarget' status changes.
         BooleanBinding noMergedBranchesFound = Bindings.createBooleanBinding(() ->
                         uiStateModel.getCurrentProjectBranches().stream().noneMatch(BranchModel::isMergedIntoTarget),
                 uiStateModel.getCurrentProjectBranches()
         );
-        mainDelMergedButton.disableProperty().bind(noProjectOrBranches.or(noTargetBranch).or(noMergedBranchesFound));
+        mainDelMergedButton.disableProperty().bind(isBusy.or(noProjectOrBranches).or(noTargetBranch).or(noMergedBranchesFound));
 
-        // 4. "Delete Unmerged" is disabled if no project or no target branch is selected.
-        mainDelUnmergedButton.disableProperty().bind(noProjectOrBranches.or(noTargetBranch));
+        mainDelUnmergedButton.disableProperty().bind(isBusy.or(noProjectOrBranches).or(noTargetBranch));
+
+        // Also bind other buttons to the busy state
+        selectAllButton.disableProperty().bind(isBusy.or(noProjectOrBranches));
+        deselectAllButton.disableProperty().bind(isBusy.or(noProjectOrBranches));
+        invertSelectionButton.disableProperty().bind(isBusy.or(noProjectOrBranches));
+        refreshProjectsButton.disableProperty().bind(isBusy);
+        refreshBranchesButton.disableProperty().bind(isBusy.or(noProjectOrBranches));
+        rescanMergedButton.disableProperty().bind(isBusy.or(noTargetBranch));
     }
 
     private void setupTableColumns() {
@@ -288,10 +292,8 @@ public class MainController {
                 uiStateModel.getCurrentProjectBranches().forEach(b -> b.setMergedIntoTarget(false));
                 uiStateModel.setCurrentTargetBranchName(null);
             }
-            rescanMergedButton.setDisable(true);
         } else {
             uiStateModel.setCurrentTargetBranchName(targetBranchName);
-            rescanMergedButton.setDisable(false);
             rescanMerged();
         }
     }
@@ -369,22 +371,19 @@ public class MainController {
 
     private void setUiBusy(boolean isBusy) {
         Platform.runLater(() -> {
+            uiStateModel.setBusy(isBusy);
+
+            // Major controls that are not bound should be disabled here
             projectComboBox.setDisable(isBusy);
             destBranchComboBox.setDisable(isBusy);
             branchesTableView.setDisable(isBusy);
-            refreshProjectsButton.setDisable(isBusy);
-            refreshBranchesButton.setDisable(isBusy);
-            selectAllButton.setDisable(isBusy);
-            deselectAllButton.setDisable(isBusy);
-            invertSelectionButton.setDisable(isBusy);
 
-            boolean targetSelected = destBranchComboBox.getValue() != null && !destBranchComboBox.getValue().equals(getNotSelectedItemText());
-            rescanMergedButton.setDisable(isBusy || !targetSelected);
-
+            // Control buttons for tasks
             playButton.setDisable(true);
             pauseButton.setDisable(!isBusy);
             stopButton.setDisable(!isBusy);
             progressBar.setVisible(isBusy);
+
             if (!isBusy) {
                 progressBar.setProgress(0);
                 uiStateModel.setStatusMessage(I18nUtil.getMessage("app.ready"));

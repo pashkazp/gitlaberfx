@@ -25,6 +25,8 @@ package com.depavlo.gitlaberfx.model;
 
 import com.depavlo.gitlaberfx.service.GitLabService;
 import javafx.beans.Observable;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -42,17 +44,16 @@ public class UIStateModel {
     private final StringProperty currentProjectName = new SimpleStringProperty();
     private final StringProperty currentTargetBranchName = new SimpleStringProperty();
     private final StringProperty statusMessage = new SimpleStringProperty();
+    private final BooleanProperty isBusy = new SimpleBooleanProperty(false);
+
 
     private final ObservableList<GitLabService.Project> allProjects = FXCollections.observableArrayList();
 
-    // This is the key change. We create an observable list with an "extractor".
-    // The extractor tells the list to also fire update events when the specified properties
-    // of its elements change. This makes bindings on the list's content reactive.
     private final ObservableList<BranchModel> currentProjectBranches =
-        FXCollections.observableArrayList(branch -> new Observable[] {
-            branch.mergedIntoTargetProperty(),
-            branch.selectedProperty()
-        });
+            FXCollections.observableArrayList(branch -> new Observable[] {
+                    branch.mergedIntoTargetProperty(),
+                    branch.selectedProperty()
+            });
 
     public String getCurrentProjectId() { return currentProjectId.get(); }
     public void setCurrentProjectId(String id) { this.currentProjectId.set(id); }
@@ -69,6 +70,10 @@ public class UIStateModel {
     public String getStatusMessage() { return statusMessage.get(); }
     public void setStatusMessage(String message) { this.statusMessage.set(message); }
     public StringProperty statusMessageProperty() { return statusMessage; }
+
+    public boolean isBusy() { return isBusy.get(); }
+    public void setBusy(boolean busy) { this.isBusy.set(busy); }
+    public BooleanProperty busyProperty() { return isBusy; }
 
     public ObservableList<GitLabService.Project> getAllProjects() { return allProjects; }
     public void setAllProjects(List<GitLabService.Project> projects) {
