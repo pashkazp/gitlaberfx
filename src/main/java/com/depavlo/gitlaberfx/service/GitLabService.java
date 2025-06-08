@@ -366,19 +366,21 @@ public class GitLabService {
      */
     private String getMergeBaseSha(String projectId, String sourceBranch, String targetBranch) {
         logger.debug("Getting merge base SHA between {} and {}", sourceBranch, targetBranch);
-        HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
+
+        HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
                 .addPathSegments("api/v4/projects")
                 .addPathSegment(projectId)
-                .addPathSegments("repository/merge_base")
-                // This is the key fix: use addQueryParameter to let OkHttp handle value encoding,
-                // but for the specific case of array-like parameters `refs[]`, we must build
-                // the query string manually or use a more advanced builder.
-                // A simpler, robust fix is to use addEncodedQueryParameter which prevents encoding the name.
-                .addEncodedQueryParameter("refs[]", URLEncoder.encode(sourceBranch, StandardCharsets.UTF_8))
-                .addEncodedQueryParameter("refs[]", URLEncoder.encode(targetBranch, StandardCharsets.UTF_8))
-                .build();
+                .addPathSegments("repository/merge_base");
+
+        // The key fix: manually construct the query string to handle array-like parameters `refs[]` correctly,
+        // then set it as pre-encoded. This avoids OkHttp encoding the `[]` characters in the parameter name.
+        String encodedQuery = "refs[]=" + encodePathSegment(sourceBranch)
+                            + "&refs[]=" + encodePathSegment(targetBranch);
+
+        urlBuilder.encodedQuery(encodedQuery);
+
         Request request = new Request.Builder()
-                .url(url)
+                .url(urlBuilder.build())
                 .header(PRIVATE_TOKEN, config.getApiKey())
                 .build();
 
