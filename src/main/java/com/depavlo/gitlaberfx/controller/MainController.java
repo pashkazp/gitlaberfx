@@ -192,14 +192,21 @@ public class MainController {
     }
 
     private void setupButtonBindings() {
-        // Цей метод має містити логіку для інших кнопок, якщо вона є.
-        // Якщо цей метод був призначений тільки для deleteSelectedButton,
-        // то його вміст переїхав у setupBindings.
+        // Condition for when no project is selected or the branch list is empty
+        BooleanBinding noProjectOrBranches = uiStateModel.currentProjectIdProperty().isNull()
+                .or(Bindings.isEmpty(uiStateModel.getCurrentProjectBranches()));
 
-        // Приклад:
-        // playButton.disableProperty().bind(uiStateModel.taskActiveProperty().not());
-        // pauseButton.disableProperty().bind(uiStateModel.taskActiveProperty().not().or(uiStateModel.pauseDisabledProperty()));
-        // stopButton.disableProperty().bind(uiStateModel.taskActiveProperty().not());
+        // Condition for when no target branch is selected
+        BooleanBinding noTargetBranch = uiStateModel.currentTargetBranchNameProperty().isNull();
+        // 3. Disable "Delete Merged" if no project/target OR no branches are marked as merged
+        BooleanBinding noMergedBranches = Bindings.createBooleanBinding(() ->
+                        uiStateModel.getCurrentProjectBranches().stream().noneMatch(BranchModel::isMergedIntoTarget),
+                uiStateModel.getCurrentProjectBranches()
+        );
+        mainDelMergedButton.disableProperty().bind(noProjectOrBranches.or(noTargetBranch).or(noMergedBranches));
+
+        // 4. Disable "Delete Unmerged" if no project/target branch
+        mainDelUnmergedButton.disableProperty().bind(noProjectOrBranches.or(noTargetBranch));
     }
 
     private void setupTableColumns() {
