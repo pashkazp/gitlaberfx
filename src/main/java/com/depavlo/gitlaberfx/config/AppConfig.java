@@ -30,6 +30,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,6 +47,24 @@ public class AppConfig {
     private String locale;
 
     public AppConfig() {
+    }
+
+    /**
+     * Checks if the essential configuration (URL and API Key) is present and appears valid.
+     * @return true if configuration is valid, false otherwise.
+     */
+    public boolean isConfigurationValid() {
+        if (gitlabUrl == null || gitlabUrl.isBlank() || apiKey == null || apiKey.isBlank()) {
+            return false;
+        }
+        try {
+            // A simple check to ensure the URL is well-formed.
+            new URL(gitlabUrl);
+            return true;
+        } catch (MalformedURLException e) {
+            logger.warn("Invalid GitLab URL format: {}", gitlabUrl);
+            return false;
+        }
     }
 
     public static AppConfig load() {

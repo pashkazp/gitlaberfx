@@ -65,10 +65,6 @@ public class SettingsController {
     private Map<String, String> availableLocales = new HashMap<>();
     private MainController mainController;
 
-    /**
-     * Sets the main controller reference.
-     * * @param mainController The main controller
-     */
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
     }
@@ -118,11 +114,6 @@ public class SettingsController {
         }
     }
 
-    /**
-     * Initializes the available locales and populates the language ComboBox.
-     * Dynamically searches for message files in the i18n directory and extracts locale information.
-     * Works with both file system resources and JAR resources.
-     */
     private void initializeLocales() {
         try {
             availableLocales.clear();
@@ -254,26 +245,22 @@ public class SettingsController {
 
     @FXML
     private void testConnection() {
+        AppConfig testConfig = new AppConfig();
+        testConfig.setGitlabUrl(gitlabUrlField.getText());
+        testConfig.setApiKey(apiKeyField.getText());
+
+        if (!testConfig.isConfigurationValid()) {
+            showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("warning.missing.settings.message"));
+            return;
+        }
+
+        GitLabService service = new GitLabService(testConfig);
         try {
-            AppConfig testConfig = new AppConfig();
-            testConfig.setGitlabUrl(gitlabUrlField.getText());
-            testConfig.setApiKey(apiKeyField.getText());
-
-            GitLabService service = new GitLabService(testConfig);
-            service.connect();
-
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle(I18nUtil.getMessage("app.success"));
-            alert.setHeaderText(null);
-            alert.setContentText(I18nUtil.getMessage("settings.connection.success"));
-            alert.showAndWait();
+            service.testConnection();
+            showSuccess(I18nUtil.getMessage("app.success"), I18nUtil.getMessage("settings.connection.success"));
         } catch (IOException e) {
             logger.error("Connection test failed", e);
-            Alert alert = new Alert(Alert.AlertType.ERROR);
-            alert.setTitle(I18nUtil.getMessage("app.error"));
-            alert.setHeaderText(null);
-            alert.setContentText(I18nUtil.getMessage("settings.connection.error", e.getMessage()));
-            alert.showAndWait();
+            showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("settings.connection.error", e.getMessage()));
         }
     }
 
@@ -331,5 +318,21 @@ public class SettingsController {
 
     public boolean isSaved() {
         return saved;
+    }
+
+    private void showSuccess(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private void showError(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 }

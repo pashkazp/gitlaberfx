@@ -213,16 +213,20 @@ public class MainController {
     //</editor-fold>
 
     //<editor-fold desc="Core Logic: Project and Branch Loading">
-    public CompletableFuture<Void> startInitialLoad() {
-        if (!gitLabService.hasRequiredConfig()) {
+    public void startInitialLoad() {
+        if (!config.isConfigurationValid()) {
             showWarning("warning.missing.settings", "warning.missing.settings.message");
-            return CompletableFuture.completedFuture(null);
+            return;
         }
-        return refreshProjects();
+        refreshProjects();
     }
 
     @FXML
     public CompletableFuture<Void> refreshProjects() {
+        if (!config.isConfigurationValid()) {
+            showWarning("warning.missing.settings", "warning.missing.settings.message");
+            return CompletableFuture.completedFuture(null);
+        }
         CompletableFuture<Void> completionFuture = new CompletableFuture<>();
         submitTask(I18nUtil.getMessage("main.status.loading.project.branches"), () -> {
             try {
@@ -528,6 +532,10 @@ public class MainController {
 
     //<editor-fold desc="UI Actions & Menu">
     @FXML private void refreshBranches() {
+        if (!config.isConfigurationValid()) {
+            showWarning("warning.missing.settings", "warning.missing.settings.message");
+            return;
+        }
         if(uiStateModel.getCurrentProjectId() != null) {
             loadBranchesForProject(uiStateModel.getCurrentProjectId());
         }
@@ -539,7 +547,7 @@ public class MainController {
     @FXML private void showSettings() {
         if (DialogHelper.showSettingsDialog(stage, config, this)) {
             this.gitLabService = new GitLabService(config);
-            refreshProjects();
+            startInitialLoad();
         }
     }
 
