@@ -24,73 +24,102 @@
 package com.depavlo.gitlaberfx.config;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.io.TempDir;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AppConfigTest {
 
+    private String originalConfigDir;
+    private String originalConfigFile;
+    private Path testConfigFile;
+
     @TempDir
     Path tempDir;
 
     @BeforeEach
-    void setUp() {
-        // Set test values
-        String testConfigDir = tempDir.toString() + "/.config/gitlaberfx";
-        String testConfigFile = testConfigDir + "/config.properties";
-        String testOldConfigDir = tempDir.toString() + "/.gitlaberfx";
-        String testOldConfigFile = testOldConfigDir + "/config.json";
+    void setUp() throws Exception {
+        // Store original values
+        originalConfigDir = getStaticFieldValue("CONFIG_DIR");
+        originalConfigFile = getStaticFieldValue("CONFIG_FILE");
 
-        AppConfig.setConfigPaths(testConfigDir, testConfigFile, testOldConfigDir, testOldConfigFile);
+        // Create test config file path in the temporary directory
+        testConfigFile = tempDir.resolve("config.properties");
+
+        // Set test values using reflection
+        setStaticFieldValue("CONFIG_DIR", tempDir.toString());
+        setStaticFieldValue("CONFIG_FILE", testConfigFile.toString());
     }
 
     @AfterEach
-    void tearDown() {
+    void tearDown() throws Exception {
         // Restore original values
-        AppConfig.resetConfigPaths();
+        setStaticFieldValue("CONFIG_DIR", originalConfigDir);
+        setStaticFieldValue("CONFIG_FILE", originalConfigFile);
+        // Temporary directory and its contents will be cleaned up automatically by JUnit
+    }
+
+    private String getStaticFieldValue(String fieldName) throws Exception {
+        Field field = AppConfig.class.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        return (String) field.get(null);
+    }
+
+    private void setStaticFieldValue(String fieldName, String value) throws Exception {
+        Field field = AppConfig.class.getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(null, value);
     }
 
     @Test
     void testSaveAndLoad() throws IOException {
-        // Створюємо тестовий конфіг
+        // Create test config
         AppConfig config = new AppConfig();
         config.setGitlabUrl("https://gitlab.com");
         config.setApiKey("test-api-key");
-        config.setUsername("test-user");
-        config.setExcludedBranches(Arrays.asList("branch1", "branch2"));
+        config.setLocale("uk_UA");
 
-        // Зберігаємо конфіг
+        // Save config
         config.save();
 
-        // Завантажуємо конфіг
+        // Verify file was created
+        assertTrue(Files.exists(testConfigFile), "Config file should exist in temporary directory");
+
+        // Load config
         AppConfig loadedConfig = AppConfig.load();
 
-        // Перевіряємо значення
-        assertEquals("https://gitlab.com", loadedConfig.getGitlabUrl());
-        assertEquals("test-api-key", loadedConfig.getApiKey());
-        assertEquals("test-user", loadedConfig.getUsername());
-        assertEquals(Arrays.asList("branch1", "branch2"), loadedConfig.getExcludedBranches());
+        // Verify values
+        assertEquals("https://gitlab.com", loadedConfig.getGitlabUrl(), "GitLab URL should match");
+        assertEquals("test-api-key", loadedConfig.getApiKey(), "API key should match");
+        assertEquals("uk_UA", loadedConfig.getLocale(), "Locale should match");
     }
 
     @Test
-    void testEmptyConfig() {
+    void testEmptyConfig() throws IOException {
+        // Ensure config file does not exist for this specific test case
+        if (Files.exists(testConfigFile)) {
+            Files.delete(testConfigFile);
+        }
+
+        // Create empty config (it shouldn't try to load from a non-existent file on construction)
         AppConfig config = new AppConfig();
-        assertNull(config.getGitlabUrl());
-        assertNull(config.getApiKey());
-        assertNull(config.getUsername());
-        assertTrue(config.getExcludedBranches().isEmpty());
+
+        // Verify empty values for a newly created config object
+        assertNull(config.getGitlabUrl(), "GitLab URL should be null for a new config");
+        assertNull(config.getApiKey(), "API key should be null for a new config");
+        assertNull(config.getLocale(), "Locale should be null for a new config");
+
+        // Optionally, test loading from a non-existent/empty file if AppConfig.load() handles this
+        // AppConfig loadedConfig = AppConfig.load();
+        // assertNull(loadedConfig.getGitlabUrl(), "GitLab URL should be null when loaded from empty/non-existent file");
+        // assertNull(loadedConfig.getApiKey(), "API key should be null when loaded from empty/non-existent file");
+        // assertNull(loadedConfig.getLocale(), "Locale should be null when loaded from empty/non-existent file");
     }
-
-
 }

@@ -23,48 +23,48 @@
  */
 package com.depavlo.gitlaberfx.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collectors;
 
 public class AppConfig {
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
     private static String CONFIG_DIR = System.getProperty("user.home") + "/.config/gitlaberfx";
     private static String CONFIG_FILE = CONFIG_DIR + "/config.properties";
 
-    // For testing purposes only
-    static void setConfigPaths(String configDir, String configFile, String oldConfigDir, String oldConfigFile) {
-        CONFIG_DIR = configDir;
-        CONFIG_FILE = configFile;
-    }
-
-    // For testing purposes only
-    static void resetConfigPaths() {
-        CONFIG_DIR = System.getProperty("user.home") + "/.config/gitlaberfx";
-        CONFIG_FILE = CONFIG_DIR + "/config.properties";
-    }
-    private static final ObjectMapper objectMapper = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT);
-
     private String gitlabUrl;
     private String apiKey;
-    private String username;
-    private List<String> excludedBranches;
     private String locale;
 
     public AppConfig() {
-        this.excludedBranches = new ArrayList<>();
+    }
+
+    /**
+     * Checks if the essential configuration (URL and API Key) is present and appears valid.
+     * @return true if configuration is valid, false otherwise.
+     */
+    public boolean isConfigurationValid() {
+        if (gitlabUrl == null || gitlabUrl.isBlank() || apiKey == null || apiKey.isBlank()) {
+            return false;
+        }
+        try {
+            // A simple check to ensure the URL is well-formed.
+            new URL(gitlabUrl);
+            return true;
+        } catch (MalformedURLException e) {
+            logger.warn("Invalid GitLab URL format: {}", gitlabUrl);
+            return false;
+        }
     }
 
     public static AppConfig load() {
@@ -73,7 +73,6 @@ public class AppConfig {
             File configFile = new File(CONFIG_FILE);
             AppConfig config = new AppConfig();
 
-            // Check if config file exists in the new location
             if (configFile.exists()) {
                 Properties properties = new Properties();
                 try (FileInputStream fis = new FileInputStream(configFile)) {
@@ -82,20 +81,11 @@ public class AppConfig {
 
                 config.setGitlabUrl(properties.getProperty("gitlabUrl"));
                 config.setApiKey(properties.getProperty("apiKey"));
-                config.setUsername(properties.getProperty("username"));
-                config.setLocale(properties.getProperty("locale", "en_US")); // Default to English if not set
-
-                // Load excluded branches
-                String excludedBranchesStr = properties.getProperty("excludedBranches");
-                if (excludedBranchesStr != null && !excludedBranchesStr.isEmpty()) {
-                    List<String> excludedBranches = Arrays.asList(excludedBranchesStr.split(","));
-                    config.setExcludedBranches(excludedBranches);
-                }
+                config.setLocale(properties.getProperty("locale", "en_US"));
 
                 return config;
             }
 
-            // Check if config file exists in the old location
         } catch (IOException e) {
             logger.error("Error loading configuration", e);
         }
@@ -108,19 +98,10 @@ public class AppConfig {
 
             Properties properties = new Properties();
 
-            // Save basic properties
             if (gitlabUrl != null) properties.setProperty("gitlabUrl", gitlabUrl);
             if (apiKey != null) properties.setProperty("apiKey", apiKey);
-            if (username != null) properties.setProperty("username", username);
             if (locale != null) properties.setProperty("locale", locale);
 
-            // Save excluded branches as comma-separated string
-            if (excludedBranches != null && !excludedBranches.isEmpty()) {
-                String excludedBranchesStr = String.join(",", excludedBranches);
-                properties.setProperty("excludedBranches", excludedBranchesStr);
-            }
-
-            // Write properties to file
             try (FileOutputStream fos = new FileOutputStream(new File(CONFIG_FILE))) {
                 properties.store(fos, "GitLaberFX Configuration");
             }
@@ -153,23 +134,6 @@ public class AppConfig {
         this.apiKey = apiKey;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-
-    public List<String> getExcludedBranches() {
-        return excludedBranches;
-    }
-
-    public void setExcludedBranches(List<String> excludedBranches) {
-        this.excludedBranches = excludedBranches;
-    }
-
     public String getLocale() {
         return locale;
     }
@@ -177,4 +141,4 @@ public class AppConfig {
     public void setLocale(String locale) {
         this.locale = locale;
     }
-} 
+}

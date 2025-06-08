@@ -34,6 +34,7 @@ public class AboutController {
     private Stage stage;
 
     public void initialize(Stage stage) {
+        logger.debug("initialize: stage={}", stage != null ? "not null" : "null");
         this.stage = stage;
     }
 

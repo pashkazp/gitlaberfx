@@ -25,6 +25,7 @@ package com.depavlo.gitlaberfx;
 
 import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.controller.MainController;
+import com.depavlo.gitlaberfx.util.I18nUtil;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
@@ -34,7 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 
 public class GitlaberApp extends Application {
     private static final Logger logger = LoggerFactory.getLogger(GitlaberApp.class);
@@ -45,73 +48,57 @@ public class GitlaberApp extends Application {
     public void start(Stage stage) throws IOException {
         logger.info("Starting application");
 
-        // Завантаження налаштувань
         AppConfig config = AppConfig.load();
 
-        // Set the application locale from config
         String localeCode = config.getLocale();
         if (localeCode != null && !localeCode.isEmpty()) {
-            String[] localeParts = localeCode.split("_");
+            String[] localeParts = localeCode.replace('-', '_').split("_");
             if (localeParts.length == 2) {
-                com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new java.util.Locale(localeParts[0], localeParts[1]));
+                I18nUtil.setLocale(new Locale(localeParts[0], localeParts[1]));
             }
         } else {
-            // Default to English if no locale is specified
-            com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new java.util.Locale("en", "US"));
+            I18nUtil.setLocale(new Locale("en", "US"));
         }
 
-        // Завантаження головного вікна
         FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));
-        fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", com.depavlo.gitlaberfx.util.I18nUtil.getCurrentLocale()));
+        fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
         Scene scene = new Scene(fxmlLoader.load(), 800, 600);
 
-        // Налаштування головного вікна
-        stage.setTitle(com.depavlo.gitlaberfx.util.I18nUtil.getMessage("app.title"));
+        stage.setTitle(I18nUtil.getMessage("app.title"));
         stage.setScene(scene);
 
-        // Ініціалізація контролера
         controller = fxmlLoader.getController();
         controller.initialize(config, stage);
 
-        // Add a close request handler to ensure proper cleanup
         stage.setOnCloseRequest(event -> {
+            logger.info("Stage is closing, shutting down controller.");
             controller.shutdown();
         });
 
-        // Add a shutdown hook to ensure background tasks are terminated
-        // when the application exits abnormally
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            logger.info("Application shutdown hook triggered");
-            if (controller != null) {
-                // Run on JavaFX thread if possible, otherwise run directly
-                if (Platform.isFxApplicationThread()) {
-                    controller.shutdownExecutor();
-                } else {
-                    try {
-                        Platform.runLater(controller::shutdownExecutor);
-                        // Give a short time for the runLater to execute
-                        Thread.sleep(200);
-                    } catch (Exception e) {
-                        // If Platform is already shutdown, call directly
-                        controller.shutdownExecutor();
-                    }
-                }
-            }
-        }));
-
         stage.show();
-        controller.refreshProjects();
+
+        // Trigger the initial data load.
+        CompletableFuture<Void> initialLoad = controller.startInitialLoad();
+
+        // After the initial load is complete, set the default selection in the UI thread.
+        // This robust approach avoids the "void cannot be dereferenced" error.
+        if (initialLoad != null) {
+            initialLoad.thenRunAsync(
+                    controller::selectInitialProject,
+                    Platform::runLater
+            );
+        }
     }
 
     @Override
     public void stop() {
-        logger.info("JavaFX stop method called");
+        logger.info("JavaFX stop method called. Ensuring controller is shutdown.");
         if (controller != null) {
-            controller.shutdownExecutor();
+            controller.shutdown();
         }
     }
 
     public static void main(String[] args) {
-        launch();
+        launch(args);
     }
 }

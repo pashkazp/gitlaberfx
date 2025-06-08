@@ -64,7 +64,7 @@ class GitLabServiceTest {
         config.setApiKey(null);
         GitLabService service = new GitLabService(config);
 
-        assertThrows(Exception.class, () -> service.connect());
+        assertThrows(Exception.class, service::testConnection);
         logger.info("[DEBUG_LOG] Connect with null API key test completed");
     }
 
@@ -74,7 +74,7 @@ class GitLabServiceTest {
         config.setApiKey("");
         GitLabService service = new GitLabService(config);
 
-        assertThrows(Exception.class, () -> service.connect());
+        assertThrows(Exception.class, service::testConnection);
         logger.info("[DEBUG_LOG] Connect with empty API key test completed");
     }
 

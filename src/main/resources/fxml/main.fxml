@@ -38,7 +38,7 @@
     </HBox>
 
     <HBox spacing="10">
-        <Button fx:id="refreshBranchesButton" onAction="#refreshBranches" text="%main.refresh.list" />
+        <Button fx:id="refreshBranchesButton" onAction="#refreshBranches" text="%main.refresh.lists" />
         <Button fx:id="selectAllButton" onAction="#selectAll" text="%main.select.all" />
         <Button fx:id="deselectAllButton" onAction="#deselectAll" text="%main.deselect.all" />
         <Button fx:id="invertSelectionButton" onAction="#invertSelection" text="%main.invert.selection" />
@@ -64,7 +64,6 @@
             <Button fx:id="deleteSelectedButton" onAction="#deleteSelected" style="-fx-base: #ff0000;" text="%main.delete.selected" />
             <Button fx:id="mainDelMergedButton" onAction="#deleteMerged" text="%main.delete.merged" />
             <Button fx:id="mainDelUnmergedButton" onAction="#deleteUnmerged" text="%main.delete.unmerged" />
-            <Button fx:id="addToExclusionsButton" onAction="#addToExclusions" text="%main.add.to.exclusions" />
         </HBox>
         <Label fx:id="branchCounterLabel" alignment="CENTER_RIGHT" style="-fx-padding: 5;" text="0/0" />
     </HBox>

@@ -62,6 +62,7 @@ public class DialogHelper {
      * @return The loading dialog stage
      */
     public static Stage showLoadingDialog(Stage parentStage, String message) {
+        logger.debug("showLoadingDialog: parentStage={}, message={}", parentStage != null ? "not null" : "null", message);
         if (loadingStage != null && loadingStage.isShowing()) {
             hideLoadingDialog();
         }
@@ -119,6 +120,7 @@ public class DialogHelper {
      * Hides the loading dialog.
      */
     public static void hideLoadingDialog() {
+        logger.debug("hideLoadingDialog");
         if (loadingStage != null) {
             // If we're not on the JavaFX application thread, use Platform.runLater
             if (!Platform.isFxApplicationThread()) {
@@ -136,7 +138,19 @@ public class DialogHelper {
         }
     }
 
-    public static boolean showSettingsDialog(Stage parentStage, AppConfig config) {
+    /**
+     * Shows the settings dialog.
+     * 
+     * @param parentStage The parent stage
+     * @param config The application configuration
+     * @param mainController The main controller (can be null if not available)
+     * @return true if settings were saved, false otherwise
+     */
+    public static boolean showSettingsDialog(Stage parentStage, AppConfig config, com.depavlo.gitlaberfx.controller.MainController mainController) {
+        logger.debug("showSettingsDialog: parentStage={}, config={}, mainController={}", 
+                parentStage != null ? "not null" : "null", 
+                config != null ? "not null" : "null", 
+                mainController != null ? "not null" : "null");
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/settings.fxml"));
             loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
@@ -151,6 +165,11 @@ public class DialogHelper {
             SettingsController controller = loader.getController();
             controller.initialize(config, stage);
 
+            // Set the main controller reference if provided
+            if (mainController != null) {
+                controller.setMainController(mainController);
+            }
+
             stage.showAndWait();
             return controller.isSaved();
         } catch (IOException e) {
@@ -159,7 +178,24 @@ public class DialogHelper {
         }
     }
 
+    /**
+     * Shows the settings dialog (overloaded method for backward compatibility).
+     * 
+     * @param parentStage The parent stage
+     * @param config The application configuration
+     * @return true if settings were saved, false otherwise
+     */
+    public static boolean showSettingsDialog(Stage parentStage, AppConfig config) {
+        logger.debug("showSettingsDialog: parentStage={}, config={}", 
+                parentStage != null ? "not null" : "null", 
+                config != null ? "not null" : "null");
+        return showSettingsDialog(parentStage, config, null);
+    }
+
     public static List<BranchModel> showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches) {
+        logger.debug("showDeleteConfirmationDialog: parentStage={}, branches.size={}", 
+                parentStage != null ? "not null" : "null", 
+                branches != null ? branches.size() : "null");
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/delete-confirmation.fxml"));
             loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
@@ -183,6 +219,7 @@ public class DialogHelper {
     }
 
     public static LocalDate showDatePickerDialog(Stage parentStage) {
+        logger.debug("showDatePickerDialog: parentStage={}", parentStage != null ? "not null" : "null");
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/date-picker.fxml"));
             loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
@@ -206,6 +243,7 @@ public class DialogHelper {
     }
 
     public static void showAboutDialog(Stage parentStage) {
+        logger.debug("showAboutDialog: parentStage={}", parentStage != null ? "not null" : "null");
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/about.fxml"));
             loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
