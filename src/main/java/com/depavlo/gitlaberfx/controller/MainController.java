@@ -33,11 +33,9 @@ import com.depavlo.gitlaberfx.util.I18nUtil;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
-import javafx.beans.binding.IntegerBinding;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
@@ -80,6 +78,7 @@ public class MainController {
     private ChangeListener<String> projectSelectionListener;
     private ChangeListener<String> targetBranchListener;
 
+
     // FXML Fields
     @FXML private ComboBox<String> projectComboBox;
     @FXML private ComboBox<String> destBranchComboBox;
@@ -101,49 +100,13 @@ public class MainController {
         setupBindings();
         setupEventListeners();
         setupTableColumns();
-        setupButtonBindings(); // Elegantly set up button disable logic
+        setupButtonBindings();
     }
 
     //<editor-fold desc="Initialization & Setup">
     private void setupBindings() {
-        // Приклад існуючих прив'язок, якщо вони є
-        // playButton.disableProperty().bind(uiStateModel.busyProperty()); // Наприклад
-
-        // Додаємо прив'язку для кнопки deleteSelectedButton
-        IntegerBinding selectedBranchesCount = Bindings.createIntegerBinding(() ->
-                        (int) uiStateModel.getCurrentProjectBranches().stream().filter(BranchModel::isSelected).count(),
-                uiStateModel.getCurrentProjectBranches() // Потрібно, щоб прив'язка реагувала на зміни в списку
-        );
-
-        // Також потрібно додати слухача до властивості selectedProperty кожної гілки,
-        // щоб selectedBranchesCount перераховувався при зміні вибору гілки.
-        // Це схоже на те, що робиться в setupEventListeners для updateBranchCounter.
-        uiStateModel.getCurrentProjectBranches().addListener((ListChangeListener<BranchModel>) c -> {
-            while (c.next()) {
-                if (c.wasAdded()) {
-                    c.getAddedSubList().forEach(branch ->
-                            branch.selectedProperty().addListener((obs, oldVal, newVal) -> {
-                                // Примусово оновлюємо прив'язку.
-                                // Це може бути не найелегантніший спосіб, але він працює для оновлення IntegerBinding,
-                                // який залежить від властивостей елементів списку.
-                                selectedBranchesCount.invalidate();
-                                updateBranchCounter(); // Також оновлюємо лічильник, якщо він тут потрібен
-                            })
-                    );
-                }
-                // Якщо гілки видаляються, слухачі автоматично видаляються разом з ними.
-            }
-            // Початкове оновлення стану кнопки при зміні списку (наприклад, завантаження нового проекту)
-            selectedBranchesCount.invalidate();
-        });
-
-
-        deleteSelectedButton.disableProperty().bind(selectedBranchesCount.isEqualTo(0));
-
-        // Інші прив'язки кнопок, якщо вони є
-        setupButtonBindings(); // Якщо цей метод викликається з initialize, то цей рекурсивний виклик треба прибрати
-                               // або перейменувати метод, щоб уникнути плутанини.
-                               // Я припускаю, що ви мали на увазі тут розмістити решту логіки прив'язок кнопок.
+        statusLabel.textProperty().bind(uiStateModel.statusMessageProperty());
+        branchesTableView.setItems(uiStateModel.getCurrentProjectBranches());
     }
 
     private void setupEventListeners() {
@@ -161,23 +124,13 @@ public class MainController {
         };
         destBranchComboBox.valueProperty().addListener(targetBranchListener);
 
-        // Цей слухач вже є і оновлює лічильник.
-        // Ми додали логіку для selectedBranchesCount.invalidate() всередину нього,
-        // щоб і кнопка, і лічильник оновлювалися.
         uiStateModel.getCurrentProjectBranches().addListener((ListChangeListener<BranchModel>) c -> {
+            updateBranchCounter();
             while (c.next()) {
                 if (c.wasAdded()) {
-                    c.getAddedSubList().forEach(branch -> branch.selectedProperty().addListener((o, ov, nv) -> {
-                        // Ця частина тепер обробляється у setupBindings для selectedBranchesCount.invalidate()
-                        // Ми залишимо тут updateBranchCounter, якщо він виконує ще якусь логіку.
-                        // Якщо updateBranchCounter робить тільки те, що оновлює текст лічильника,
-                        // то його можна також прив'язати до selectedBranchesCount.
-                        updateBranchCounter();
-                    }));
+                    c.getAddedSubList().forEach(branch -> branch.selectedProperty().addListener((o, ov, nv) -> updateBranchCounter()));
                 }
             }
-            // Початкове оновлення лічильника при завантаженні нового списку
-            updateBranchCounter();
         });
 
         branchesTableView.setOnKeyPressed(event -> {
@@ -192,27 +145,33 @@ public class MainController {
     }
 
     private void setupButtonBindings() {
-        // Condition for when no project is selected or the branch list is empty
+        // Condition: No project selected OR branch list is empty.
         BooleanBinding noProjectOrBranches = uiStateModel.currentProjectIdProperty().isNull()
                 .or(Bindings.isEmpty(uiStateModel.getCurrentProjectBranches()));
 
-        // Condition for when no target branch is selected
+        // Condition: No target branch is selected.
         BooleanBinding noTargetBranch = uiStateModel.currentTargetBranchNameProperty().isNull();
-        // 3. Disable "Delete Merged" if no project/target OR no branches are marked as merged
-        BooleanBinding noMergedBranches = Bindings.createBooleanBinding(() ->
+
+        // 2. "Delete Selected" is disabled if no project/branches OR no branches are selected by the user.
+        BooleanBinding noBranchSelected = Bindings.createBooleanBinding(() ->
+                        uiStateModel.getCurrentProjectBranches().stream().noneMatch(BranchModel::isSelected),
+                uiStateModel.getCurrentProjectBranches()
+        );
+        deleteSelectedButton.disableProperty().bind(noProjectOrBranches.or(noBranchSelected));
+
+        // 3. "Delete Merged" is disabled if no project/target branch OR no branches are marked as merged into the target.
+        // Thanks to the extractor, this binding now correctly re-evaluates when a branch's 'mergedIntoTarget' status changes.
+        BooleanBinding noMergedBranchesFound = Bindings.createBooleanBinding(() ->
                         uiStateModel.getCurrentProjectBranches().stream().noneMatch(BranchModel::isMergedIntoTarget),
                 uiStateModel.getCurrentProjectBranches()
         );
-        mainDelMergedButton.disableProperty().bind(noProjectOrBranches.or(noTargetBranch).or(noMergedBranches));
+        mainDelMergedButton.disableProperty().bind(noProjectOrBranches.or(noTargetBranch).or(noMergedBranchesFound));
 
-        // 4. Disable "Delete Unmerged" if no project/target branch
+        // 4. "Delete Unmerged" is disabled if no project or no target branch is selected.
         mainDelUnmergedButton.disableProperty().bind(noProjectOrBranches.or(noTargetBranch));
     }
 
     private void setupTableColumns() {
-        statusLabel.textProperty().bind(uiStateModel.statusMessageProperty());
-        branchesTableView.setItems(uiStateModel.getCurrentProjectBranches());
-        uiStateModel.getCurrentProjectBranches().addListener((ListChangeListener<BranchModel>) c -> updateBranchCounter());
         branchesTableView.setEditable(true);
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
         selectedColumn.setCellFactory(column -> new CheckBoxTableCell<>());
@@ -305,7 +264,6 @@ public class MainController {
                 branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
 
                 Platform.runLater(() -> {
-                    // This clever trick prevents the listener from firing on a programmatic change
                     destBranchComboBox.valueProperty().removeListener(targetBranchListener);
                     uiStateModel.setCurrentProjectBranches(branches);
                     populateBranchComboBoxFromModel();
@@ -419,11 +377,6 @@ public class MainController {
             selectAllButton.setDisable(isBusy);
             deselectAllButton.setDisable(isBusy);
             invertSelectionButton.setDisable(isBusy);
-
-            // Let the bindings handle the delete buttons
-            // deleteSelectedButton.setDisable(isBusy);
-            // mainDelMergedButton.setDisable(isBusy);
-            // mainDelUnmergedButton.setDisable(isBusy);
 
             boolean targetSelected = destBranchComboBox.getValue() != null && !destBranchComboBox.getValue().equals(getNotSelectedItemText());
             rescanMergedButton.setDisable(isBusy || !targetSelected);
