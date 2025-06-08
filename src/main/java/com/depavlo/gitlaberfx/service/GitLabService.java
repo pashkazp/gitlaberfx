@@ -466,7 +466,6 @@ public class GitLabService {
         if (branchName == null) {
             return null;
         }
-        String preprocessed = branchName.replace(",", "%2C");
-        return URLEncoder.encode(preprocessed, StandardCharsets.UTF_8);
+        return URLEncoder.encode(branchName, StandardCharsets.UTF_8);
     }
 }

@@ -86,14 +86,23 @@ class GitLabServiceTest {
         Method encodeBranchNameMethod = GitLabService.class.getDeclaredMethod("encodeBranchName", String.class);
         encodeBranchNameMethod.setAccessible(true);
 
-        // Test branch name with comma
-        String branchNameWithComma = "review/PLD-1173-fix_tests,_skip_dto_generation_from_WSDL";
+        // Test branch name with comma and slash
+        String branchNameWithComma = "review/PLD-1173-fix_tests,_skip_dto_generation";
         String encodedName = (String) encodeBranchNameMethod.invoke(gitLabService, branchNameWithComma);
 
-        // Verify that the comma is properly encoded
-        // The comma should be double-encoded: first replaced with %2C, then that %2C is encoded
-        assertTrue(encodedName.contains("%252C"), 
-                "Encoded branch name should contain properly encoded comma: " + encodedName);
+        // Verify that the comma is properly encoded to %2C
+        assertTrue(encodedName.contains("%2C"),
+                "Encoded branch name should contain properly encoded comma.");
+
+        // Verify that the slash is properly encoded to %2F
+        assertTrue(encodedName.contains("%2F"),
+                "Encoded branch name should contain properly encoded slash.");
+
+        // Ensure there is no double encoding (%25)
+        assertFalse(encodedName.contains("%25"),
+                "Encoded branch name should not be double-encoded.");
+
+        assertEquals("review%2FPLD-1173-fix_tests%2C_skip_dto_generation", encodedName);
 
         logger.info("[DEBUG_LOG] encodeBranchName with comma test completed");
     }
