@@ -56,26 +56,6 @@ mvn clean package antrun:run@run-with-debug
 4. Запустіть додаток через Maven
 5. Запустіть debug конфігурацію в IDE
 
-### Visual Studio Code
-
-1. Створіть файл `.vscode/launch.json`:
-```json
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "java",
-            "name": "Debug GitLaberFXC",
-            "request": "attach",
-            "hostName": "localhost",
-            "port": 5005
-        }
-    ]
-}
-```
-2. Запустіть додаток через Maven
-3. Натисніть F5 для підключення відлагоджувача
-
 ## Вирішення проблем
 
 ### Windows: "JavaFX runtime components are missing"
