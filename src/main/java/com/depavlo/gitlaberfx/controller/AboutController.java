@@ -28,16 +28,33 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Controller for the About dialog.
+ * This class handles the functionality of the About dialog, which displays
+ * information about the application such as version, author, and license.
+ */
 public class AboutController {
+    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(AboutController.class);
 
+    /** The stage that contains the About dialog. */
     private Stage stage;
 
+    /**
+     * Initializes the controller with the stage that contains the About dialog.
+     * This method is called after the FXML has been loaded.
+     *
+     * @param stage The stage that contains the About dialog
+     */
     public void initialize(Stage stage) {
         logger.debug("initialize: stage={}", stage != null ? "not null" : "null");
         this.stage = stage;
     }
 
+    /**
+     * Closes the About dialog.
+     * This method is called when the user clicks the close button.
+     */
     @FXML
     private void close() {
         logger.debug("Closing about dialog");

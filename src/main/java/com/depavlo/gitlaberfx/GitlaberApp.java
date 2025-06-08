@@ -39,11 +39,28 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Main application class for the GitlaberFX application.
+ * This class is responsible for initializing the JavaFX application,
+ * loading the configuration, setting up the UI, and managing the application lifecycle.
+ * It uses FXML for the UI layout and supports internationalization.
+ */
 public class GitlaberApp extends Application {
+    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(GitlaberApp.class);
 
+    /** The main controller for the application UI. */
     private MainController controller;
 
+    /**
+     * Initializes and starts the JavaFX application.
+     * This method is called by the JavaFX runtime after the application is launched.
+     * It loads the configuration, sets up the locale, loads the FXML, initializes the controller,
+     * and sets up the initial UI state.
+     *
+     * @param stage the primary stage for this application
+     * @throws IOException if there is an error loading the FXML or configuration
+     */
     @Override
     public void start(Stage stage) throws IOException {
         logger.info("Starting application");
@@ -90,6 +107,11 @@ public class GitlaberApp extends Application {
         }
     }
 
+    /**
+     * Cleans up resources when the application is stopping.
+     * This method is called by the JavaFX runtime when the application is shutting down.
+     * It ensures that the controller is properly shut down to release resources.
+     */
     @Override
     public void stop() {
         logger.info("JavaFX stop method called. Ensuring controller is shutdown.");
@@ -98,6 +120,12 @@ public class GitlaberApp extends Application {
         }
     }
 
+    /**
+     * The main entry point for the application.
+     * This method launches the JavaFX application.
+     *
+     * @param args command line arguments (not used)
+     */
     public static void main(String[] args) {
         launch(args);
     }

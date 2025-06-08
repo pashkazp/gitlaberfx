@@ -50,8 +50,17 @@ import java.util.ResourceBundle;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * Utility class for creating and managing various dialogs in the application.
+ * This class provides methods for showing loading indicators, settings dialogs,
+ * confirmation dialogs, date pickers, and about dialogs.
+ * All methods are static and can be called from any part of the application.
+ */
 public class DialogHelper {
+    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(DialogHelper.class);
+
+    /** Reference to the currently displayed loading dialog stage. */
     private static Stage loadingStage;
 
     /**
@@ -192,6 +201,14 @@ public class DialogHelper {
         return showSettingsDialog(parentStage, config, null);
     }
 
+    /**
+     * Shows a confirmation dialog for deleting branches.
+     * This dialog displays a list of branches and allows the user to confirm which ones to delete.
+     * 
+     * @param parentStage The parent stage
+     * @param branches The list of branches to potentially delete
+     * @return The list of branches selected for deletion, or null if the dialog was cancelled or an error occurred
+     */
     public static List<BranchModel> showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches) {
         logger.debug("showDeleteConfirmationDialog: parentStage={}, branches.size={}", 
                 parentStage != null ? "not null" : "null", 
@@ -218,6 +235,13 @@ public class DialogHelper {
         }
     }
 
+    /**
+     * Shows a date picker dialog.
+     * This dialog allows the user to select a date from a calendar.
+     * 
+     * @param parentStage The parent stage
+     * @return The selected date, or null if no date was selected or an error occurred
+     */
     public static LocalDate showDatePickerDialog(Stage parentStage) {
         logger.debug("showDatePickerDialog: parentStage={}", parentStage != null ? "not null" : "null");
         try {
@@ -242,6 +266,12 @@ public class DialogHelper {
         }
     }
 
+    /**
+     * Shows the about dialog.
+     * This dialog displays information about the application, such as version, author, and license.
+     * 
+     * @param parentStage The parent stage
+     */
     public static void showAboutDialog(Stage parentStage) {
         logger.debug("showAboutDialog: parentStage={}", parentStage != null ? "not null" : "null");
         try {

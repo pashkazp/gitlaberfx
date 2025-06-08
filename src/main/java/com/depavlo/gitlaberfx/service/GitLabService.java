@@ -43,14 +43,46 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Service class for interacting with the GitLab API.
+ * This class provides methods to perform various operations on GitLab resources
+ * such as projects, branches, and commits. It handles the HTTP communication
+ * with the GitLab server using OkHttp and parses JSON responses using Jackson.
+ * 
+ * The service supports operations like:
+ * - Testing connection to GitLab
+ * - Retrieving projects
+ * - Managing branches (listing, checking merge status, deleting)
+ * - Working with commits
+ * 
+ * It uses the configuration from AppConfig for GitLab URL and API token.
+ */
 public class GitLabService {
+    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(GitLabService.class);
+
+    /** Constant for the GitLab API v4 projects endpoint path. */
     public static final String API_V_4_PROJECTS = "/api/v4/projects/";
+
+    /** Constant for the GitLab API private token header name. */
     public static final String PRIVATE_TOKEN = "PRIVATE-TOKEN";
+
+    /** Configuration containing GitLab URL and API token. */
     private final AppConfig config;
+
+    /** HTTP client for making requests to the GitLab API. */
     private final OkHttpClient httpClient;
+
+    /** Object mapper for parsing JSON responses from the GitLab API. */
     private final ObjectMapper objectMapper;
 
+    /**
+     * Constructs a new GitLabService with the provided configuration.
+     * Initializes the HTTP client with a custom SSL context that trusts all certificates,
+     * which is useful for self-hosted GitLab instances with self-signed certificates.
+     *
+     * @param config the configuration containing GitLab URL and API token
+     */
     public GitLabService(AppConfig config) {
         this.config = config;
 
@@ -115,6 +147,14 @@ public class GitLabService {
     }
 
 
+    /**
+     * Retrieves a list of all GitLab projects that the user has access to.
+     * This method handles pagination to fetch all projects, not just the first page.
+     * It fetches projects in batches of 100 and continues until all projects are retrieved.
+     *
+     * @return a list of GitLab projects
+     * @throws IOException if there is an error communicating with the GitLab API or parsing the response
+     */
     public List<Project> getProjects() throws IOException {
         if (!config.isConfigurationValid()) {
             logger.warn("Skipping getProjects() because configuration is invalid.");
@@ -158,6 +198,16 @@ public class GitLabService {
         return projects;
     }
 
+    /**
+     * Retrieves a list of all branches for a specific GitLab project.
+     * This method handles pagination to fetch all branches, not just the first page.
+     * It fetches branch details including name, last commit, merge status,
+     * protection status, and other branch attributes.
+     *
+     * @param projectId the ID of the GitLab project
+     * @return a list of branch models representing the branches in the project
+     * @throws IOException if there is an error communicating with the GitLab API or parsing the response
+     */
     public List<BranchModel> getBranches(String projectId) throws IOException {
         if (!config.isConfigurationValid()) {
             logger.warn("Skipping getBranches() because configuration is invalid.");
@@ -199,6 +249,13 @@ public class GitLabService {
         return branches;
     }
 
+    /**
+     * Deletes a branch from a GitLab project.
+     *
+     * @param projectId the ID of the GitLab project
+     * @param branchName the name of the branch to delete
+     * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be deleted
+     */
     public void deleteBranch(String projectId, String branchName) throws IOException {
         logger.info("Deleting branch {} from project {}", branchName, projectId);
         String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches/" + encodeBranchName(branchName);
@@ -216,6 +273,16 @@ public class GitLabService {
     }
 
 
+    /**
+     * Checks if a branch is merged into another branch by comparing their commit SHAs.
+     * This method determines if all commits from the source branch are already in the target branch.
+     *
+     * @param projectId the ID of the GitLab project
+     * @param branchName the name of the source branch to check
+     * @param mainBranch the name of the target branch to check against
+     * @return true if the source branch is merged into the target branch, false otherwise
+     * @throws IOException if there is an error communicating with the GitLab API
+     */
     public boolean isCommitInMainBranch(String projectId, String branchName, String mainBranch) throws IOException {
         logger.debug("Checking if branch {} is merged into {}", branchName, mainBranch);
 
@@ -241,6 +308,13 @@ public class GitLabService {
         return isMerged;
     }
 
+    /**
+     * Gets the SHA of the last commit on a branch.
+     *
+     * @param projectId the ID of the GitLab project
+     * @param branchName the name of the branch
+     * @return the SHA of the last commit on the branch, or null if there was an error
+     */
     private String getBranchLastCommitSha(String projectId, String branchName) {
         logger.debug("Getting SHA for branch {}", branchName);
         String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches/" + encodeBranchName(branchName);
@@ -262,6 +336,15 @@ public class GitLabService {
         }
     }
 
+    /**
+     * Gets the merge base SHA between two branches.
+     * The merge base is the common ancestor commit of the two branches.
+     *
+     * @param projectId the ID of the GitLab project
+     * @param sourceBranch the name of the source branch
+     * @param targetBranch the name of the target branch
+     * @return the SHA of the merge base commit, or null if there was an error
+     */
     private String getMergeBaseSha(String projectId, String sourceBranch, String targetBranch) {
         logger.debug("Getting merge base SHA between {} and {}", sourceBranch, targetBranch);
         String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/merge_base?refs[]=" +
@@ -284,24 +367,85 @@ public class GitLabService {
         }
     }
 
+    /**
+     * Represents a GitLab project with its basic properties.
+     * This class is used to store project information retrieved from the GitLab API.
+     */
     public static class Project {
+        /** The unique identifier of the project in GitLab. */
         private int id;
+
+        /** The name of the project. */
         private String name;
+
+        /** The path segment of the project URL. */
         private String path;
+
+        /** The namespace path of the project (e.g., group or user path). */
         private String namespacePath;
 
+        /**
+         * Gets the ID of the project.
+         * 
+         * @return the project ID
+         */
         public int getId() { return id; }
+
+        /**
+         * Sets the ID of the project.
+         * 
+         * @param id the project ID to set
+         */
         public void setId(int id) { this.id = id; }
 
+        /**
+         * Gets the name of the project.
+         * 
+         * @return the project name
+         */
         public String getName() { return name; }
+
+        /**
+         * Sets the name of the project.
+         * 
+         * @param name the project name to set
+         */
         public void setName(String name) { this.name = name; }
 
+        /**
+         * Gets the path segment of the project URL.
+         * 
+         * @return the project path
+         */
         public String getPath() { return path; }
+
+        /**
+         * Sets the path segment of the project URL.
+         * 
+         * @param path the project path to set
+         */
         public void setPath(String path) { this.path = path; }
 
+        /**
+         * Gets the namespace path of the project.
+         * 
+         * @return the namespace path
+         */
         public String getNamespacePath() { return namespacePath; }
+
+        /**
+         * Sets the namespace path of the project.
+         * 
+         * @param namespacePath the namespace path to set
+         */
         public void setNamespacePath(String namespacePath) { this.namespacePath = namespacePath; }
 
+        /**
+         * Gets the full path name of the project, including namespace.
+         * If namespace path is available, returns "namespacePath/path", otherwise returns just the name.
+         * 
+         * @return the full path name of the project
+         */
         public String getPathName() {
             if (namespacePath != null && !namespacePath.isEmpty()) {
                 return namespacePath + "/" + path;
@@ -310,6 +454,14 @@ public class GitLabService {
         }
     }
 
+    /**
+     * Encodes a branch name for use in a URL.
+     * This method handles special characters in branch names to ensure they are properly encoded for GitLab API URLs.
+     * It specifically pre-processes commas before applying standard URL encoding.
+     *
+     * @param branchName the branch name to encode
+     * @return the URL-encoded branch name, or null if the input was null
+     */
     private String encodeBranchName(String branchName) {
         if (branchName == null) {
             return null;

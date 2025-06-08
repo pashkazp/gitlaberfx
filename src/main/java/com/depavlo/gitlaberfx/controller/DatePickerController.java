@@ -31,21 +31,43 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 
+/**
+ * Controller for the date picker dialog.
+ * This class handles the functionality of the date picker dialog, which allows
+ * the user to select a date from a calendar.
+ */
 public class DatePickerController {
+    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(DatePickerController.class);
 
+    /** The date picker control that allows the user to select a date. */
     @FXML
     private DatePicker datePicker;
 
+    /** The stage that contains the date picker dialog. */
     private Stage stage;
+
+    /** The date selected by the user, or null if no date was selected. */
     private LocalDate selectedDate;
 
+    /**
+     * Initializes the controller with the stage that contains the date picker dialog.
+     * This method is called after the FXML has been loaded.
+     * It sets the initial date to the current date.
+     *
+     * @param stage The stage that contains the date picker dialog
+     */
     public void initialize(Stage stage) {
         logger.debug("initialize: stage={}", stage != null ? "not null" : "null");
         this.stage = stage;
         datePicker.setValue(LocalDate.now());
     }
 
+    /**
+     * Confirms the date selection and closes the dialog.
+     * This method is called when the user clicks the confirm button.
+     * It saves the selected date and closes the dialog.
+     */
     @FXML
     private void confirm() {
         logger.debug("Confirming date selection");
@@ -53,6 +75,11 @@ public class DatePickerController {
         stage.close();
     }
 
+    /**
+     * Cancels the date selection and closes the dialog.
+     * This method is called when the user clicks the cancel button.
+     * It sets the selected date to null and closes the dialog.
+     */
     @FXML
     private void cancel() {
         logger.debug("Cancelling date selection");
@@ -60,6 +87,11 @@ public class DatePickerController {
         stage.close();
     }
 
+    /**
+     * Gets the date selected by the user.
+     *
+     * @return The selected date, or null if no date was selected or the selection was cancelled
+     */
     public LocalDate getSelectedDate() {
         logger.debug("getSelectedDate: selectedDate={}", selectedDate);
         return selectedDate;

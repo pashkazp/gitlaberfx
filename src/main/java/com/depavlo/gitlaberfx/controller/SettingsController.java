@@ -47,28 +47,64 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Controller for the settings dialog.
+ * This class handles the functionality of the settings dialog, which allows
+ * the user to configure GitLab connection settings and application preferences.
+ * It manages GitLab URL, API key, and language selection, and provides
+ * functionality to test the connection and save the settings.
+ */
 public class SettingsController {
+    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(SettingsController.class);
 
+    /** Text field for entering the GitLab URL. */
     @FXML
     private TextField gitlabUrlField;
 
+    /** Password field for entering the GitLab API key. */
     @FXML
     private PasswordField apiKeyField;
 
+    /** Combo box for selecting the application language. */
     @FXML
     private ComboBox<String> languageComboBox;
 
+    /** The application configuration that will be updated with the new settings. */
     private AppConfig config;
+
+    /** The stage that contains the settings dialog. */
     private Stage stage;
+
+    /** Flag indicating whether the settings have been saved. */
     private boolean saved = false;
+
+    /** Map of available locales, with display names as keys and locale codes as values. */
     private Map<String, String> availableLocales = new HashMap<>();
+
+    /** Reference to the main controller for updating the UI after settings changes. */
     private MainController mainController;
 
+    /**
+     * Sets the main controller reference.
+     * This method is called by the main controller to establish a reference
+     * that allows the settings controller to communicate with the main controller.
+     *
+     * @param mainController The main controller instance
+     */
     public void setMainController(MainController mainController) {
         this.mainController = mainController;
     }
 
+    /**
+     * Initializes the controller with the application configuration and stage.
+     * This method is called after the FXML has been loaded.
+     * It populates the form fields with the current configuration values
+     * and initializes the available locales for the language selection.
+     *
+     * @param config The application configuration containing the current settings
+     * @param stage The stage that contains the settings dialog
+     */
     public void initialize(AppConfig config, Stage stage) {
         this.config = config;
         this.stage = stage;
@@ -114,6 +150,13 @@ public class SettingsController {
         }
     }
 
+    /**
+     * Initializes the available locales for the language selection.
+     * This method scans the i18n directory for message property files
+     * and extracts the available locales. It populates the language combo box
+     * with the display names of the available locales.
+     * The method handles both file system and JAR-based resource access.
+     */
     private void initializeLocales() {
         try {
             availableLocales.clear();
@@ -243,6 +286,13 @@ public class SettingsController {
         }
     }
 
+    /**
+     * Tests the connection to the GitLab server using the current settings.
+     * This method is called when the user clicks the test connection button.
+     * It creates a temporary configuration with the current form values
+     * and attempts to connect to the GitLab server. The result is displayed
+     * in an alert dialog.
+     */
     @FXML
     private void testConnection() {
         AppConfig testConfig = new AppConfig();
@@ -264,6 +314,13 @@ public class SettingsController {
         }
     }
 
+    /**
+     * Saves the settings and closes the dialog.
+     * This method is called when the user clicks the save button.
+     * It updates the application configuration with the values from the form fields
+     * and saves the configuration to disk. If the language has been changed,
+     * it also updates the application locale and notifies the main controller.
+     */
     @FXML
     private void save() {
         config.setGitlabUrl(gitlabUrlField.getText());
@@ -311,15 +368,36 @@ public class SettingsController {
         stage.close();
     }
 
+    /**
+     * Cancels the settings changes and closes the dialog.
+     * This method is called when the user clicks the cancel button.
+     * It discards any changes made to the form fields and closes the dialog
+     * without updating the application configuration.
+     */
     @FXML
     private void cancel() {
         stage.close();
     }
 
+    /**
+     * Checks if the settings have been saved.
+     * This method can be used by the calling code to determine if the user
+     * saved the settings or cancelled the dialog.
+     *
+     * @return true if the settings were saved, false otherwise
+     */
     public boolean isSaved() {
         return saved;
     }
 
+    /**
+     * Displays a success message in an information dialog.
+     * This method is used to show success messages to the user,
+     * such as when a connection test is successful.
+     *
+     * @param title The title of the dialog
+     * @param message The message to display in the dialog
+     */
     private void showSuccess(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle(title);
@@ -328,6 +406,14 @@ public class SettingsController {
         alert.showAndWait();
     }
 
+    /**
+     * Displays an error message in an error dialog.
+     * This method is used to show error messages to the user,
+     * such as when a connection test fails or when required settings are missing.
+     *
+     * @param title The title of the dialog
+     * @param message The error message to display in the dialog
+     */
     private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);

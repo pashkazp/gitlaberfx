@@ -37,15 +37,36 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Properties;
 
+/**
+ * Configuration class for the GitlaberFX application.
+ * This class manages loading, saving, and accessing application configuration settings
+ * such as GitLab URL, API key, and locale preferences.
+ * Configuration is persisted to a properties file in the user's home directory.
+ */
 public class AppConfig {
+    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(AppConfig.class);
+
+    /** Directory path where configuration files are stored. */
     private static String CONFIG_DIR = System.getProperty("user.home") + "/.config/gitlaberfx";
+
+    /** Full path to the configuration properties file. */
     private static String CONFIG_FILE = CONFIG_DIR + "/config.properties";
 
+    /** The URL of the GitLab instance to connect to. */
     private String gitlabUrl;
+
+    /** The API key or personal access token for authenticating with GitLab. */
     private String apiKey;
+
+    /** The locale code for the application's user interface language. */
     private String locale;
 
+    /**
+     * Constructs a new empty AppConfig instance.
+     * This constructor creates a configuration object with null values for all properties.
+     * Use the load() method to populate the configuration from the saved properties file.
+     */
     public AppConfig() {
     }
 
@@ -67,6 +88,13 @@ public class AppConfig {
         }
     }
 
+    /**
+     * Loads the application configuration from the properties file.
+     * If the configuration file exists, it reads the properties and creates a populated AppConfig object.
+     * If the file doesn't exist or there's an error reading it, returns a new empty AppConfig object.
+     *
+     * @return a populated AppConfig object if the file exists and can be read, otherwise a new empty AppConfig
+     */
     public static AppConfig load() {
         try {
             createConfigDirIfNotExists();
@@ -92,6 +120,12 @@ public class AppConfig {
         return new AppConfig();
     }
 
+    /**
+     * Saves the current configuration to the properties file.
+     * This method creates the configuration directory if it doesn't exist,
+     * then writes all non-null properties to the file.
+     * If there's an error during the save operation, it's logged but not propagated.
+     */
     public void save() {
         try {
             createConfigDirIfNotExists();
@@ -110,6 +144,12 @@ public class AppConfig {
         }
     }
 
+    /**
+     * Creates the configuration directory if it doesn't exist.
+     * This method is called before any file operations to ensure the directory structure is in place.
+     *
+     * @throws IOException if there's an error creating the directory
+     */
     private static void createConfigDirIfNotExists() throws IOException {
         Path configPath = Paths.get(CONFIG_DIR);
         if (!Files.exists(configPath)) {
@@ -118,26 +158,56 @@ public class AppConfig {
     }
 
     // Getters and setters
+    /**
+     * Gets the GitLab URL.
+     *
+     * @return the URL of the GitLab instance
+     */
     public String getGitlabUrl() {
         return gitlabUrl;
     }
 
+    /**
+     * Sets the GitLab URL.
+     *
+     * @param gitlabUrl the URL of the GitLab instance to set
+     */
     public void setGitlabUrl(String gitlabUrl) {
         this.gitlabUrl = gitlabUrl;
     }
 
+    /**
+     * Gets the API key for GitLab authentication.
+     *
+     * @return the API key or personal access token
+     */
     public String getApiKey() {
         return apiKey;
     }
 
+    /**
+     * Sets the API key for GitLab authentication.
+     *
+     * @param apiKey the API key or personal access token to set
+     */
     public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
     }
 
+    /**
+     * Gets the locale code for the application's user interface language.
+     *
+     * @return the locale code (e.g., "en_US", "uk_UA")
+     */
     public String getLocale() {
         return locale;
     }
 
+    /**
+     * Sets the locale code for the application's user interface language.
+     *
+     * @param locale the locale code to set (e.g., "en_US", "uk_UA")
+     */
     public void setLocale(String locale) {
         this.locale = locale;
     }

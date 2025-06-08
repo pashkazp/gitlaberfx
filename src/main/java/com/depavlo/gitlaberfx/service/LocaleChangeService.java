@@ -42,16 +42,42 @@ import java.util.ResourceBundle;
 
 /**
  * Service for handling dynamic locale changes in the application.
+ * This class provides functionality to change the application's locale at runtime,
+ * preserving the current state of the UI and reloading the interface with the new locale.
+ * It handles saving the current UI state, changing the locale, and restoring the state
+ * after the UI has been reloaded with the new locale.
  */
 public class LocaleChangeService {
+    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(LocaleChangeService.class);
 
+    /**
+     * Inner class to store the UI state that needs to be preserved during locale change.
+     * This includes selected project and branch information that should be restored
+     * after the UI is reloaded with the new locale.
+     */
     public static class SavedState {
+        /** The ID of the currently selected project. */
         public String projectId;
+
+        /** The name of the currently selected project. */
         public String projectName;
+
+        /** The name of the currently selected target branch. */
         public String targetBranchName;
     }
 
+    /**
+     * Changes the application's locale while preserving the current UI state.
+     * This method saves the current UI state, changes the locale, reloads the UI,
+     * and then restores the saved state in the new UI.
+     *
+     * @param newLocale The new locale to set
+     * @param config The application configuration to update with the new locale
+     * @param stage The primary stage of the application
+     * @param currentController The current main controller containing the UI state to preserve
+     * @throws RuntimeException if there's an error during the locale change process
+     */
     public static void changeLocale(Locale newLocale, AppConfig config, Stage stage, MainController currentController) {
         logger.info("Changing locale to: {}", newLocale);
         try {
@@ -74,6 +100,14 @@ public class LocaleChangeService {
         }
     }
 
+    /**
+     * Saves the current UI state from the model into a SavedState object.
+     * This method extracts the essential state information that needs to be preserved
+     * during the locale change and UI reload.
+     *
+     * @param model The UI state model containing the current state
+     * @return A SavedState object containing the essential state information
+     */
     private static SavedState saveState(UIStateModel model) {
         logger.debug("Saving UI state from model");
         SavedState state = new SavedState();
@@ -84,6 +118,16 @@ public class LocaleChangeService {
         return state;
     }
 
+    /**
+     * Reloads the UI with the new locale.
+     * This method creates a new scene with the updated locale resources,
+     * initializes a new MainController, and sets it on the primary stage.
+     *
+     * @param stage The primary stage of the application
+     * @param config The application configuration
+     * @return The newly created and initialized MainController
+     * @throws IOException if there's an error loading the FXML or initializing the controller
+     */
     private static MainController reloadUI(Stage stage, AppConfig config) throws IOException {
         logger.info("Reloading UI with new locale");
         FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));

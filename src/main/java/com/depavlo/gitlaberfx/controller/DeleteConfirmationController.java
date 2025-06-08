@@ -44,48 +44,80 @@ import com.depavlo.gitlaberfx.util.I18nUtil;
 
 import java.util.List;
 
+/**
+ * Controller for the delete confirmation dialog.
+ * This class handles the functionality of the dialog that allows users to select
+ * branches for deletion. It displays a table of branches with various properties
+ * and provides options to select, deselect, or invert the selection of branches.
+ * Users can confirm or cancel the deletion operation.
+ */
 public class DeleteConfirmationController {
+    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(DeleteConfirmationController.class);
 
+    /** Table view that displays the branches. */
     @FXML
     private TableView<BranchModel> branchesTableView;
 
+    /** Column for the selection checkboxes. */
     @FXML
     private TableColumn<BranchModel, Boolean> selectedColumn;
 
+    /** Column for the branch names. */
     @FXML
     private TableColumn<BranchModel, String> nameColumn;
 
+    /** Column for the last commit information. */
     @FXML
     private TableColumn<BranchModel, String> lastCommitColumn;
 
+    /** Column indicating whether the branch is merged into the target branch. */
     @FXML
     private TableColumn<BranchModel, Boolean> mergeToDestColumn;
 
+    /** Column indicating whether the branch is the default branch. */
     @FXML
     private TableColumn<BranchModel, Boolean> defaultColumn;
 
+    /** Column indicating whether the branch is protected. */
     @FXML
     private TableColumn<BranchModel, Boolean> protectedColumn;
 
+    /** Column indicating whether the branch is merged. */
     @FXML
     private TableColumn<BranchModel, Boolean> mergedColumn;
 
+    /** Column indicating whether developers can push to the branch. */
     @FXML
     private TableColumn<BranchModel, Boolean> developersCanPushColumn;
 
+    /** Column indicating whether developers can merge to the branch. */
     @FXML
     private TableColumn<BranchModel, Boolean> developersCanMergeColumn;
 
+    /** Column indicating whether the current user can push to the branch. */
     @FXML
     private TableColumn<BranchModel, Boolean> canPushColumn;
 
+    /** Label that displays the count of selected branches. */
     @FXML
     private Label branchCounterLabel;
 
+    /** The stage that contains the delete confirmation dialog. */
     private Stage stage;
+
+    /** The list of branches that are selected for deletion. */
     private List<BranchModel> selectedBranches;
 
+    /**
+     * Initializes the controller with the list of branches and the stage.
+     * This method is called after the FXML has been loaded.
+     * It sets up the table columns, populates the table with branches,
+     * and adds listeners for branch selection changes.
+     *
+     * @param branches The list of branches to display in the table
+     * @param stage The stage that contains the delete confirmation dialog
+     */
     public void initialize(List<BranchModel> branches, Stage stage) {
         logger.debug("initialize: branches.size={}, stage={}", 
                 branches != null ? branches.size() : "null", 
@@ -153,6 +185,11 @@ public class DeleteConfirmationController {
         updateBranchCounter();
     }
 
+    /**
+     * Selects all non-protected branches in the table.
+     * This method is called when the user clicks the "Select All" button.
+     * Protected branches cannot be selected for deletion.
+     */
     @FXML
     private void selectAll() {
         logger.debug("Selecting all branches");
@@ -164,6 +201,10 @@ public class DeleteConfirmationController {
         updateBranchCounter();
     }
 
+    /**
+     * Deselects all branches in the table.
+     * This method is called when the user clicks the "Deselect All" button.
+     */
     @FXML
     private void deselectAll() {
         logger.debug("Deselecting all branches");
@@ -171,6 +212,12 @@ public class DeleteConfirmationController {
         updateBranchCounter();
     }
 
+    /**
+     * Inverts the selection of all non-protected branches in the table.
+     * This method is called when the user clicks the "Invert Selection" button.
+     * Selected branches become deselected, and deselected branches become selected.
+     * Protected branches remain unselected.
+     */
     @FXML
     private void invertSelection() {
         logger.debug("Inverting selection");
@@ -182,6 +229,11 @@ public class DeleteConfirmationController {
         updateBranchCounter();
     }
 
+    /**
+     * Confirms the branch deletion selection and closes the dialog.
+     * This method is called when the user clicks the confirm button.
+     * It saves the list of selected branches and closes the dialog.
+     */
     @FXML
     private void confirm() {
         logger.debug("Confirming deletion");
@@ -191,6 +243,11 @@ public class DeleteConfirmationController {
         stage.close();
     }
 
+    /**
+     * Cancels the branch deletion operation and closes the dialog.
+     * This method is called when the user clicks the cancel button.
+     * It sets the selected branches to null and closes the dialog.
+     */
     @FXML
     private void cancel() {
         logger.debug("Cancelling deletion");
@@ -198,6 +255,12 @@ public class DeleteConfirmationController {
         stage.close();
     }
 
+    /**
+     * Gets the list of branches selected for deletion.
+     * This method is called after the dialog is closed to retrieve the selected branches.
+     *
+     * @return The list of selected branches, or null if the operation was cancelled
+     */
     public List<BranchModel> getSelectedBranches() {
         logger.debug("getSelectedBranches: selectedBranches.size={}", 
                 selectedBranches != null ? selectedBranches.size() : "null");
