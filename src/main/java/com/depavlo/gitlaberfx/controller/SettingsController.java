@@ -260,7 +260,7 @@ public class SettingsController {
             showSuccess(I18nUtil.getMessage("app.success"), I18nUtil.getMessage("settings.connection.success"));
         } catch (IOException e) {
             logger.error("Connection test failed", e);
-            showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("settings.connection.error", e.getMessage()));
+            showError(I18nUtil.getMessage("app.error"), I18nUtil.getMessage("settings.connection.error.generic"));
         }
     }
 

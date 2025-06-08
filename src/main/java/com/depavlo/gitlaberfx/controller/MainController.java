@@ -213,12 +213,12 @@ public class MainController {
     //</editor-fold>
 
     //<editor-fold desc="Core Logic: Project and Branch Loading">
-    public void startInitialLoad() {
+    public CompletableFuture<Void> startInitialLoad() {
         if (!config.isConfigurationValid()) {
             showWarning("warning.missing.settings", "warning.missing.settings.message");
-            return;
+            return CompletableFuture.completedFuture(null);
         }
-        refreshProjects();
+        return refreshProjects();
     }
 
     @FXML
@@ -238,7 +238,7 @@ public class MainController {
                 });
             } catch (IOException e) {
                 logger.error("Failed to load projects", e);
-                Platform.runLater(() -> showError("app.error", e.getMessage()));
+                Platform.runLater(() -> showError("error.loading", I18nUtil.getMessage("error.loading.projects.generic")));
                 completionFuture.completeExceptionally(e);
             }
         });
@@ -282,7 +282,7 @@ public class MainController {
                 });
             } catch (IOException e) {
                 logger.error("Failed to load branches for project {}", projectId, e);
-                Platform.runLater(() -> showError("app.error", e.getMessage()));
+                Platform.runLater(() -> showError("error.loading", I18nUtil.getMessage("error.loading.branches.generic")));
                 completionFuture.completeExceptionally(e);
             }
         });
@@ -559,7 +559,7 @@ public class MainController {
             LocaleChangeService.changeLocale(newLocale, config, stage, this);
         } catch (Exception e) {
             logger.error("Failed to change locale", e);
-            showError("app.error", "error.execution.message");
+            showError("app.error", I18nUtil.getMessage("error.execution.generic"));
         }
     }
     //</editor-fold>
@@ -576,7 +576,7 @@ public class MainController {
                 task.run();
             } catch (Exception e) {
                 logger.error("Task '{}' failed", name, e);
-                Platform.runLater(() -> showError("app.error", e.getMessage()));
+                Platform.runLater(() -> showError("app.error", I18nUtil.getMessage("error.execution.generic")));
             } finally {
                 setUiBusy(false);
             }

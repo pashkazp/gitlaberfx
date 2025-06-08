@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.CompletableFuture;
 
 public class GitlaberApp extends Application {
     private static final Logger logger = LoggerFactory.getLogger(GitlaberApp.class);
@@ -53,14 +54,14 @@ public class GitlaberApp extends Application {
         if (localeCode != null && !localeCode.isEmpty()) {
             String[] localeParts = localeCode.replace('-', '_').split("_");
             if (localeParts.length == 2) {
-                com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new Locale(localeParts[0], localeParts[1]));
+                I18nUtil.setLocale(new Locale(localeParts[0], localeParts[1]));
             }
         } else {
-            com.depavlo.gitlaberfx.util.I18nUtil.setLocale(new Locale("en", "US"));
+            I18nUtil.setLocale(new Locale("en", "US"));
         }
 
         FXMLLoader fxmlLoader = new FXMLLoader(GitlaberApp.class.getResource("/fxml/main.fxml"));
-        fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", com.depavlo.gitlaberfx.util.I18nUtil.getCurrentLocale()));
+        fxmlLoader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
         Scene scene = new Scene(fxmlLoader.load(), 800, 600);
 
         stage.setTitle(I18nUtil.getMessage("app.title"));
@@ -76,12 +77,17 @@ public class GitlaberApp extends Application {
 
         stage.show();
 
-        // Trigger the initial data load and set the default selection when it's done.
-        // This ensures the UI correctly displays the "not selected" state after async loading.
-        controller.startInitialLoad().thenRunAsync(
-            controller::selectInitialProject,
-            Platform::runLater
-        );
+        // Trigger the initial data load.
+        CompletableFuture<Void> initialLoad = controller.startInitialLoad();
+
+        // After the initial load is complete, set the default selection in the UI thread.
+        // This robust approach avoids the "void cannot be dereferenced" error.
+        if (initialLoad != null) {
+            initialLoad.thenRunAsync(
+                    controller::selectInitialProject,
+                    Platform::runLater
+            );
+        }
     }
 
     @Override

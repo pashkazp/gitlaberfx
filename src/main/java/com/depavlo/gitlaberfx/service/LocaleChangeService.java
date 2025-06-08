@@ -55,28 +55,33 @@ public class LocaleChangeService {
     public static void changeLocale(Locale newLocale, AppConfig config, Stage stage, MainController currentController) {
         logger.info("Changing locale to: {}", newLocale);
         try {
-            // 1. Get the entire state model from the current controller
+            // Get the entire state model from the current controller
             UIStateModel existingModel = currentController.getUiStateModel();
-            SavedState savedSelections = new SavedState();
-            savedSelections.projectId = existingModel.getCurrentProjectId();
-            savedSelections.projectName = existingModel.getCurrentProjectName();
-            savedSelections.targetBranchName = existingModel.getCurrentTargetBranchName();
+            SavedState savedSelections = saveState(existingModel);
 
-            // 2. Update locale globally
             I18nUtil.setLocale(newLocale);
             config.setLocale(newLocale.toLanguageTag().replace('-', '_'));
             config.save();
 
-            // 3. Reload UI, which creates a new controller
             MainController newController = reloadUI(stage, config);
 
-            // 4. Repopulate the new controller with the existing data
+            // Pass both the existing model data and the specific selections to the new controller
             newController.repopulateFromState(existingModel, savedSelections);
 
         } catch (Exception e) {
             logger.error("Error changing locale", e);
             throw new RuntimeException("Failed to change locale", e);
         }
+    }
+
+    private static SavedState saveState(UIStateModel model) {
+        logger.debug("Saving UI state from model");
+        SavedState state = new SavedState();
+        state.projectId = model.getCurrentProjectId();
+        state.projectName = model.getCurrentProjectName();
+        state.targetBranchName = model.getCurrentTargetBranchName();
+        logger.debug("Saved state: Project='{}', TargetBranch='{}'", state.projectName, state.targetBranchName);
+        return state;
     }
 
     private static MainController reloadUI(Stage stage, AppConfig config) throws IOException {
