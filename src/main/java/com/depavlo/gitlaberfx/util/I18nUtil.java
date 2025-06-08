@@ -1,7 +1,5 @@
 package com.depavlo.gitlaberfx.util;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -13,34 +11,6 @@ public class I18nUtil {
     private static final String BUNDLE_BASE_NAME = "i18n.messages";
     private static Locale currentLocale = new Locale("en", "US"); // Default to English
     private static ResourceBundle resourceBundle;
-
-    // Observer pattern for locale changes
-    private static final List<LocaleChangeListener> listeners = new ArrayList<>();
-
-    /**
-     * Interface for locale change listeners
-     */
-    public interface LocaleChangeListener {
-        void onLocaleChanged(Locale newLocale);
-    }
-
-    /**
-     * Adds a listener to be notified when the locale changes
-     * 
-     * @param listener The listener to add
-     */
-    public static void addLocaleChangeListener(LocaleChangeListener listener) {
-        listeners.add(listener);
-    }
-
-    /**
-     * Removes a locale change listener
-     * 
-     * @param listener The listener to remove
-     */
-    public static void removeLocaleChangeListener(LocaleChangeListener listener) {
-        listeners.remove(listener);
-    }
 
     /**
      * Gets the base name of the resource bundle.
@@ -65,18 +35,12 @@ public class I18nUtil {
 
     /**
      * Sets the current locale and reloads the resource bundle.
-     * Notifies all registered listeners about the locale change.
      * 
      * @param locale The locale to set
      */
     public static void setLocale(Locale locale) {
         currentLocale = locale;
         loadResourceBundle();
-
-        // Notify all listeners about the locale change
-        for (LocaleChangeListener listener : listeners) {
-            listener.onLocaleChanged(locale);
-        }
     }
 
     /**

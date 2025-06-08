@@ -99,17 +99,17 @@ class GitLabServiceTest {
     }
 
     @Test
-    void testIsCommitInDestBranchWithSameBranch() throws Exception {
-        logger.debug("[DEBUG_LOG] Testing isCommitInDestBranch with same branch names");
+    void testIsCommitInMainBranchWithSameBranch() throws Exception {
+        logger.debug("[DEBUG_LOG] Testing isCommitInMainBranch with same branch names");
 
         // Test with same branch names
         String projectId = "123";
         String branchName = "main";
 
         // The method should return false when checking if a branch is merged into itself
-        assertFalse(gitLabService.isCommitInDestBranch(projectId, branchName, branchName),
-                "isCommitInDestBranch should return false when source and target branches are the same");
+        assertFalse(gitLabService.isCommitInMainBranch(projectId, branchName, branchName),
+                "isCommitInMainBranch should return false when source and target branches are the same");
 
-        logger.info("[DEBUG_LOG] isCommitInDestBranch with same branch names test completed");
+        logger.info("[DEBUG_LOG] isCommitInMainBranch with same branch names test completed");
     }
 } 

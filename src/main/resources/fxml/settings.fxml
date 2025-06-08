@@ -21,9 +21,11 @@
         <Label text="%settings.api.key" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
         <PasswordField fx:id="apiKeyField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
 
+        <Label text="%settings.username" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
 
-        <Label text="%settings.language" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <ComboBox fx:id="languageComboBox" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Label text="%settings.language" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <ComboBox fx:id="languageComboBox" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
     </GridPane>
 
     <HBox spacing="10" alignment="CENTER_RIGHT">

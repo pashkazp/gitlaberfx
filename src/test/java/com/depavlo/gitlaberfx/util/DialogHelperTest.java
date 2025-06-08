@@ -62,7 +62,7 @@ class DialogHelperTest {
         // This doesn't actually call the method, just verifies it exists
         assertDoesNotThrow(() -> {
             // This is just a compile-time check
-            DialogHelper.SettingsResult result = null;
+            boolean result = false;
             if (false) { // Never executed, just for compile-time checking
                 result = DialogHelper.showSettingsDialog(mockStage, config);
             }

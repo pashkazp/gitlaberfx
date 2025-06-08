@@ -58,6 +58,8 @@ public class SettingsController {
     @FXML
     private PasswordField apiKeyField;
 
+    @FXML
+    private TextField usernameField;
 
     @FXML
     private ComboBox<String> languageComboBox;
@@ -65,7 +67,6 @@ public class SettingsController {
     private AppConfig config;
     private Stage stage;
     private boolean saved = false;
-    private boolean localeChanged = false;
     private Map<String, String> availableLocales = new HashMap<>();
 
     public void initialize(AppConfig config, Stage stage) {
@@ -74,6 +75,7 @@ public class SettingsController {
 
         gitlabUrlField.setText(config.getGitlabUrl());
         apiKeyField.setText(config.getApiKey());
+        usernameField.setText(config.getUsername());
 
         // Initialize available locales
         initializeLocales();
@@ -279,6 +281,7 @@ public class SettingsController {
             AppConfig testConfig = new AppConfig();
             testConfig.setGitlabUrl(gitlabUrlField.getText());
             testConfig.setApiKey(apiKeyField.getText());
+            testConfig.setUsername(usernameField.getText());
 
             GitLabService service = new GitLabService(testConfig);
             service.connect();
@@ -302,16 +305,18 @@ public class SettingsController {
     private void save() {
         config.setGitlabUrl(gitlabUrlField.getText());
         config.setApiKey(apiKeyField.getText());
+        config.setUsername(usernameField.getText());
 
         // Save the selected locale
         String selectedLanguage = languageComboBox.getSelectionModel().getSelectedItem();
+        boolean localeChanged = false;
 
         if (selectedLanguage != null && availableLocales.containsKey(selectedLanguage)) {
             String localeCode = availableLocales.get(selectedLanguage);
             String currentLocale = config.getLocale();
 
             // Check if locale has changed
-            this.localeChanged = currentLocale != null && !currentLocale.equals(localeCode);
+            localeChanged = currentLocale != null && !currentLocale.equals(localeCode);
 
             config.setLocale(localeCode);
 
@@ -326,12 +331,12 @@ public class SettingsController {
         config.save();
         saved = true;
 
-        // Show success message if locale was changed
+        // Show restart message if locale was changed
         if (localeChanged) {
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle(I18nUtil.getMessage("app.info"));
             alert.setHeaderText(null);
-            alert.setContentText(I18nUtil.getMessage("settings.locale.changed"));
+            alert.setContentText(I18nUtil.getMessage("settings.locale.restart"));
             alert.showAndWait();
         }
 
@@ -346,8 +351,4 @@ public class SettingsController {
     public boolean isSaved() {
         return saved;
     }
-
-    public boolean isLocaleChanged() {
-        return localeChanged;
-    }
-}
+} 

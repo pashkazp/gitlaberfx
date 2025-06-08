@@ -59,6 +59,7 @@ public class AppConfig {
 
     private String gitlabUrl;
     private String apiKey;
+    private String username;
     private List<String> excludedBranches;
     private String locale;
 
@@ -81,6 +82,7 @@ public class AppConfig {
 
                 config.setGitlabUrl(properties.getProperty("gitlabUrl"));
                 config.setApiKey(properties.getProperty("apiKey"));
+                config.setUsername(properties.getProperty("username"));
                 config.setLocale(properties.getProperty("locale", "en_US")); // Default to English if not set
 
                 // Load excluded branches
@@ -109,6 +111,7 @@ public class AppConfig {
             // Save basic properties
             if (gitlabUrl != null) properties.setProperty("gitlabUrl", gitlabUrl);
             if (apiKey != null) properties.setProperty("apiKey", apiKey);
+            if (username != null) properties.setProperty("username", username);
             if (locale != null) properties.setProperty("locale", locale);
 
             // Save excluded branches as comma-separated string
@@ -150,6 +153,13 @@ public class AppConfig {
         this.apiKey = apiKey;
     }
 
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
 
     public List<String> getExcludedBranches() {

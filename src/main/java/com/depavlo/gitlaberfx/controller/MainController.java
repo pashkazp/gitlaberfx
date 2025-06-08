@@ -31,13 +31,10 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.TableRow;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.io.IOException;
 import org.slf4j.Logger;
@@ -48,8 +45,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -57,452 +52,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import com.depavlo.gitlaberfx.util.I18nUtil;
 
-public class MainController implements I18nUtil.LocaleChangeListener {
+public class MainController {
     private static final Logger logger = LoggerFactory.getLogger(MainController.class);
-    private static String NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
-
-    /**
-     * Called when the locale changes.
-     * Updates the UI with the new locale while preserving combobox states.
-     * 
-     * @param newLocale The new locale
-     */
-    @Override
-    public void onLocaleChanged(Locale newLocale) {
-        logger.info("Locale changed to: {}", newLocale);
-
-        // Save current state of comboboxes
-        String currentProject = projectComboBox.getValue();
-        String currentDestBranch = destBranchComboBox.getValue();
-
-        // Save the current list of projects and branches
-        ObservableList<String> currentProjects = projectComboBox.getItems();
-        ObservableList<String> currentBranches = destBranchComboBox.getItems();
-
-        // Check if current values are NOT_SELECTED_ITEM
-        boolean projectWasSelected = currentProject != null && !currentProject.equals(NOT_SELECTED_ITEM);
-        boolean branchWasSelected = currentDestBranch != null && !currentDestBranch.equals(NOT_SELECTED_ITEM);
-
-        // Update NOT_SELECTED_ITEM with new localized value
-        NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
-
-        // Save the current state of the table
-        List<BranchModel> branches = new ArrayList<>(branchesTableView.getItems());
-
-        try {
-            // Get the current scene
-            Scene currentScene = projectComboBox.getScene();
-
-            // Create a new ResourceBundle with the new locale
-            ResourceBundle newBundle = ResourceBundle.getBundle("i18n.messages", newLocale);
-
-            // Create a new FXMLLoader with the new ResourceBundle
-            FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
-            fxmlLoader.setResources(newBundle);
-
-            // Load the FXML but don't create a new scene yet
-            fxmlLoader.load();
-
-            // Get the controller from the loader
-            MainController tempController = fxmlLoader.getController();
-
-            // Update all UI text elements with the new locale in the current scene
-            updateUILanguage();
-
-            // Explicitly update menu bar if it exists
-            if (mainVBox != null && mainVBox.getScene() != null) {
-                // Find and update the menu bar
-                mainVBox.getScene().getRoot().lookupAll(".menu-bar").forEach(node -> {
-                    if (node instanceof javafx.scene.control.MenuBar) {
-                        updateMenuBar((javafx.scene.control.MenuBar) node);
-                    }
-                });
-            }
-
-            // Update combobox items that contain the NOT_SELECTED_ITEM
-            if (!currentProjects.isEmpty() && currentProjects.get(0).equals(NOT_SELECTED_ITEM) || 
-                (currentProjects.get(0).equals(currentProject) && !projectWasSelected)) {
-                currentProjects.set(0, NOT_SELECTED_ITEM);
-            }
-
-            if (!currentBranches.isEmpty() && currentBranches.get(0).equals(NOT_SELECTED_ITEM) || 
-                (currentBranches.get(0).equals(currentDestBranch) && !branchWasSelected)) {
-                currentBranches.set(0, NOT_SELECTED_ITEM);
-            }
-
-            // Restore combobox selections
-            if (projectWasSelected) {
-                projectComboBox.setValue(currentProject);
-            } else {
-                projectComboBox.setValue(NOT_SELECTED_ITEM);
-            }
-
-            if (branchWasSelected) {
-                destBranchComboBox.setValue(currentDestBranch);
-                // Explicitly call onDestBranchSelected to update the UI based on the selected branch
-                onDestBranchSelected();
-            } else {
-                destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-            }
-
-            // Force a refresh of the scene to ensure all bindings are updated
-            currentScene.getRoot().requestLayout();
-
-            logger.info("UI language updated successfully with new approach");
-        } catch (Exception e) {
-            logger.error("Error updating UI with new locale using new approach", e);
-
-            // Fall back to the old method if the new approach fails
-
-            // Preserve the project list but update the NOT_SELECTED_ITEM
-            if (!currentProjects.isEmpty()) {
-                currentProjects.set(0, NOT_SELECTED_ITEM);
-            }
-            projectComboBox.setItems(currentProjects);
-
-            // Restore project selection
-            if (projectWasSelected) {
-                projectComboBox.setValue(currentProject);
-            } else {
-                projectComboBox.setValue(NOT_SELECTED_ITEM);
-            }
-
-            // Preserve the branch list but update the NOT_SELECTED_ITEM
-            if (!currentBranches.isEmpty()) {
-                currentBranches.set(0, NOT_SELECTED_ITEM);
-            }
-            destBranchComboBox.setItems(currentBranches);
-
-            // Restore branch selection
-            if (branchWasSelected) {
-                destBranchComboBox.setValue(currentDestBranch);
-                // Explicitly call onDestBranchSelected to update the UI based on the selected branch
-                onDestBranchSelected();
-            } else {
-                destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-            }
-
-            // Update all UI components with the new locale
-            updateUILanguage();
-
-            // Explicitly update menu bar in fallback path as well
-            if (mainVBox != null && mainVBox.getScene() != null) {
-                // Find and update the menu bar
-                mainVBox.getScene().getRoot().lookupAll(".menu-bar").forEach(node -> {
-                    if (node instanceof javafx.scene.control.MenuBar) {
-                        updateMenuBar((javafx.scene.control.MenuBar) node);
-                    }
-                });
-            }
-        }
-    }
-
-
-    /**
-     * Updates all UI components with the current locale.
-     */
-    private void updateUILanguage() {
-        // Update window title
-        if (stage != null) {
-            stage.setTitle(I18nUtil.getMessage("app.title"));
-        }
-
-        // Update NOT_SELECTED_ITEM
-        NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
-
-        // Ensure menu items and labels are updated by calling updateAllLabeledNodes
-        // This will update all labeled nodes, including menu items and ComboBox labels
-        if (mainVBox != null && mainVBox.getScene() != null) {
-            updateAllLabeledNodes(mainVBox.getScene().getRoot());
-        }
-
-        // Update tooltips
-        playButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.play")));
-        pauseButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.pause")));
-        stopButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.stop")));
-        rescanMergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.rescan")));
-
-        // Update table column tooltips
-        setupBooleanColumn(mergedColumn, "merged", I18nUtil.getMessage("column.tooltip.merged"));
-        setupBooleanColumn(mergeToDestColumn, "mergedIntoTarget", I18nUtil.getMessage("column.tooltip.merged.into.target"));
-        setupBooleanColumn(protectedColumn, "protected", I18nUtil.getMessage("column.tooltip.protected"));
-        setupBooleanColumn(developersCanPushColumn, "developersCanPush", I18nUtil.getMessage("column.tooltip.developers.can.push"));
-        setupBooleanColumn(developersCanMergeColumn, "developersCanMerge", I18nUtil.getMessage("column.tooltip.developers.can.merge"));
-        setupBooleanColumn(canPushColumn, "canPush", I18nUtil.getMessage("column.tooltip.can.push"));
-        setupBooleanColumn(defaultColumn, "default", I18nUtil.getMessage("column.tooltip.default"));
-
-        // Update status label
-        updateStatus(I18nUtil.getMessage("app.ready"));
-
-        // Update branch counter
-        updateBranchCounter();
-
-        // Update table column headers
-        selectedColumn.setText(I18nUtil.getMessage("column.select"));
-        nameColumn.setText(I18nUtil.getMessage("column.branch.name"));
-        lastCommitColumn.setText(I18nUtil.getMessage("column.last.commit"));
-        mergeToDestColumn.setText(I18nUtil.getMessage("column.merged"));
-
-        // Update button texts
-        refreshBranchesButton.setText(I18nUtil.getMessage("main.refresh.list"));
-        selectAllButton.setText(I18nUtil.getMessage("main.select.all"));
-        deselectAllButton.setText(I18nUtil.getMessage("main.deselect.all"));
-        invertSelectionButton.setText(I18nUtil.getMessage("main.invert.selection"));
-        deleteSelectedButton.setText(I18nUtil.getMessage("main.delete.selected"));
-        mainDelMergedButton.setText(I18nUtil.getMessage("main.delete.merged"));
-        mainDelUnmergedButton.setText(I18nUtil.getMessage("main.delete.unmerged"));
-        addToExclusionsButton.setText(I18nUtil.getMessage("main.add.to.exclusions"));
-
-        logger.info("UI language updated successfully");
-    }
-
-    /**
-     * Recursively updates all labeled nodes in the scene with the new locale.
-     * This is necessary because FXML bindings don't automatically update when the locale changes.
-     * 
-     * @param node The root node to start the recursive update from
-     */
-    private void updateAllLabeledNodes(javafx.scene.Node node) {
-        // Handle Labeled nodes (Button, Label, etc.)
-        if (node instanceof javafx.scene.control.Labeled) {
-            javafx.scene.control.Labeled labeled = (javafx.scene.control.Labeled) node;
-            String text = labeled.getText();
-            if (text != null && text.startsWith("%")) {
-                String key = text.substring(1); // Remove the % prefix
-                labeled.setText(I18nUtil.getMessage(key));
-            }
-        }
-
-        // Handle TableView specially to update column headers
-        if (node instanceof javafx.scene.control.TableView) {
-            javafx.scene.control.TableView<?> tableView = (javafx.scene.control.TableView<?>) node;
-            for (javafx.scene.control.TableColumn<?, ?> column : tableView.getColumns()) {
-                String text = column.getText();
-                if (text != null && text.startsWith("%")) {
-                    String key = text.substring(1); // Remove the % prefix
-                    column.setText(I18nUtil.getMessage(key));
-                }
-            }
-        }
-
-        // Handle MenuBar specially since its items aren't in the children list
-        if (node instanceof javafx.scene.control.MenuBar) {
-            updateMenuBar((javafx.scene.control.MenuBar) node);
-        }
-
-        // Handle ComboBox labels - find parent container and update its Label child
-        if (node instanceof javafx.scene.control.ComboBox) {
-            javafx.scene.control.ComboBox<?> comboBox = (javafx.scene.control.ComboBox<?>) node;
-            javafx.scene.Parent parent = comboBox.getParent();
-
-            // Look for the parent container that might contain the Label
-            while (parent != null && !(parent instanceof javafx.scene.layout.VBox || 
-                                      parent instanceof javafx.scene.layout.HBox || 
-                                      parent instanceof javafx.scene.layout.GridPane)) {
-                parent = parent.getParent();
-            }
-
-            if (parent != null) {
-                // Search for Label in all children and their children recursively
-                updateLabelsRecursively(parent);
-            }
-        }
-
-        // Recursively process all children
-        if (node instanceof javafx.scene.Parent) {
-            javafx.scene.Parent parent = (javafx.scene.Parent) node;
-            for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
-                updateAllLabeledNodes(child);
-            }
-        }
-    }
-
-    /**
-     * Helper method to recursively update labels in a parent container
-     * 
-     * @param parent The parent container to search for labels
-     */
-    private void updateLabelsRecursively(javafx.scene.Parent parent) {
-        for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
-            if (child instanceof javafx.scene.control.Label) {
-                javafx.scene.control.Label label = (javafx.scene.control.Label) child;
-                String text = label.getText();
-                if (text != null && text.startsWith("%")) {
-                    String key = text.substring(1); // Remove the % prefix
-                    label.setText(I18nUtil.getMessage(key));
-                }
-            }
-
-            // Recursively process children
-            if (child instanceof javafx.scene.Parent) {
-                updateLabelsRecursively((javafx.scene.Parent) child);
-            }
-        }
-    }
-
-    /**
-     * Helper method to update a MenuBar and all its menus and items
-     * 
-     * @param menuBar The MenuBar to update
-     */
-    private void updateMenuBar(javafx.scene.control.MenuBar menuBar) {
-        for (javafx.scene.control.Menu menu : menuBar.getMenus()) {
-            // Update the menu text
-            updateMenuItemText(menu);
-
-            // Update all menu items recursively
-            updateMenuItemsRecursively(menu);
-        }
-    }
-
-    /**
-     * Helper method to update menu items recursively
-     * 
-     * @param menu The menu to update items for
-     */
-    private void updateMenuItemsRecursively(javafx.scene.control.Menu menu) {
-        for (javafx.scene.control.MenuItem item : menu.getItems()) {
-            if (item instanceof javafx.scene.control.SeparatorMenuItem) {
-                continue; // Skip separators
-            }
-
-            // Update the item text
-            updateMenuItemText(item);
-
-            // If this is a submenu, recursively update its items
-            if (item instanceof javafx.scene.control.Menu) {
-                updateMenuItemsRecursively((javafx.scene.control.Menu) item);
-            }
-        }
-    }
-
-    /**
-     * Helper method to update a menu item's text
-     * 
-     * @param item The menu item to update
-     */
-    private static final String MESSAGE_KEY_PROPERTY = "messageKey";
-
-    private void updateMenuItemText(javafx.scene.control.MenuItem item) {
-        // Check if we've already stored the key in properties
-        Object keyProperty = item.getProperties().get(MESSAGE_KEY_PROPERTY);
-        String key = null;
-
-        if (keyProperty instanceof String) {
-            // Use the stored key
-            key = (String) keyProperty;
-        } else {
-            // First time processing this item, check if text starts with %
-            String text = item.getText();
-            if (text != null && text.startsWith("%")) {
-                key = text.substring(1);
-            } else {
-                // Try to find the key by reverse lookup in the current resource bundle
-                key = findKeyForText(text);
-            }
-
-            // Store the key in properties for future locale changes if found
-            if (key != null) {
-                item.getProperties().put(MESSAGE_KEY_PROPERTY, key);
-            }
-        }
-
-        // Update the text if we have a key
-        if (key != null) {
-            item.setText(I18nUtil.getMessage(key));
-        }
-    }
-
-    /**
-     * Tries to find a message key for the given text by checking all keys in the resource bundle.
-     * This is a fallback method for items that have already been localized.
-     * 
-     * @param text The text to find a key for
-     * @return The key if found, null otherwise
-     */
-    private String findKeyForText(String text) {
-        if (text == null || text.isEmpty()) {
-            return null;
-        }
-
-        // Get the current resource bundle
-        ResourceBundle bundle = ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale());
-
-        // Check all keys in the bundle
-        for (String key : bundle.keySet()) {
-            String value = bundle.getString(key);
-            if (text.equals(value)) {
-                return key;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Recursively stores message keys for all menu items in the scene.
-     * This is called during initialization to ensure all menu items have their keys stored
-     * for future locale changes.
-     * 
-     * @param node The root node to start the recursive search from
-     */
-    private void storeMenuItemKeys(javafx.scene.Node node) {
-        // Handle MenuBar specially
-        if (node instanceof javafx.scene.control.MenuBar) {
-            storeMenuBarKeys((javafx.scene.control.MenuBar) node);
-        }
-
-        // Recursively process all children
-        if (node instanceof javafx.scene.Parent) {
-            for (javafx.scene.Node child : ((javafx.scene.Parent) node).getChildrenUnmodifiable()) {
-                storeMenuItemKeys(child);
-            }
-        }
-    }
-
-    /**
-     * Stores message keys for all menus in a MenuBar.
-     * 
-     * @param menuBar The MenuBar to process
-     */
-    private void storeMenuBarKeys(javafx.scene.control.MenuBar menuBar) {
-        for (javafx.scene.control.Menu menu : menuBar.getMenus()) {
-            // Store the key for the menu
-            String text = menu.getText();
-            if (text != null && text.startsWith("%")) {
-                String key = text.substring(1);
-                menu.getProperties().put(MESSAGE_KEY_PROPERTY, key);
-            }
-
-            // Store keys for all menu items recursively
-            storeMenuItemKeysRecursively(menu);
-        }
-    }
-
-    /**
-     * Recursively stores message keys for all items in a menu.
-     * 
-     * @param menu The menu to process
-     */
-    private void storeMenuItemKeysRecursively(javafx.scene.control.Menu menu) {
-        for (javafx.scene.control.MenuItem item : menu.getItems()) {
-            if (item instanceof javafx.scene.control.SeparatorMenuItem) {
-                continue; // Skip separators
-            }
-
-            // Store the key for the item
-            String text = item.getText();
-            if (text != null && text.startsWith("%")) {
-                String key = text.substring(1);
-                item.getProperties().put(MESSAGE_KEY_PROPERTY, key);
-            }
-
-            // If this is a submenu, recursively store keys for its items
-            if (item instanceof javafx.scene.control.Menu) {
-                storeMenuItemKeysRecursively((javafx.scene.control.Menu) item);
-            }
-        }
-    }
+    private static final String NOT_SELECTED_ITEM = I18nUtil.getMessage("app.not.selected");
 
     private final ExecutorService executorService = Executors.newCachedThreadPool();
 
@@ -638,9 +190,6 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     @FXML
     private Button rescanMergedButton;
 
-    @FXML
-    private VBox mainVBox;
-
     private AppConfig config;
     private GitLabService gitLabService;
     private Stage stage;
@@ -649,14 +198,6 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     public void initialize(AppConfig config, Stage stage) {
         this.config = config;
         this.stage = stage;
-
-        // Register as a locale change listener
-        I18nUtil.addLocaleChangeListener(this);
-
-        // Store message keys for all menu items
-        if (mainVBox != null && mainVBox.getScene() != null) {
-            storeMenuItemKeys(mainVBox.getScene().getRoot());
-        }
 
         // Налаштування колонок таблиці
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));
@@ -696,14 +237,10 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         initialItems.add(NOT_SELECTED_ITEM);
         destBranchComboBox.setItems(FXCollections.observableArrayList(initialItems));
         destBranchComboBox.setValue(NOT_SELECTED_ITEM);
-        destBranchComboBox.setOnAction(e -> onDestBranchSelected());
 
         // Налаштування комбобоксів
-        initialItems = new ArrayList<>();
-        initialItems.add(NOT_SELECTED_ITEM);
-        projectComboBox.setItems(FXCollections.observableArrayList(initialItems));
-        projectComboBox.setValue(NOT_SELECTED_ITEM);
         projectComboBox.setOnAction(e -> onProjectSelected());
+        destBranchComboBox.setOnAction(e -> onMainBranchSelected());
 
         // Налаштування TableView для редагування
         branchesTableView.setEditable(true);
@@ -733,7 +270,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         pauseButton.setDisable(true);
         stopButton.setDisable(true);
 
-        // Initially disable rescan button until a dest branch is selected
+        // Initially disable rescan button until a main branch is selected
         rescanMergedButton.setDisable(true);
         rescanMergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.rescan")));
 
@@ -784,8 +321,8 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
     private void onProjectSelected() {
         String projectName = projectComboBox.getValue();
-        // Save current dest branch selection before updating
-        String currentDestBranch = destBranchComboBox.getValue();
+        // Save current main branch selection before updating
+        String currentMainBranch = destBranchComboBox.getValue();
 
         // Clear destBranchComboBox when a project is selected
         destBranchComboBox.getItems().clear();
@@ -853,9 +390,9 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
                             destBranchComboBox.setItems(FXCollections.observableArrayList(updatedBranchNames));
 
-                            // Restore the previously selected dest branch if it still exists in the updated list
-                            if (currentDestBranch != null && updatedBranchNames.contains(currentDestBranch)) {
-                                destBranchComboBox.setValue(currentDestBranch);
+                            // Restore the previously selected main branch if it still exists in the updated list
+                            if (currentMainBranch != null && updatedBranchNames.contains(currentMainBranch)) {
+                                destBranchComboBox.setValue(currentMainBranch);
                             } else {
                                 destBranchComboBox.setValue(NOT_SELECTED_ITEM);
                             }
@@ -879,16 +416,16 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         }
     }
 
-    private void onDestBranchSelected() {
-        String destBranch = destBranchComboBox.getValue();
-        if (destBranch != null) {
-            // Set the initial state of the rescan button based on whether a dest branch is selected
-            rescanMergedButton.setDisable(NOT_SELECTED_ITEM.equals(destBranch));
+    private void onMainBranchSelected() {
+        String mainBranch = destBranchComboBox.getValue();
+        if (mainBranch != null) {
+            // Set the initial state of the rescan button based on whether a main branch is selected
+            rescanMergedButton.setDisable(NOT_SELECTED_ITEM.equals(mainBranch));
 
             ObservableList<BranchModel> branches = branchesTableView.getItems();
             if (branches != null) {
                 // If "not selected" item is selected, reset the "Merged" flag for all branches
-                if (NOT_SELECTED_ITEM.equals(destBranch)) {
+                if (NOT_SELECTED_ITEM.equals(mainBranch)) {
                     for (BranchModel branch : branches) {
                         branch.setMergedIntoTarget(false);
                     }
@@ -900,12 +437,12 @@ public class MainController implements I18nUtil.LocaleChangeListener {
 
                     // Create a copy of the branches list for thread safety
                     List<BranchModel> branchesCopy = new ArrayList<>(branches);
-                    String finalDestBranch = destBranch;
+                    String finalMainBranch = mainBranch;
                     final int totalBranches = branchesCopy.size();
 
                     submitTask(() -> {
                         try {
-                            // Check if branches have been merged into the selected dest branch
+                            // Check if branches have been merged into the selected main branch
                             int branchCounter = 0;
                             outerLoop: for (BranchModel branch : branchesCopy) {
                                 // Update progress
@@ -933,19 +470,19 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                                 }
 
                                 try {
-                                    // Skip checking the dest branch itself
-                                    if (branch.getName().equals(finalDestBranch)) {
+                                    // Skip checking the main branch itself
+                                    if (branch.getName().equals(finalMainBranch)) {
                                         Platform.runLater(() -> branch.setMergedIntoTarget(false));
                                         continue outerLoop;
                                     }
                                     updateStatus("Перевірка гілки: " + branch.getName());
-                                    boolean isMerged = gitLabService.isCommitInDestBranch(currentProjectId, branch.getName(), finalDestBranch);
+                                    boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                                     // Update UI in JavaFX thread
                                     final boolean finalIsMerged = isMerged;
                                     Platform.runLater(() -> branch.setMergedIntoTarget(finalIsMerged));
                                 } catch (IOException e) {
-                                    logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalDestBranch, e);
+                                    logger.error("Error checking if branch {} is merged into {}", branch.getName(), finalMainBranch, e);
                                     Platform.runLater(() -> branch.setMergedIntoTarget(false));
                                 }
 
@@ -988,25 +525,14 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     @FXML
     private void showSettings() {
         logger.debug("Showing settings dialog");
-
-        // Show settings dialog and get result
-        DialogHelper.SettingsResult result = DialogHelper.showSettingsDialog(stage, config);
-
-        if (result.isSaved()) {
+        if (DialogHelper.showSettingsDialog(stage, config)) {
             loadConfig();
-
-            // Note: Locale changes are now handled by the LocaleChangeListener mechanism
-            // The onLocaleChanged method will be called automatically if the locale is changed
         }
     }
 
     @FXML
     private void exit() {
-        logger.info("Exit method called");
         shutdown();
-
-        // Force exit to ensure all threads are terminated
-        System.exit(0);
     }
 
     /**
@@ -1015,9 +541,6 @@ public class MainController implements I18nUtil.LocaleChangeListener {
      */
     public void shutdown() {
         logger.info("Exiting application");
-
-        // Unregister as a locale change listener
-        I18nUtil.removeLocaleChangeListener(this);
 
         // Shutdown the executor service and cancel tasks
         shutdownExecutor();
@@ -1048,17 +571,6 @@ public class MainController implements I18nUtil.LocaleChangeListener {
         // Shutdown the executor service to prevent resource leaks
         executorService.shutdownNow();
 
-        try {
-            // Give a short time for tasks to terminate
-            if (!executorService.awaitTermination(100, java.util.concurrent.TimeUnit.MILLISECONDS)) {
-                logger.warn("Executor service did not terminate in the allowed time");
-            }
-        } catch (InterruptedException e) {
-            // Restore the interrupted status
-            Thread.currentThread().interrupt();
-            logger.warn("Interrupted while waiting for executor service to terminate", e);
-        }
-
         logger.info("Executor service shutdown complete");
     }
 
@@ -1079,9 +591,9 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     public void refreshProjects() {
         logger.debug("Refreshing projects list from GitLab");
         if (!checkConfig()) return;
-        // Save current project and dest branch selection before updating
+        // Save current project and main branch selection before updating
         String currentProject = projectComboBox.getValue();
-        String currentDestBranch = destBranchComboBox.getValue();
+        String currentMainBranch = destBranchComboBox.getValue();
 
         // Update status bar
         updateStatus("Оновлення списку проєктів з GitLab...");
@@ -1105,7 +617,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                     projectComboBox.setItems(FXCollections.observableArrayList(projectNames));
 
                     // Check if the current project still exists in the updated list
-                    if (currentProject != null && !currentProject.equalsIgnoreCase(NOT_SELECTED_ITEM) && projectNames.contains(currentProject)) {
+                    if (currentProject != null && projectNames.contains(currentProject)) {
                         // Restore the current project
                         projectComboBox.setValue(currentProject);
 
@@ -1113,7 +625,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                         updateStatus("Оновлення гілок проєкту...");
 
                         // The onProjectSelected() method will be called automatically when the project is selected,
-                        // which will update the branches and restore the dest branch if it still exists
+                        // which will update the branches and restore the main branch if it still exists
                     } else {
                         // Reset both project and main branch to "not selected"
                         projectComboBox.setValue(NOT_SELECTED_ITEM);
@@ -1245,8 +757,8 @@ public class MainController implements I18nUtil.LocaleChangeListener {
     @FXML
     private void deleteMerged() {
         logger.debug("Checking merged branches");
-        String destBranch = destBranchComboBox.getValue();
-        if (destBranch == null || NOT_SELECTED_ITEM.equals(destBranch)) {
+        String mainBranch = destBranchComboBox.getValue();
+        if (mainBranch == null || NOT_SELECTED_ITEM.equals(mainBranch)) {
             showError(I18nUtil.getMessage("error.target.branch"), I18nUtil.getMessage("error.target.branch.message"));
             return;
         }
@@ -1258,7 +770,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
             updateProgress(0.0);
 
             // Store final values for use in lambda
-            final String finalDestBranch = destBranch;
+            final String finalMainBranch = mainBranch;
             final LocalDate finalCutoffDate = cutoffDate;
 
             submitTask(() -> {
@@ -1300,10 +812,10 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                             break outerLoop;
                         }
 
-                        // Check if the branch is merged into the dest branch
+                        // Check if the branch is merged into the main branch
                         try {
                             updateStatus("Перевірка гілки: " + branch.getName());
-                            boolean isMerged = gitLabService.isCommitInDestBranch(currentProjectId, branch.getName(), finalDestBranch);
+                            boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                             // If the branch is not merged, skip to the next branch
                             if (!isMerged) {
@@ -1491,10 +1003,10 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                             break outerLoop;
                         }
 
-                        // Check if the branch is merged into the dest branch
+                        // Check if the branch is merged into the main branch
                         try {
                             updateStatus("Перевірка гілки: " + branch.getName());
-                            boolean isMerged = gitLabService.isCommitInDestBranch(currentProjectId, branch.getName(), finalMainBranch);
+                            boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                             // If the branch is merged, skip to the next branch (inverse of deleteMerged logic)
                             if (isMerged || branch.isProtected() || branch.getName().equalsIgnoreCase(finalMainBranch)) {
@@ -1697,7 +1209,7 @@ public class MainController implements I18nUtil.LocaleChangeListener {
                             continue outerLoop;
                         }
                         updateStatus("Перевірка гілки: " + branch.getName());
-                        boolean isMerged = gitLabService.isCommitInDestBranch(currentProjectId, branch.getName(), finalMainBranch);
+                        boolean isMerged = gitLabService.isCommitInMainBranch(currentProjectId, branch.getName(), finalMainBranch);
 
                         // Update UI in JavaFX thread
                         final boolean finalIsMerged = isMerged;

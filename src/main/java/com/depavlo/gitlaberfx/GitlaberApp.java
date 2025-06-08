@@ -75,14 +75,7 @@ public class GitlaberApp extends Application {
 
         // Add a close request handler to ensure proper cleanup
         stage.setOnCloseRequest(event -> {
-            logger.info("Close request received");
             controller.shutdown();
-
-            // Consume the event to prevent default handling
-            event.consume();
-
-            // Force exit to ensure all threads are terminated
-            System.exit(0);
         });
 
         // Add a shutdown hook to ensure background tasks are terminated
@@ -116,17 +109,6 @@ public class GitlaberApp extends Application {
         if (controller != null) {
             controller.shutdownExecutor();
         }
-
-        // Ensure all threads are terminated
-        try {
-            // Give a short time for any remaining tasks to complete
-            Thread.sleep(200);
-        } catch (InterruptedException e) {
-            // Ignore interruption
-        }
-
-        // Force exit to ensure all threads are terminated
-        System.exit(0);
     }
 
     public static void main(String[] args) {

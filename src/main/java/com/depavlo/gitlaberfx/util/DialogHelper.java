@@ -54,24 +54,6 @@ public class DialogHelper {
     private static final Logger logger = LoggerFactory.getLogger(DialogHelper.class);
     private static Stage loadingStage;
 
-    public static class SettingsResult {
-        private final boolean saved;
-        private final boolean localeChanged;
-
-        public SettingsResult(boolean saved, boolean localeChanged) {
-            this.saved = saved;
-            this.localeChanged = localeChanged;
-        }
-
-        public boolean isSaved() {
-            return saved;
-        }
-
-        public boolean isLocaleChanged() {
-            return localeChanged;
-        }
-    }
-
     /**
      * Shows a loading dialog with a message.
      * 
@@ -154,7 +136,7 @@ public class DialogHelper {
         }
     }
 
-    public static SettingsResult showSettingsDialog(Stage parentStage, AppConfig config) {
+    public static boolean showSettingsDialog(Stage parentStage, AppConfig config) {
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/settings.fxml"));
             loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
@@ -170,10 +152,10 @@ public class DialogHelper {
             controller.initialize(config, stage);
 
             stage.showAndWait();
-            return new SettingsResult(controller.isSaved(), controller.isLocaleChanged());
+            return controller.isSaved();
         } catch (IOException e) {
             logger.error("Error showing settings dialog", e);
-            return new SettingsResult(false, false);
+            return false;
         }
     }
 
