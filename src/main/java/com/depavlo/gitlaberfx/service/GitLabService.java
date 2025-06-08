@@ -42,6 +42,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Service class for interacting with the GitLab API.
@@ -60,10 +61,6 @@ import java.util.List;
 public class GitLabService {
     /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(GitLabService.class);
-
-    /** Constant for the GitLab API v4 projects endpoint path. */
-    public static final String API_V_4_PROJECTS = "/api/v4/projects/";
-
     /** Constant for the GitLab API private token header name. */
     public static final String PRIVATE_TOKEN = "PRIVATE-TOKEN";
 
@@ -86,17 +83,12 @@ public class GitLabService {
     public GitLabService(AppConfig config) {
         this.config = config;
 
-        // Trust all certs for self-hosted GitLab instances with self-signed certificates
         TrustManager[] trustAllCerts = new TrustManager[]{
                 new X509TrustManager() {
                     @Override
-                    public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
-                    }
-
+                    public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
                     @Override
-                    public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
-                    }
-
+                    public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {}
                     @Override
                     public java.security.cert.X509Certificate[] getAcceptedIssuers() {
                         return new java.security.cert.X509Certificate[]{};
@@ -133,8 +125,11 @@ public class GitLabService {
             throw new IOException("GitLab URL or API Key is not configured correctly.");
         }
         logger.info("Testing connection to GitLab at {}", config.getGitlabUrl());
+        HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
+                .addPathSegments("api/v4/user")
+                .build();
         Request request = new Request.Builder()
-                .url(config.getGitlabUrl() + "/api/v4/user")
+                .url(url)
                 .header(PRIVATE_TOKEN, config.getApiKey())
                 .build();
 
@@ -164,8 +159,14 @@ public class GitLabService {
         List<Project> projects = new ArrayList<>();
         int page = 1;
         int perPage = 100;
+        HttpUrl baseUrl = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl()));
+
         while (true) {
-            String url = config.getGitlabUrl() + "/api/v4/projects?per_page=" + perPage + "&page=" + page;
+            HttpUrl url = baseUrl.newBuilder()
+                    .addPathSegments("api/v4/projects")
+                    .addQueryParameter("per_page", String.valueOf(perPage))
+                    .addQueryParameter("page", String.valueOf(page))
+                    .build();
             Request request = new Request.Builder()
                     .url(url)
                     .header(PRIVATE_TOKEN, config.getApiKey())
@@ -217,8 +218,16 @@ public class GitLabService {
         List<BranchModel> branches = new ArrayList<>();
         int page = 1;
         int perPage = 100;
+        HttpUrl baseUrl = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl()));
+
         while (true) {
-            String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches?per_page=" + perPage + "&page=" + page;
+            HttpUrl url = baseUrl.newBuilder()
+                    .addPathSegments("api/v4/projects")
+                    .addPathSegment(projectId)
+                    .addPathSegments("repository/branches")
+                    .addQueryParameter("per_page", String.valueOf(perPage))
+                    .addQueryParameter("page", String.valueOf(page))
+                    .build();
             Request request = new Request.Builder()
                     .url(url)
                     .header(PRIVATE_TOKEN, config.getApiKey())
@@ -233,14 +242,14 @@ public class GitLabService {
                 for (JsonNode branchNode : jsonArray) {
                     String branchName = branchNode.get("name").asText();
                     String lastCommitDate = branchNode.get("commit").get("committed_date").asText();
-                    boolean isProtected = branchNode.has("protected") ? branchNode.get("protected").asBoolean() : false;
-                    boolean developersCanPush = branchNode.has("developers_can_push") ? branchNode.get("developers_can_push").asBoolean() : false;
-                    boolean developersCanMerge = branchNode.has("developers_can_merge") ? branchNode.get("developers_can_merge").asBoolean() : false;
-                    boolean canPush = branchNode.has("can_push") ? branchNode.get("can_push").asBoolean() : false;
-                    boolean isDefault = branchNode.has("default") ? branchNode.get("default").asBoolean() : false;
-                    boolean isMerged = branchNode.has("merged") ? branchNode.get("merged").asBoolean() : false;
+                    boolean isProtected = branchNode.has("protected") && branchNode.get("protected").asBoolean();
+                    boolean developersCanPush = branchNode.has("developers_can_push") && branchNode.get("developers_can_push").asBoolean();
+                    boolean developersCanMerge = branchNode.has("developers_can_merge") && branchNode.get("developers_can_merge").asBoolean();
+                    boolean canPush = branchNode.has("can_push") && branchNode.get("can_push").asBoolean();
+                    boolean isDefault = branchNode.has("default") && branchNode.get("default").asBoolean();
+                    boolean isMerged = branchNode.has("merged") && branchNode.get("merged").asBoolean();
                     branches.add(new BranchModel(branchName, lastCommitDate, isMerged, isProtected,
-                            developersCanPush, developersCanMerge, canPush, isDefault));
+                                               developersCanPush, developersCanMerge, canPush, isDefault));
                 }
                 if (jsonArray.size() < perPage) break;
                 page++;
@@ -258,7 +267,12 @@ public class GitLabService {
      */
     public void deleteBranch(String projectId, String branchName) throws IOException {
         logger.info("Deleting branch {} from project {}", branchName, projectId);
-        String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches/" + encodeBranchName(branchName);
+        HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
+                .addPathSegments("api/v4/projects")
+                .addPathSegment(projectId)
+                .addPathSegments("repository/branches")
+                .addEncodedPathSegment(encodePathSegment(branchName))
+                .build();
         Request request = new Request.Builder()
                 .url(url)
                 .delete()
@@ -317,7 +331,12 @@ public class GitLabService {
      */
     private String getBranchLastCommitSha(String projectId, String branchName) {
         logger.debug("Getting SHA for branch {}", branchName);
-        String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/branches/" + encodeBranchName(branchName);
+        HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
+                .addPathSegments("api/v4/projects")
+                .addPathSegment(projectId)
+                .addPathSegments("repository/branches")
+                .addEncodedPathSegment(encodePathSegment(branchName))
+                .build();
         Request request = new Request.Builder()
                 .url(url)
                 .header(PRIVATE_TOKEN, config.getApiKey())
@@ -347,8 +366,13 @@ public class GitLabService {
      */
     private String getMergeBaseSha(String projectId, String sourceBranch, String targetBranch) {
         logger.debug("Getting merge base SHA between {} and {}", sourceBranch, targetBranch);
-        String url = config.getGitlabUrl() + API_V_4_PROJECTS + projectId + "/repository/merge_base?refs[]=" +
-                encodeBranchName(sourceBranch) + "&refs[]=" + encodeBranchName(targetBranch);
+        HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
+                .addPathSegments("api/v4/projects")
+                .addPathSegment(projectId)
+                .addPathSegments("repository/merge_base")
+                .addQueryParameter("refs[]", sourceBranch)
+                .addQueryParameter("refs[]", targetBranch)
+                .build();
         Request request = new Request.Builder()
                 .url(url)
                 .header(PRIVATE_TOKEN, config.getApiKey())
@@ -459,13 +483,13 @@ public class GitLabService {
      * This method handles special characters in branch names to ensure they are properly encoded for GitLab API URLs.
      * It specifically pre-processes commas before applying standard URL encoding.
      *
-     * @param branchName the branch name to encode
+     * @param segment the branch name to encode
      * @return the URL-encoded branch name, or null if the input was null
      */
-    private String encodeBranchName(String branchName) {
-        if (branchName == null) {
+    private String encodePathSegment(String segment) {
+        if (segment == null) {
             return null;
         }
-        return URLEncoder.encode(branchName, StandardCharsets.UTF_8);
+        return URLEncoder.encode(segment, StandardCharsets.UTF_8);
     }
 }
