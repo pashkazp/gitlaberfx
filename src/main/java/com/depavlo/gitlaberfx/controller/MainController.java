@@ -170,6 +170,36 @@ public class MainController {
         setupTableColumns();
         setupButtonBindings();
         setUiBusy(false);
+        setupTooltips(); // Set tooltips for UI elements
+    }
+
+/**
+     * Set up and initializes tips (Tooltips) for different items
+     * User interface in the main window.
+     *
+     * This method is commonly called during the controller initialization
+     * To increase the convenience of using by providing additional
+     * Information on the functionality of the buttons, input fields or other components.
+     *
+     * Tips can be downloaded from resource files to support
+     * Internationalization.
+     */
+    private void setupTooltips() {
+        projectComboBox.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.project.combobox")));
+        destBranchComboBox.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.target.branch.combobox")));
+        refreshProjectsButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.refresh.projects")));
+        refreshBranchesButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.refresh.branches")));
+        selectAllButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.select.all")));
+        deselectAllButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.deselect.all")));
+        invertSelectionButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.invert.selection")));
+        deleteSelectedButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.delete.selected")));
+        mainDelMergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.delete.merged")));
+        mainDelUnmergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.delete.unmerged")));
+
+        playButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.play")));
+        pauseButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.pause")));
+        stopButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.stop")));
+        rescanMergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.rescan")));
     }
 
     //<editor-fold desc="Initialization & Setup">
