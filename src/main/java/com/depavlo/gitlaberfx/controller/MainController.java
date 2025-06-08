@@ -102,6 +102,7 @@ public class MainController {
         setupEventListeners();
         setupTableColumns();
         setupButtonBindings();
+        setUiBusy(false);
     }
 
     //<editor-fold desc="Initialization & Setup">
@@ -146,7 +147,6 @@ public class MainController {
     }
 
     private void setupButtonBindings() {
-        // Corrected line: The type of the local variable now matches the return type of the method.
         BooleanProperty isBusy = uiStateModel.busyProperty();
 
         BooleanBinding noProjectOrBranches = uiStateModel.currentProjectIdProperty().isNull()
@@ -168,7 +168,6 @@ public class MainController {
 
         mainDelUnmergedButton.disableProperty().bind(isBusy.or(noProjectOrBranches).or(noTargetBranch));
 
-        // Also bind other buttons to the busy state
         selectAllButton.disableProperty().bind(isBusy.or(noProjectOrBranches));
         deselectAllButton.disableProperty().bind(isBusy.or(noProjectOrBranches));
         invertSelectionButton.disableProperty().bind(isBusy.or(noProjectOrBranches));
@@ -375,12 +374,10 @@ public class MainController {
         Platform.runLater(() -> {
             uiStateModel.setBusy(isBusy);
 
-            // Major controls that are not bound should be disabled here
             projectComboBox.setDisable(isBusy);
             destBranchComboBox.setDisable(isBusy);
             branchesTableView.setDisable(isBusy);
 
-            // Control buttons for tasks
             playButton.setDisable(true);
             pauseButton.setDisable(!isBusy);
             stopButton.setDisable(!isBusy);
