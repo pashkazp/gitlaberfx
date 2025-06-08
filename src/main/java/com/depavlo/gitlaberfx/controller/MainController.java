@@ -33,6 +33,7 @@ import com.depavlo.gitlaberfx.util.I18nUtil;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.BooleanBinding;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -145,7 +146,8 @@ public class MainController {
     }
 
     private void setupButtonBindings() {
-        BooleanBinding isBusy = uiStateModel.busyProperty().not();
+        // Corrected line: The type of the local variable now matches the return type of the method.
+        BooleanProperty isBusy = uiStateModel.busyProperty();
 
         BooleanBinding noProjectOrBranches = uiStateModel.currentProjectIdProperty().isNull()
                 .or(Bindings.isEmpty(uiStateModel.getCurrentProjectBranches()));
