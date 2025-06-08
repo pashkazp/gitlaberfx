@@ -370,8 +370,12 @@ public class GitLabService {
                 .addPathSegments("api/v4/projects")
                 .addPathSegment(projectId)
                 .addPathSegments("repository/merge_base")
-                .addQueryParameter("refs[]", sourceBranch)
-                .addQueryParameter("refs[]", targetBranch)
+                // This is the key fix: use addQueryParameter to let OkHttp handle value encoding,
+                // but for the specific case of array-like parameters `refs[]`, we must build
+                // the query string manually or use a more advanced builder.
+                // A simpler, robust fix is to use addEncodedQueryParameter which prevents encoding the name.
+                .addEncodedQueryParameter("refs[]", URLEncoder.encode(sourceBranch, StandardCharsets.UTF_8))
+                .addEncodedQueryParameter("refs[]", URLEncoder.encode(targetBranch, StandardCharsets.UTF_8))
                 .build();
         Request request = new Request.Builder()
                 .url(url)
