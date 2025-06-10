@@ -202,17 +202,38 @@ public class DialogHelper {
     }
 
     /**
-     * Shows a confirmation dialog for deleting branches.
-     * This dialog displays a list of branches and allows the user to confirm which ones to delete.
+     * Shows a confirmation dialog for deleting branches (backward compatibility method).
+     * This method is provided for backward compatibility with code that doesn't provide
+     * deletion type and project name.
      * 
      * @param parentStage The parent stage
      * @param branches The list of branches to potentially delete
      * @return The list of branches selected for deletion, or null if the dialog was cancelled or an error occurred
      */
     public static List<BranchModel> showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches) {
-        logger.debug("showDeleteConfirmationDialog: parentStage={}, branches.size={}", 
+        return showDeleteConfirmationDialog(parentStage, branches, 
+                                          I18nUtil.getMessage("main.delete.selected"), 
+                                          "");
+    }
+
+    /**
+     * Shows a confirmation dialog for deleting branches.
+     * This dialog displays a list of branches and allows the user to confirm which ones to delete.
+     * This version of the method includes information about the deletion type and project name.
+     * 
+     * @param parentStage The parent stage
+     * @param branches The list of branches to potentially delete
+     * @param deletionType The type of deletion operation (e.g., "Deleting selected branches")
+     * @param projectName The name of the project from which branches will be deleted
+     * @return The list of branches selected for deletion, or null if the dialog was cancelled or an error occurred
+     */
+    public static List<BranchModel> showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches, 
+                                                                String deletionType, String projectName) {
+        logger.debug("showDeleteConfirmationDialog: parentStage={}, branches.size={}, deletionType={}, projectName={}", 
                 parentStage != null ? "not null" : "null", 
-                branches != null ? branches.size() : "null");
+                branches != null ? branches.size() : "null",
+                deletionType,
+                projectName);
         try {
             FXMLLoader loader = new FXMLLoader(DialogHelper.class.getResource("/fxml/delete-confirmation.fxml"));
             loader.setResources(ResourceBundle.getBundle("i18n.messages", I18nUtil.getCurrentLocale()));
@@ -225,7 +246,7 @@ public class DialogHelper {
             stage.setScene(scene);
 
             DeleteConfirmationController controller = loader.getController();
-            controller.initialize(branches, stage);
+            controller.initialize(branches, stage, deletionType, projectName);
 
             stage.showAndWait();
             return controller.getSelectedBranches();

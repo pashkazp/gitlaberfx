@@ -109,20 +109,53 @@ public class DeleteConfirmationController {
     /** The list of branches that are selected for deletion. */
     private List<BranchModel> selectedBranches;
 
+    /** The type of deletion operation. */
+    private String deletionType;
+
+    /** The name of the project from which branches will be deleted. */
+    private String projectName;
+
+    /** Label that displays the deletion type and project name. */
+    @FXML
+    private Label deletionInfoLabel;
+
     /**
-     * Initializes the controller with the list of branches and the stage.
-     * This method is called after the FXML has been loaded.
-     * It sets up the table columns, populates the table with branches,
-     * and adds listeners for branch selection changes.
+     * Initializes the controller with the list of branches and the stage (backward compatibility method).
+     * This method is provided for backward compatibility with code that doesn't provide
+     * deletion type and project name.
      *
      * @param branches The list of branches to display in the table
      * @param stage The stage that contains the delete confirmation dialog
      */
     public void initialize(List<BranchModel> branches, Stage stage) {
-        logger.debug("initialize: branches.size={}, stage={}", 
+        initialize(branches, stage, I18nUtil.getMessage("main.delete.selected"), "");
+    }
+
+    /**
+     * Initializes the controller with the list of branches, the stage, deletion type, and project name.
+     * This method is called after the FXML has been loaded.
+     * It sets up the table columns, populates the table with branches,
+     * adds listeners for branch selection changes, and displays the deletion type and project name.
+     *
+     * @param branches The list of branches to display in the table
+     * @param stage The stage that contains the delete confirmation dialog
+     * @param deletionType The type of deletion operation (e.g., "Deleting selected branches")
+     * @param projectName The name of the project from which branches will be deleted
+     */
+    public void initialize(List<BranchModel> branches, Stage stage, String deletionType, String projectName) {
+        logger.debug("initialize: branches.size={}, stage={}, deletionType={}, projectName={}", 
                 branches != null ? branches.size() : "null", 
-                stage != null ? "not null" : "null");
+                stage != null ? "not null" : "null",
+                deletionType,
+                projectName);
         this.stage = stage;
+        this.deletionType = deletionType;
+        this.projectName = projectName;
+
+        // Set the deletion info label text
+        if (deletionInfoLabel != null) {
+            deletionInfoLabel.setText(I18nUtil.getMessage("delete.confirmation.info", deletionType, projectName));
+        }
 
         // Налаштування колонок таблиці
         selectedColumn.setCellValueFactory(new PropertyValueFactory<>("selected"));

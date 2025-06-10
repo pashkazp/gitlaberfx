@@ -792,7 +792,9 @@ public class MainController {
      * @param operationDescription A description of the operation for the status message
      */
     private void executeBranchDeletion(List<BranchModel> branches, String operationDescription) {
-        List<BranchModel> confirmed = DialogHelper.showDeleteConfirmationDialog(stage, branches);
+        List<BranchModel> confirmed = DialogHelper.showDeleteConfirmationDialog(stage, branches, 
+                                                                              operationDescription, 
+                                                                              uiStateModel.getCurrentProjectName());
         if (confirmed == null || confirmed.isEmpty()) return;
 
         // Save the current target branch name
