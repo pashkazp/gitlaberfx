@@ -1,0 +1,37 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Component Diagram for GitLaberFX Desktop Application
+
+Person(user, "Користувач")
+System_Ext(gitlab_api, "GitLab API")
+
+Container_Boundary(app, "Десктопний додаток") {
+
+    Component(main_controller, "MainController", "JavaFX Controller", "Керує головним вікном, обробляє події UI та делегує логіку.")
+    Component(ui_state_model, "UIStateModel", "Model", "Централізована модель, що зберігає стан UI (списки, вибори, статус зайнятості).")
+
+    Component(gitlab_service, "GitLabService", "Service", "Інкапсулює всю логіку взаємодії з GitLab API. Єдиний компонент, що виконує мережеві запити.")
+    Component(locale_service, "LocaleChangeService", "Service", "Керує динамічною зміною мови інтерфейсу.")
+
+    Component(config_component, "AppConfig", "Component", "Відповідає за завантаження та збереження конфігурації додатку.")
+
+    Component(domain_models, "Data Models", "POJO / JavaFX Beans", "Класи, що представляють дані (напр., BranchModel).")
+
+    Rel(user, main_controller, "Взаємодіє з", "GUI Events")
+
+    Rel(main_controller, ui_state_model, "Оновлює та читає", "Змінює стан")
+    Rel(main_controller, gitlab_service, "Викликає методи для отримання даних та видалення", "Java")
+    Rel(main_controller, locale_service, "Ініціює зміну локалі", "Java")
+    Rel(main_controller, config_component, "Використовує для налаштувань")
+
+    Rel(gitlab_service, gitlab_api, "Робить запити", "HTTPS/JSON")
+    Rel(gitlab_service, config_component, "Читає URL та API-ключ")
+    Rel(gitlab_service, domain_models, "Створює та повертає")
+
+    Rel(ui_state_model, domain_models, "Містить списки")
+}
+
+@enduml

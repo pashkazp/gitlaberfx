@@ -1,0 +1,16 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+LAYOUT_WITH_LEGEND()
+
+title System Context Diagram for GitLaberFX
+
+Person(user, "Розробник / Тімлід", "Користувач, який бажає керувати гілками у своїх проектах GitLab.")
+System_Ext(gitlab, "GitLab Platform", "Платформа для хостингу Git-репозиторіїв та управління життєвим циклом розробки.")
+
+System(gitlaberfx, "GitLaberFX", "Десктопний додаток для масового управління та очищення гілок у GitLab.")
+
+Rel(user, gitlaberfx, "Використовує", "GUI")
+Rel(gitlaberfx, gitlab, "Читає дані та видаляє гілки через", "GitLab API (HTTPS)")
+
+@enduml

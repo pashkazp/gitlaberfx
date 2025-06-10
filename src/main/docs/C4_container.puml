@@ -1,0 +1,26 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Container Diagram for GitLaberFX
+
+Person(user, "Розробник / Тімлід", "Користувач, який бажає керувати гілками у своїх проектах GitLab.")
+System_Ext(gitlab, "GitLab Platform", "Платформа для хостингу Git-репозиторіїв та управління життєвим циклом розробки.")
+
+System_Boundary(c1, "GitLaberFX") {
+    Container(app, "Десктопний додаток", "JavaFX, Java 17", "Основний виконуваний додаток (.jar). Надає UI та реалізує всю бізнес-логіку.")
+
+    ContainerDb(config, "Файл конфігурації", "Properties File", "Зберігає URL GitLab, API-ключ та налаштування локалі.")
+
+    ContainerDb(logs, "Файли логів", "Log Files", "Зберігає діагностичну інформацію та помилки для відлагодження.")
+}
+
+Rel(user, app, "Використовує", "JavaFX GUI")
+
+Rel(app, gitlab, "Робить API-запити до", "HTTPS (JSON/API)")
+
+Rel(app, config, "Читає/Записує", "File I/O")
+Rel(app, logs, "Записує", "File I/O")
+
+@enduml

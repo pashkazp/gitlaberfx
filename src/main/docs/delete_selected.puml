@@ -1,0 +1,65 @@
+@startuml
+!theme vibrant
+title Процес видалення обраних гілок
+
+actor Користувач as User
+participant "MainController" as Controller
+participant "UIStateModel" as Model
+participant "GitLabService" as Service
+participant "JavaFX UI" as UI
+
+autonumber "<b>[0]"
+
+box "I. Підготовка" #LightCyan
+    User -> UI: Обирає проєкт
+    UI -> Controller: handleProjectSelection()
+    Controller -> Service: getBranches()
+    Service --> Controller: Повертає список гілок
+    Controller -> Model: оновлює currentProjectBranches
+
+    User -> UI: Обирає цільову гілку
+    UI -> Controller: handleTargetBranchSelection()
+    Controller -> Controller: Запускає rescanMerged() у фоні
+    loop для кожної гілки
+        Controller -> Service: isCommitInMainBranch()
+        Service --> Controller: Повертає статус
+        Controller -> Model: branch.setMergedIntoTarget(status)
+    end
+    UI <-- Model: Таблиця оновлюється з позначками '✔'
+end box
+
+box "II. Видалення" #LightGoldenRodYellow
+    User -> UI: Встановлює чекбокси на гілках
+    User -> Controller: Натискає "Видалити вибрані"
+    Controller -> Model: Фільтрує список, отримуючи обрані гілки
+    Controller -> UI: Відкриває діалог підтвердження
+    UI -> User: Підтверджує видалення
+    User -> Controller: Повертає фінальний список
+
+    Controller -> Controller: Запускає executeBranchDeletion()
+    note right
+        Задача виконується у фоновому потоці.
+        UI блокується через isBusy.
+    end note
+
+    loop для кожної гілки з підтвердженого списку
+        Controller -> Service: deleteBranch(id, branchName)
+        Service -> GitLab: **DELETE API request**
+        Controller -> Model: Збирає список успішно видалених гілок
+    end
+end box
+
+box "III. Елегантне оновлення UI" #LightGreen
+    Controller -> Model: **uiStateModel.getCurrentProjectBranches().removeAll(successfullyDeleted)**
+    note right
+        **Ключовий момент:**
+        Замість повного перезавантаження,
+        ми лише видаляємо елементи з **існуючої** моделі.
+        Це зберігає стан інших гілок та обрану цільову гілку.
+    end note
+
+    Model -> UI: ObservableList автоматично оновлює TableView
+    Controller -> UI: Додаток готовий до подальшої роботи
+end box
+
+@enduml

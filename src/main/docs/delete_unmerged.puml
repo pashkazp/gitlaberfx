@@ -1,0 +1,58 @@
+@startuml
+!theme vibrant
+title Процес видалення старих незмерджених гілок
+
+actor Користувач as User
+participant "MainController" as Controller
+participant "UIStateModel" as Model
+participant "GitLabService" as Service
+participant "JavaFX UI" as UI
+
+autonumber "<b>[0]"
+
+box "I. Підготовка" #LightCyan
+    User -> UI: Обирає проєкт та цільову гілку
+    Controller -> Model: Стан UI оновлюється
+    Controller -> Controller: Запускається rescanMerged()
+    note right: UI показує позначки '✔' для змерджених гілок
+end box
+
+box "II. Ініціація видалення" #LightGoldenRodYellow
+    User -> Controller: Натискає "Видалити не змерджені"
+    Controller -> UI: Відкриває діалог вибору дати
+    UI -> User: Обирає дату
+    User -> Controller: Повертає дату
+
+    Controller -> Model: **Фільтрує список currentProjectBranches**
+    note right
+        Умови фільтрації:
+        1. `branch.isMergedIntoTarget() == false`
+        2. `branch.getLastCommit()` < обраної дати
+    end note
+
+    Controller -> UI: Показує діалог підтвердження зі списком відфільтрованих гілок
+    UI -> User: Підтверджує видалення
+    User -> Controller: Повертає фінальний список
+
+    Controller -> Controller: Запускає executeBranchDeletion()
+    loop для кожної гілки з підтвердженого списку
+        Controller -> Service: deleteBranch(id, branchName)
+        Service -> GitLab: **DELETE API request**
+        Controller -> Model: Збирає список успішно видалених
+    end
+end box
+
+box "III. Елегантне оновлення UI" #LightGreen
+    Controller -> Model: **uiStateModel.getCurrentProjectBranches().removeAll(successfullyDeleted)**
+    note right
+        **Результат:**
+        Зберігається контекст користувача. Програма
+        поводить себе передбачувано та ефективно,
+        уникаючи зайвих мережевих запитів.
+    end note
+
+    Model -> UI: ObservableList автоматично оновлює TableView
+    Controller -> UI: Додаток готовий до подальшої роботи
+end box
+
+@enduml
