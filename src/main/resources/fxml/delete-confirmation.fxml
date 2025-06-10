@@ -10,6 +10,7 @@
         <Insets bottom="10" left="10" right="10" top="10" />
     </padding>
 
+    <Label fx:id="deletionInfoLabel" style="-fx-font-weight: bold;" />
     <Label text="%delete.confirmation.select.branches" />
 
     <HBox alignment="CENTER_LEFT" spacing="10">
