@@ -37,6 +37,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.CheckBoxTableCell;
@@ -526,6 +527,26 @@ public class MainController {
         uiStateModel.setCurrentTargetBranchName(null);
         populateBranchComboBoxFromModel();
     }
+
+    /**
+     * Removes deleted branches from the model.
+     * This method is called after branches are deleted to update the model without reloading all branches.
+     * It preserves the merge markers and other properties of the remaining branches.
+     *
+     * @param deletedBranches The list of branches that were deleted
+     */
+    private void removeDeletedBranchesFromModel(List<BranchModel> deletedBranches) {
+        // Get the current list of branches
+        ObservableList<BranchModel> currentBranches = uiStateModel.getCurrentProjectBranches();
+
+        // Remove the deleted branches one by one
+        for (BranchModel branch : new ArrayList<>(deletedBranches)) {
+            currentBranches.removeIf(b -> b.getName().equals(branch.getName()));
+        }
+
+        // Update the branch counter
+        updateBranchCounter();
+    }
     //</editor-fold>
 
     //<editor-fold desc="UI Update & Helper Methods">
@@ -764,7 +785,8 @@ public class MainController {
      * Executes the branch deletion process.
      * This method shows a confirmation dialog, then deletes the confirmed branches one by one.
      * It updates the progress bar and status message during the operation.
-     * After all branches are deleted, it refreshes the branches list.
+     * After all branches are deleted, it removes the deleted branches from the model
+     * while preserving the target branch selection and merge markers.
      *
      * @param branches The list of branches to delete
      * @param operationDescription A description of the operation for the status message
@@ -772,6 +794,9 @@ public class MainController {
     private void executeBranchDeletion(List<BranchModel> branches, String operationDescription) {
         List<BranchModel> confirmed = DialogHelper.showDeleteConfirmationDialog(stage, branches);
         if (confirmed == null || confirmed.isEmpty()) return;
+
+        // Save the current target branch name
+        final String savedTargetBranchName = uiStateModel.getCurrentTargetBranchName();
 
         final int total = confirmed.size();
         submitTask(operationDescription, () -> {
@@ -789,7 +814,18 @@ public class MainController {
                 final double progress = (double) (i + 1) / total;
                 Platform.runLater(() -> updateProgress(progress));
             }
-            Platform.runLater(() -> loadBranchesForProject(uiStateModel.getCurrentProjectId()));
+
+            // Instead of reloading all branches, just remove the deleted ones
+            Platform.runLater(() -> {
+                removeDeletedBranchesFromModel(confirmed);
+
+                // Ensure the target branch is still selected
+                if (uiStateModel.getCurrentTargetBranchName() == null && savedTargetBranchName != null) {
+                    uiStateModel.setCurrentTargetBranchName(savedTargetBranchName);
+                    populateBranchComboBoxFromModel();
+                    destBranchComboBox.setValue(savedTargetBranchName);
+                }
+            });
         });
     }
     //</editor-fold>
