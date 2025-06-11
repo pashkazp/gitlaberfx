@@ -891,7 +891,7 @@ public class MainController {
                 try {
                     if (isArchive) {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.archiving.branch", branch.getName())));
-                        gitLabService.archiveBranch(uiStateModel.getCurrentProjectId(), branch.getName(), config.getArchivePrefix());
+                        gitLabService.archiveBranch(uiStateModel.getCurrentProjectId(), branch.getOriginalName(), config.getArchivePrefix());
                         successfullyArchived.add(branch);
                     } else {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.deleting.branch", branch.getName())));

@@ -4,13 +4,13 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<HBox spacing="5" alignment="CENTER_LEFT" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.FilterPanelController">
+<HBox alignment="CENTER_LEFT" spacing="5" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.FilterPanelController">
     <padding>
         <Insets bottom="5" left="0" right="0" top="5" />
     </padding>
     
     <Label text="%filter.panel.title" />
-    <TextField fx:id="filterTextField" HBox.hgrow="ALWAYS" promptText=".*" />
-    <Button fx:id="includeButton" onAction="#includeMatching" text="+" style="-fx-min-width: 30; -fx-min-height: 25;" />
-    <Button fx:id="excludeButton" onAction="#excludeMatching" text="-" style="-fx-min-width: 30; -fx-min-height: 25;" />
+    <TextField fx:id="filterTextField" disable="true" promptText=".*" HBox.hgrow="ALWAYS" />
+    <Button fx:id="includeButton" disable="true" onAction="#includeMatching" style="-fx-min-width: 30; -fx-min-height: 25;" text="+" />
+    <Button fx:id="excludeButton" disable="true" onAction="#excludeMatching" style="-fx-min-width: 30; -fx-min-height: 25;" text="-" />
 </HBox>

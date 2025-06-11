@@ -65,7 +65,8 @@ public class UIStateModel {
     private final ObservableList<BranchModel> currentProjectBranches =
             FXCollections.observableArrayList(branch -> new Observable[] {
                     branch.mergedIntoTargetProperty(),
-                    branch.selectedProperty()
+                    branch.selectedProperty(),
+                    branch.nameProperty()
             });
 
     /**
