@@ -286,6 +286,66 @@ public class GitLabService {
         }
     }
 
+    /**
+     * Archives a branch by renaming it to <code>archive/&lt;name&gt;</code>. If the
+     * rename API is not available, falls back to creating the archived branch
+     * from the same commit and deleting the original.
+     *
+     * @param projectId  GitLab project ID
+     * @param branchName Name of the branch to archive
+     */
+    public void archiveBranch(String projectId, String branchName) throws IOException {
+        logger.info("Archiving branch {} from project {}", branchName, projectId);
+        String newName = "archive/" + branchName;
+
+        HttpUrl renameUrl = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
+                .addPathSegments("api/v4/projects")
+                .addPathSegment(projectId)
+                .addPathSegments("repository/branches")
+                .addEncodedPathSegment(encodePathSegment(branchName))
+                .addPathSegment("rename")
+                .addQueryParameter("new_branch", newName)
+                .build();
+        Request renameRequest = new Request.Builder()
+                .url(renameUrl)
+                .post(RequestBody.create(new byte[0]))
+                .header(PRIVATE_TOKEN, config.getApiKey())
+                .build();
+
+        try (Response response = httpClient.newCall(renameRequest).execute()) {
+            if (response.isSuccessful()) {
+                return;
+            }
+        }
+
+        // Fallback: create new branch and delete the old one
+        createBranch(projectId, newName, branchName);
+        deleteBranch(projectId, branchName);
+    }
+
+    /**
+     * Creates a branch from a specific ref.
+     */
+    private void createBranch(String projectId, String branchName, String ref) throws IOException {
+        HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
+                .addPathSegments("api/v4/projects")
+                .addPathSegment(projectId)
+                .addPathSegments("repository/branches")
+                .addQueryParameter("branch", branchName)
+                .addQueryParameter("ref", ref)
+                .build();
+        Request request = new Request.Builder()
+                .url(url)
+                .post(RequestBody.create(new byte[0]))
+                .header(PRIVATE_TOKEN, config.getApiKey())
+                .build();
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Failed to create branch: " + response);
+            }
+        }
+    }
+
 
     /**
      * Checks if a branch is merged into another branch by comparing their commit SHAs.

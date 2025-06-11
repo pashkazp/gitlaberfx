@@ -150,8 +150,9 @@ public class MainController {
 
     /** Buttons for various operations (refresh, selection, deletion). */
     @FXML private Button refreshProjectsButton, refreshBranchesButton, selectAllButton, 
-                         deselectAllButton, invertSelectionButton, deleteSelectedButton, 
-                         mainDelMergedButton, mainDelUnmergedButton;
+                         deselectAllButton, invertSelectionButton, deleteSelectedButton,
+                         mainDelMergedButton, mainDelUnmergedButton,
+                         archiveSelectedButton, mainArchiveMergedButton, mainArchiveUnmergedButton;
 
     /**
      * Initializes the controller with the application configuration and stage.
@@ -196,6 +197,9 @@ public class MainController {
         deleteSelectedButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.delete.selected")));
         mainDelMergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.delete.merged")));
         mainDelUnmergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.delete.unmerged")));
+        archiveSelectedButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.archive.selected")));
+        mainArchiveMergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.archive.merged")));
+        mainArchiveUnmergedButton.setTooltip(new Tooltip(I18nUtil.getMessage("tooltip.archive.unmerged")));
 
         playButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.play")));
         pauseButton.setTooltip(new Tooltip(I18nUtil.getMessage("button.tooltip.pause")));
@@ -288,6 +292,9 @@ public class MainController {
         mainDelMergedButton.disableProperty().bind(isBusy.or(noProjectOrBranches).or(noTargetBranch).or(noMergedBranchesFound));
 
         mainDelUnmergedButton.disableProperty().bind(isBusy.or(noProjectOrBranches).or(noTargetBranch));
+        archiveSelectedButton.disableProperty().bind(isBusy.or(noProjectOrBranches).or(noBranchSelected));
+        mainArchiveMergedButton.disableProperty().bind(isBusy.or(noProjectOrBranches).or(noTargetBranch).or(noMergedBranchesFound));
+        mainArchiveUnmergedButton.disableProperty().bind(isBusy.or(noProjectOrBranches).or(noTargetBranch));
 
         selectAllButton.disableProperty().bind(isBusy.or(noProjectOrBranches));
         deselectAllButton.disableProperty().bind(isBusy.or(noProjectOrBranches));
@@ -547,6 +554,22 @@ public class MainController {
         // Update the branch counter
         updateBranchCounter();
     }
+
+    /**
+     * Updates the model after branches are archived by renaming them locally.
+     *
+     * @param oldName  Original branch name
+     * @param newName  New archived branch name
+     */
+    private void updateBranchNameInModel(String oldName, String newName) {
+        for (BranchModel b : uiStateModel.getCurrentProjectBranches()) {
+            if (b.getName().equals(oldName)) {
+                b.setName(newName);
+                break;
+            }
+        }
+        updateBranchCounter();
+    }
     //</editor-fold>
 
     //<editor-fold desc="UI Update & Helper Methods">
@@ -713,6 +736,19 @@ public class MainController {
     }
 
     /**
+     * Archives the selected branches by renaming them with the <code>archive/</code> prefix.
+     */
+    @FXML
+    private void archiveSelected() {
+        List<BranchModel> toArchive = uiStateModel.getCurrentProjectBranches().stream()
+                .filter(BranchModel::isSelected)
+                .collect(Collectors.toList());
+        if (!toArchive.isEmpty()) {
+            executeBranchArchiving(toArchive, I18nUtil.getMessage("main.archive.selected"));
+        }
+    }
+
+    /**
      * Deletes merged branches older than a specified date.
      * This method prompts the user to select a cutoff date, then collects all branches
      * that are merged into the target branch, not protected, and older than the cutoff date.
@@ -742,6 +778,36 @@ public class MainController {
                 showInfo("info.title", "info.no.merged.branches");
             } else {
                 executeBranchDeletion(toDelete, I18nUtil.getMessage("main.status.deleting.merged"));
+            }
+        }
+    }
+
+    /**
+     * Archives merged branches older than the selected date.
+     */
+    @FXML
+    private void archiveMerged() {
+        String targetBranch = uiStateModel.getCurrentTargetBranchName();
+        if (targetBranch == null) {
+            showError("error.target.branch", "error.target.branch.message");
+            return;
+        }
+        LocalDate cutoffDate = DialogHelper.showDatePickerDialog(stage);
+        if (cutoffDate != null) {
+            List<BranchModel> toArchive = uiStateModel.getCurrentProjectBranches().stream()
+                    .filter(b -> b.isMergedIntoTarget() && !b.isProtected())
+                    .filter(b -> {
+                        try {
+                            return LocalDate.parse(b.getLastCommit().substring(0, 10), DateTimeFormatter.ISO_LOCAL_DATE).isBefore(cutoffDate);
+                        } catch (DateTimeParseException e) {
+                            return false;
+                        }
+                    }).collect(Collectors.toList());
+
+            if (toArchive.isEmpty()) {
+                showInfo("info.title", "info.no.merged.branches");
+            } else {
+                executeBranchArchiving(toArchive, I18nUtil.getMessage("main.archive.merged"));
             }
         }
     }
@@ -782,6 +848,36 @@ public class MainController {
     }
 
     /**
+     * Archives unmerged branches older than the selected date.
+     */
+    @FXML
+    private void archiveUnmerged() {
+        String targetBranch = uiStateModel.getCurrentTargetBranchName();
+        if (targetBranch == null) {
+            showError("error.target.branch", "error.target.branch.message");
+            return;
+        }
+        LocalDate cutoffDate = DialogHelper.showDatePickerDialog(stage);
+        if (cutoffDate != null) {
+            List<BranchModel> toArchive = uiStateModel.getCurrentProjectBranches().stream()
+                    .filter(b -> !b.isMergedIntoTarget() && !b.isProtected() && !b.getName().equals(targetBranch))
+                    .filter(b -> {
+                        try {
+                            return LocalDate.parse(b.getLastCommit().substring(0, 10), DateTimeFormatter.ISO_LOCAL_DATE).isBefore(cutoffDate);
+                        } catch (DateTimeParseException e) {
+                            return false;
+                        }
+                    }).collect(Collectors.toList());
+
+            if (toArchive.isEmpty()) {
+                showInfo("info.title", "info.no.unmerged.branches");
+            } else {
+                executeBranchArchiving(toArchive, I18nUtil.getMessage("main.archive.unmerged"));
+            }
+        }
+    }
+
+    /**
      * Executes the branch deletion process.
      * This method shows a confirmation dialog, then deletes the confirmed branches one by one.
      * It updates the progress bar and status message during the operation.
@@ -792,8 +888,8 @@ public class MainController {
      * @param operationDescription A description of the operation for the status message
      */
     private void executeBranchDeletion(List<BranchModel> branches, String operationDescription) {
-        List<BranchModel> confirmed = DialogHelper.showDeleteConfirmationDialog(stage, branches, 
-                                                                              operationDescription, 
+        List<BranchModel> confirmed = DialogHelper.showDeleteConfirmationDialog(stage, branches,
+                                                                              operationDescription,
                                                                               uiStateModel.getCurrentProjectName());
         if (confirmed == null || confirmed.isEmpty()) return;
 
@@ -825,6 +921,53 @@ public class MainController {
                 if (uiStateModel.getCurrentTargetBranchName() == null && savedTargetBranchName != null) {
                     uiStateModel.setCurrentTargetBranchName(savedTargetBranchName);
                     populateBranchComboBoxFromModel();
+                    destBranchComboBox.setValue(savedTargetBranchName);
+                }
+            });
+        });
+    }
+
+    /**
+     * Executes the branch archiving process. Branches are renamed to
+     * <code>archive/&lt;branch&gt;</code> without reloading from GitLab.
+     *
+     * @param branches            The list of branches to archive
+     * @param operationDescription Description key for status messages
+     */
+    private void executeBranchArchiving(List<BranchModel> branches, String operationDescription) {
+        List<BranchModel> confirmed = DialogHelper.showDeleteConfirmationDialog(stage, branches,
+                                                                               operationDescription,
+                                                                               uiStateModel.getCurrentProjectName());
+        if (confirmed == null || confirmed.isEmpty()) return;
+
+        final String savedTargetBranchName = uiStateModel.getCurrentTargetBranchName();
+
+        final int total = confirmed.size();
+        submitTask(operationDescription, () -> {
+            for (int i = 0; i < total; i++) {
+                if (Thread.currentThread().isInterrupted()) break;
+                checkPause();
+
+                BranchModel branch = confirmed.get(i);
+                String oldName = branch.getName();
+                String newName = "archive/" + oldName;
+                try {
+                    String msg = I18nUtil.getMessage("main.status.archiving.branch", oldName);
+                    Platform.runLater(() -> uiStateModel.setStatusMessage(msg));
+                    gitLabService.archiveBranch(uiStateModel.getCurrentProjectId(), oldName);
+                } catch (IOException e) {
+                    logger.error("Failed to archive branch {}", oldName, e);
+                    continue;
+                }
+                String finalNewName = newName;
+                Platform.runLater(() -> updateBranchNameInModel(oldName, finalNewName));
+                final double progress = (double) (i + 1) / total;
+                Platform.runLater(() -> updateProgress(progress));
+            }
+
+            Platform.runLater(() -> {
+                populateBranchComboBoxFromModel();
+                if (savedTargetBranchName != null && destBranchComboBox.getItems().contains(savedTargetBranchName)) {
                     destBranchComboBox.setValue(savedTargetBranchName);
                 }
             });

@@ -62,6 +62,12 @@ public class AppConfig {
     /** The locale code for the application's user interface language. */
     private String locale;
 
+    /** Comma-separated list of regex patterns for branch inclusion. */
+    private String includePatterns;
+
+    /** Comma-separated list of regex patterns for branch exclusion. */
+    private String excludePatterns;
+
     /**
      * Constructs a new empty AppConfig instance.
      * This constructor creates a configuration object with null values for all properties.
@@ -110,6 +116,8 @@ public class AppConfig {
                 config.setGitlabUrl(properties.getProperty("gitlabUrl"));
                 config.setApiKey(properties.getProperty("apiKey"));
                 config.setLocale(properties.getProperty("locale", "en_US"));
+                config.setIncludePatterns(properties.getProperty("includePatterns"));
+                config.setExcludePatterns(properties.getProperty("excludePatterns"));
 
                 return config;
             }
@@ -135,6 +143,8 @@ public class AppConfig {
             if (gitlabUrl != null) properties.setProperty("gitlabUrl", gitlabUrl);
             if (apiKey != null) properties.setProperty("apiKey", apiKey);
             if (locale != null) properties.setProperty("locale", locale);
+            if (includePatterns != null) properties.setProperty("includePatterns", includePatterns);
+            if (excludePatterns != null) properties.setProperty("excludePatterns", excludePatterns);
 
             try (FileOutputStream fos = new FileOutputStream(new File(CONFIG_FILE))) {
                 properties.store(fos, "GitLaberFX Configuration");
@@ -210,5 +220,33 @@ public class AppConfig {
      */
     public void setLocale(String locale) {
         this.locale = locale;
+    }
+
+    /**
+     * Gets the comma-separated include regex patterns.
+     */
+    public String getIncludePatterns() {
+        return includePatterns;
+    }
+
+    /**
+     * Sets the include regex patterns.
+     */
+    public void setIncludePatterns(String includePatterns) {
+        this.includePatterns = includePatterns;
+    }
+
+    /**
+     * Gets the comma-separated exclude regex patterns.
+     */
+    public String getExcludePatterns() {
+        return excludePatterns;
+    }
+
+    /**
+     * Sets the exclude regex patterns.
+     */
+    public void setExcludePatterns(String excludePatterns) {
+        this.excludePatterns = excludePatterns;
     }
 }
