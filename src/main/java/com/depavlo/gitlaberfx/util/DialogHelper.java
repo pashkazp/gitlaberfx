@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 /**
  * Utility class for creating and managing various dialogs in the application.
@@ -249,13 +248,8 @@ public class DialogHelper {
             stage.setTitle(I18nUtil.getMessage("dialog.delete.confirmation"));
             stage.setScene(scene);
 
-            // Create deep copies of branches to avoid modifying the original list
-            List<BranchModel> branchCopies = branches.stream()
-                    .map(BranchModel::new)  // Use copy constructor
-                    .collect(Collectors.toList());
-
             DeleteConfirmationController controller = loader.getController();
-            controller.initialize(branchCopies, stage, deletionType, projectName);
+            controller.initialize(branches, stage, deletionType, projectName);
 
             stage.showAndWait();
             return controller.getSelectedBranches();

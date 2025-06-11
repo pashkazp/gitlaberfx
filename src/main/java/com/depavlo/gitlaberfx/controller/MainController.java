@@ -154,9 +154,6 @@ public class MainController {
                          deselectAllButton, invertSelectionButton, deleteSelectedButton, 
                          mainDelMergedButton, mainDelUnmergedButton;
 
-    /** Controller for the filter panel. */
-    @FXML private FilterPanelController filterPanelController;
-
     /**
      * Initializes the controller with the application configuration and stage.
      * This method is called after the FXML has been loaded.
@@ -448,9 +445,6 @@ public class MainController {
                     populateBranchComboBoxFromModel();
                     destBranchComboBox.valueProperty().addListener(targetBranchListener);
 
-                    // Pass branches to the filter panel controller
-                    filterPanelController.setTargetList(uiStateModel.getCurrentProjectBranches());
-
                     completionFuture.complete(null);
                 });
             } catch (IOException e) {
@@ -533,9 +527,6 @@ public class MainController {
         uiStateModel.setCurrentProjectName(null);
         uiStateModel.setCurrentTargetBranchName(null);
         populateBranchComboBoxFromModel();
-
-        // Clear the filter panel
-        filterPanelController.setTargetList(FXCollections.emptyObservableList());
     }
 
     /**
@@ -672,8 +663,9 @@ public class MainController {
 
         if (currentSelection != null && !currentSelection.equals(getNotSelectedItemText())) {
             for (BranchModel branch : archivedBranches) {
-                // Check if this branch's original name matches the current selection
-                if (branch.getOriginalName().equals(currentSelection)) {
+                // Check if this branch's original name (before archiving) matches the current selection
+                String originalName = branch.getName().substring(config.getArchivePrefix().length());
+                if (originalName.equals(currentSelection)) {
                     wasArchived = true;
                     archivedName = branch.getName();
                     break;
@@ -891,7 +883,7 @@ public class MainController {
                 try {
                     if (isArchive) {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.archiving.branch", branch.getName())));
-                        gitLabService.archiveBranch(uiStateModel.getCurrentProjectId(), branch.getOriginalName(), config.getArchivePrefix());
+                        gitLabService.archiveBranch(uiStateModel.getCurrentProjectId(), branch.getName(), config.getArchivePrefix());
                         successfullyArchived.add(branch);
                     } else {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.deleting.branch", branch.getName())));
@@ -912,8 +904,7 @@ public class MainController {
 
                 // For archived branches: update their names with the archive prefix
                 for (BranchModel branch : successfullyArchived) {
-                    // Use the originalName to avoid adding multiple prefixes
-                    branch.setName(config.getArchivePrefix() + branch.getOriginalName());
+                    branch.setName(config.getArchivePrefix() + branch.getName());
                 }
 
                 // For deleted branches: remove them from the model
