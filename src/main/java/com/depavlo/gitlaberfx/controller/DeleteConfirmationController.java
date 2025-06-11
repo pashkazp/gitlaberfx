@@ -131,7 +131,7 @@ public class DeleteConfirmationController {
     private Button confirmButton;
 
     /** Flag indicating whether to archive branches instead of deleting them. */
-    private boolean archive = false;
+    private boolean archive = true;
 
     /**
      * Initializes the controller with the list of branches and the stage (backward compatibility method).
