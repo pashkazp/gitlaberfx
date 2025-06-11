@@ -25,6 +25,7 @@ package com.depavlo.gitlaberfx.util;
 
 import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.model.BranchModel;
+import com.depavlo.gitlaberfx.model.OperationConfirmationResult;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -83,7 +84,7 @@ class DialogHelperTest {
         // Verify that the method can be called with the expected parameters
         assertDoesNotThrow(() -> {
             // This is just a compile-time check
-            List<BranchModel> result = null;
+            OperationConfirmationResult result = null;
             if (false) { // Never executed, just for compile-time checking
                 result = DialogHelper.showDeleteConfirmationDialog(mockStage, branches);
             }
