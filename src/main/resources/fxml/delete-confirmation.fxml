@@ -19,6 +19,8 @@
         <Button onAction="#invertSelection" text="%main.invert.selection" />
     </HBox>
 
+    <fx:include source="filter-panel.fxml" />
+
     <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="selectedColumn" maxWidth="70.0" prefWidth="70.0" text="%column.select" />

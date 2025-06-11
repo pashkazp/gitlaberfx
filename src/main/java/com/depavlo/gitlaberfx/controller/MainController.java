@@ -154,6 +154,9 @@ public class MainController {
                          deselectAllButton, invertSelectionButton, deleteSelectedButton, 
                          mainDelMergedButton, mainDelUnmergedButton;
 
+    /** Controller for the filter panel. */
+    @FXML private FilterPanelController filterPanelController;
+
     /**
      * Initializes the controller with the application configuration and stage.
      * This method is called after the FXML has been loaded.
@@ -173,6 +176,11 @@ public class MainController {
         setupButtonBindings();
         setUiBusy(false);
         setupTooltips(); // Set tooltips for UI elements
+
+        // Initialize the filter panel controller with the UI state model
+        if (filterPanelController != null) {
+            filterPanelController.initialize(uiStateModel);
+        }
     }
 
 /**
