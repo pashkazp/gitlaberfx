@@ -10,28 +10,36 @@ System_Ext(gitlab_api, "GitLab API")
 
 Container_Boundary(app, "Десктопний додаток") {
 
-    Component(main_controller, "MainController", "JavaFX Controller", "Керує головним вікном, обробляє події UI та делегує логіку.")
-    Component(ui_state_model, "UIStateModel", "Model", "Централізована модель, що зберігає стан UI (списки, вибори, статус зайнятості).")
+    Component(main_controller, "MainController", "JavaFX Controller", "Керує головним вікном. Включає в себе FilterPanel. Обробляє події та оркеструє операції (видалення/архівація).")
+    Component(confirmation_controller, "DeleteConfirmationController", "JavaFX Controller", "Керує діалогом підтвердження. Включає в себе FilterPanel. Повертає вибір користувача (видалити/архівувати).")
+    Component(filter_panel, "FilterPanelController", "Reusable UI Component", "Надає UI та логіку для фільтрації списків гілок за RegExp маскою.")
 
-    Component(gitlab_service, "GitLabService", "Service", "Інкапсулює всю логіку взаємодії з GitLab API. Єдиний компонент, що виконує мережеві запити.")
-    Component(locale_service, "LocaleChangeService", "Service", "Керує динамічною зміною мови інтерфейсу.")
+    Component(ui_state_model, "UIStateModel", "Model", "Централізована модель стану UI. Відстежує зміни в іменах гілок для реактивного оновлення.")
+    Component(domain_models, "Data Models", "POJO / JavaFX Beans", "Класи даних (BranchModel з originalName, OperationConfirmationResult).")
 
-    Component(config_component, "AppConfig", "Component", "Відповідає за завантаження та збереження конфігурації додатку.")
-
-    Component(domain_models, "Data Models", "POJO / JavaFX Beans", "Класи, що представляють дані (напр., BranchModel).")
+    Component(gitlab_service, "GitLabService", "Service", "Інкапсулює всю логіку взаємодії з GitLab API. Реалізує атомарний метод archiveBranch з відкатом.")
+    Component(dialog_helper, "DialogHelper", "Utility", "Створює та налаштовує діалогові вікна, включаючи вікно підтвердження.")
+    Component(config_component, "AppConfig", "Component", "Керує конфігурацією додатку, включаючи archivePrefix.")
 
     Rel(user, main_controller, "Взаємодіє з", "GUI Events")
+    Rel(user, confirmation_controller, "Взаємодіє з", "GUI Events")
 
-    Rel(main_controller, ui_state_model, "Оновлює та читає", "Змінює стан")
-    Rel(main_controller, gitlab_service, "Викликає методи для отримання даних та видалення", "Java")
-    Rel(main_controller, locale_service, "Ініціює зміну локалі", "Java")
-    Rel(main_controller, config_component, "Використовує для налаштувань")
+    Rel(main_controller, filter_panel, "Використовує та надає дані")
+    Rel(confirmation_controller, filter_panel, "Використовує та надає дані")
+
+    Rel(main_controller, dialog_helper, "Викликає для показу діалогів")
+    Rel(dialog_helper, confirmation_controller, "Створює та налаштовує")
+
+    Rel(main_controller, ui_state_model, "Оновлює та читає стан")
+    Rel(main_controller, gitlab_service, "Викликає для видалення/архівації")
+    Rel(main_controller, config_component, "Читає archivePrefix")
 
     Rel(gitlab_service, gitlab_api, "Робить запити", "HTTPS/JSON")
     Rel(gitlab_service, config_component, "Читає URL та API-ключ")
     Rel(gitlab_service, domain_models, "Створює та повертає")
 
     Rel(ui_state_model, domain_models, "Містить списки")
+
 }
 
 @enduml

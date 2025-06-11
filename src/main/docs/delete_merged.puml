@@ -1,9 +1,11 @@
 @startuml
 !theme vibrant
-title Процес видалення змерджених гілок
+title Процес видалення змерджених гілок (з архівацією та фільтрацією)
 
 actor Користувач as User
 participant "MainController" as Controller
+participant "DialogHelper" as Helper
+participant "DeleteConfirmationController" as Dialog
 participant "UIStateModel" as Model
 participant "GitLabService" as Service
 participant "JavaFX UI" as UI
@@ -12,33 +14,31 @@ autonumber "<b>[0]"
 
 box "I. Підготовка" #LightCyan
     User -> UI: Обирає проєкт та цільову гілку
-    Controller -> Model: Стан UI оновлюється
     Controller -> Controller: Запускається rescanMerged()
     note right: UI показує позначки '✔' для змерджених гілок
 end box
 
-box "II. Ініціація видалення" #LightGoldenRodYellow
+box "II. Ініціація та підтвердження" #LightGoldenRodYellow
     User -> Controller: Натискає "Видалити змерджені"
     Controller -> UI: Відкриває діалог вибору дати
     UI -> User: Обирає дату
     User -> Controller: Повертає дату
 
-    Controller -> Model: **Фільтрує список currentProjectBranches**
-    note right
-        Умови фільтрації:
-        1. `branch.isMergedIntoTarget() == true`
-        2. `branch.getLastCommit()` < обраної дати
-    end note
+    Controller -> Model: **Фільтрує гілки за датою та статусом `isMergedIntoTarget`**
 
-    Controller -> UI: Показує діалог підтвердження зі списком відфільтрованих гілок
-    UI -> User: Підтверджує видалення
-    User -> Controller: Повертає фінальний список
+    Controller -> Helper: showDeleteConfirmationDialog(відфільтрований_список)
+    Helper -> Dialog: Створює діалог з **копією** списку
 
-    Controller -> Controller: Запускає executeBranchDeletion()
+    User -> Dialog: **Знімає вибір з деяких гілок або використовує фільтр**
+    User -> Dialog: **Залишає ☐ Архівувати** (виконуємо видалення)
+    User -> Dialog: Натискає "Видалити"
+    Dialog --> Controller: Повертає OperationConfirmationResult (з прапорцем `archive=false`)
+
+    Controller -> Controller: Запускає **executeBranchOperation()**
     loop для кожної гілки з підтвердженого списку
-        Controller -> Service: deleteBranch(id, branchName)
+        Controller -> Service: **deleteBranch(id, branch.getName())**
         Service -> GitLab: **DELETE API request**
-        Controller -> Model: Збирає список успішно видалених
+        Controller -> Model: Збирає список успішно видалених гілок
     end
 end box
 
@@ -46,12 +46,14 @@ box "III. Елегантне оновлення UI" #LightGreen
     Controller -> Model: **uiStateModel.getCurrentProjectBranches().removeAll(successfullyDeleted)**
     note right
         **Ефект:**
-        Таблиця оновлюється, видаляючи лише потрібні рядки.
-        Вибір цільової гілки та позначки '✔' на інших гілках
-        **залишаються незмінними**.
+        Замість повного перезавантаження,
+        видаляються лише потрібні елементи з моделі.
+        Вибір цільової гілки та позначки '✔' **зберігаються**.
     end note
 
     Model -> UI: ObservableList автоматично оновлює TableView
+    Controller -> Controller: **repopulateTargetBranchComboBox()**
+
     Controller -> UI: Додаток готовий до подальшої роботи
 end box
 

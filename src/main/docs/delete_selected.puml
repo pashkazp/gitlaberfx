@@ -1,64 +1,63 @@
 @startuml
 !theme vibrant
-title Процес видалення обраних гілок
+title Процес видалення обраних гілок (з архівацією та фільтрацією)
 
 actor Користувач as User
 participant "MainController" as Controller
+participant "FilterPanel" as Filter
+participant "DialogHelper" as Helper
+participant "DeleteConfirmationController" as Dialog
 participant "UIStateModel" as Model
 participant "GitLabService" as Service
 participant "JavaFX UI" as UI
 
 autonumber "<b>[0]"
 
-box "I. Підготовка" #LightCyan
-    User -> UI: Обирає проєкт
-    UI -> Controller: handleProjectSelection()
-    Controller -> Service: getBranches()
-    Service --> Controller: Повертає список гілок
-    Controller -> Model: оновлює currentProjectBranches
+box "I. Підготовка та вибір" #LightCyan
+    User -> UI: Обирає проєкт та цільову гілку
+    Controller -> Service: Завантажує та аналізує гілки
+    Controller -> Model: Оновлює currentProjectBranches
+    Controller -> Filter: **setTargetList(список_гілок)**
 
-    User -> UI: Обирає цільову гілку
-    UI -> Controller: handleTargetBranchSelection()
-    Controller -> Controller: Запускає rescanMerged() у фоні
-    loop для кожної гілки
-        Controller -> Service: isCommitInMainBranch()
-        Service --> Controller: Повертає статус
-        Controller -> Model: branch.setMergedIntoTarget(status)
-    end
-    UI <-- Model: Таблиця оновлюється з позначками '✔'
+    User -> Filter: Вводить маску (напр., "archive/.*")
+    User -> Filter: Натискає "+" або "-"
+    Filter -> Model: **Масово змінює .setSelected() для гілок**
+    User -> UI: Вручну коригує вибір у TableView
 end box
 
-box "II. Видалення" #LightGoldenRodYellow
-    User -> UI: Встановлює чекбокси на гілках
+box "II. Підтвердження та операція" #LightGoldenRodYellow
     User -> Controller: Натискає "Видалити вибрані"
-    Controller -> Model: Фільтрує список, отримуючи обрані гілки
-    Controller -> UI: Відкриває діалог підтвердження
-    UI -> User: Підтверджує видалення
-    User -> Controller: Повертає фінальний список
+    Controller -> Model: Фільтрує список за `isSelected == true`
+    Controller -> Helper: showDeleteConfirmationDialog(список)
+    Helper -> Dialog: Створює діалог з **копією** списку
+    Dialog -> Filter: **setTargetList(копія_списку)**
 
-    Controller -> Controller: Запускає executeBranchDeletion()
-    note right
-        Задача виконується у фоновому потоці.
-        UI блокується через isBusy.
-    end note
+    User -> Dialog: Додатково фільтрує список у діалозі
+    User -> Dialog: **Встановлює ☑ Архівувати**
+    User -> Dialog: Натискає "Архівувати"
+    Dialog --> Controller: Повертає OperationConfirmationResult (з прапорцем `archive=true`)
 
+    Controller -> Controller: Запускає **executeBranchOperation()**
+    note right: UI блокується через `isBusy`
     loop для кожної гілки з підтвердженого списку
-        Controller -> Service: deleteBranch(id, branchName)
-        Service -> GitLab: **DELETE API request**
-        Controller -> Model: Збирає список успішно видалених гілок
+        Controller -> Service: **archiveBranch(id, branch.getOriginalName())**
+        Service -> GitLab: **POST (Create) + DELETE (Delete)**
+        Controller -> Model: Збирає список успішно заархівованих гілок
     end
 end box
 
 box "III. Елегантне оновлення UI" #LightGreen
-    Controller -> Model: **uiStateModel.getCurrentProjectBranches().removeAll(successfullyDeleted)**
+    Controller -> Model: **successfullyArchived.forEach(b -> b.setName(...))**
     note right
         **Ключовий момент:**
-        Замість повного перезавантаження,
-        ми лише видаляємо елементи з **існуючої** моделі.
-        Це зберігає стан інших гілок та обрану цільову гілку.
+        Змінюється лише `nameProperty` в існуючих об'єктах моделі.
+        ObservableList з екстрактором реагує на цю зміну.
     end note
 
-    Model -> UI: ObservableList автоматично оновлює TableView
+    Model -> UI: **TableView автоматично оновлює імена гілок**
+    Controller -> Controller: **repopulateTargetBranchComboBox()**
+    note right: ComboBox перемальовується з новими іменами, вибір зберігається.
+
     Controller -> UI: Додаток готовий до подальшої роботи
 end box
 

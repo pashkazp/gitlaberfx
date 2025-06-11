@@ -1,9 +1,12 @@
 @startuml
 !theme vibrant
-title Процес видалення старих незмерджених гілок
+title Процес видалення/архівації старих незмерджених гілок
 
 actor Користувач as User
 participant "MainController" as Controller
+participant "DialogHelper" as Helper
+participant "DeleteConfirmationController" as DialogController
+participant "FilterPanelController" as Filter
 participant "UIStateModel" as Model
 participant "GitLabService" as Service
 participant "JavaFX UI" as UI
@@ -17,11 +20,12 @@ box "I. Підготовка" #LightCyan
     note right: UI показує позначки '✔' для змерджених гілок
 end box
 
-box "II. Ініціація видалення" #LightGoldenRodYellow
+box "II. Ініціація та підтвердження" #LightGoldenRodYellow
     User -> Controller: Натискає "Видалити не змерджені"
-    Controller -> UI: Відкриває діалог вибору дати
-    UI -> User: Обирає дату
-    User -> Controller: Повертає дату
+    Controller -> Helper: Відкриває діалог вибору дати
+    Helper --> User: Показує календар
+    User -> Helper: Обирає дату
+    Helper --> Controller: Повертає обрану дату
 
     Controller -> Model: **Фільтрує список currentProjectBranches**
     note right
@@ -30,28 +34,54 @@ box "II. Ініціація видалення" #LightGoldenRodYellow
         2. `branch.getLastCommit()` < обраної дати
     end note
 
-    Controller -> UI: Показує діалог підтвердження зі списком відфільтрованих гілок
-    UI -> User: Підтверджує видалення
-    User -> Controller: Повертає фінальний список
+    Controller -> Helper: showDeleteConfirmationDialog(список_гілок, архівувати_за_замовчуванням)
+    Helper -> DialogController: Створює вікно, передає **копію** списку
+    DialogController -> Filter: **setTargetList(копія_списку)**
+    note right: Панель фільтрації тепер працює\nз даними всередині діалогу.
 
-    Controller -> Controller: Запускає executeBranchDeletion()
-    loop для кожної гілки з підтвердженого списку
-        Controller -> Service: deleteBranch(id, branchName)
-        Service -> GitLab: **DELETE API request**
-        Controller -> Model: Збирає список успішно видалених
-    end
+    User -> Filter: Вводить маску (напр. `archive/*`) та натискає "-"
+    Filter -> DialogController: Оновлює стан "вибрано" у гілок в діалозі
+
+    User -> DialogController: Встановлює прапорець "☑ Архівувати"
+    DialogController -> UI: Кнопка змінює назву на "Архівувати"
+
+    User -> DialogController: Натискає "Архівувати"
+    DialogController --> Helper: Повертає OperationConfirmationResult (фінальний список, isArchive=true)
+    Helper --> Controller: Повертає результат
 end box
 
-box "III. Елегантне оновлення UI" #LightGreen
-    Controller -> Model: **uiStateModel.getCurrentProjectBranches().removeAll(successfullyDeleted)**
+box "III. Виконання та оновлення UI" #LightGreen
+    Controller -> Controller: Запускає executeBranchOperation()
     note right
-        **Результат:**
-        Зберігається контекст користувача. Програма
-        поводить себе передбачувано та ефективно,
-        уникаючи зайвих мережевих запитів.
+        Задача виконується у фоновому потоці.
+        Основний UI блокується через isBusy.
     end note
 
-    Model -> UI: ObservableList автоматично оновлює TableView
+    loop для кожної гілки з фінального списку
+        alt якщо isArchive == true
+            Controller -> Service: **archiveBranch(id, branchName, prefix)**
+            Service -> GitLab: **POST (Create) + DELETE API requests**
+            Controller -> Model: Додає гілку до списку `successfullyArchived`
+        else
+            Controller -> Service: **deleteBranch(id, branchName)**
+            Service -> GitLab: **DELETE API request**
+            Controller -> Model: Додає гілку до списку `successfullyDeleted`
+        end
+    end
+
+    Controller -> Controller: **Оновлює UI в головному потоці (Platform.runLater)**
+
+    Controller -> Model: Оновлює імена в `successfullyArchived` (`branch.setName(...)`)
+    Controller -> Model: Видаляє гілки зі списку `successfullyDeleted`
+    note right
+        `TableView` миттєво реагує на ці зміни\nзавдяки `ObservableList` з екстрактором.
+    end note
+
+    Controller -> Controller: Викликає `repopulateTargetBranchComboBox()`
+    note right
+        `ComboBox` цільової гілки оновлюється,\nзберігаючи вибір, навіть якщо цільова\nгілка була щойно заархівована.
+    end note
+
     Controller -> UI: Додаток готовий до подальшої роботи
 end box
 
