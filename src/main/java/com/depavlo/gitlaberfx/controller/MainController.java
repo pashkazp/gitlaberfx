@@ -662,8 +662,8 @@ public class MainController {
      * @param archivedBranches The list of branches that were archived
      */
     private void repopulateTargetBranchComboBox(String savedTargetBranchName, List<BranchModel> archivedBranches) {
-        // Save the current selection
-        String currentSelection = destBranchComboBox.getValue();
+        // Save the current selection from the model (single source of truth)
+        String currentSelection = uiStateModel.getCurrentTargetBranchName();
 
         // Check if the current selection was archived
         boolean wasArchived = false;
@@ -882,6 +882,8 @@ public class MainController {
             // Create two lists to track successfully processed branches
             List<BranchModel> successfullyDeleted = new ArrayList<>();
             List<BranchModel> successfullyArchived = new ArrayList<>();
+            // Create a list to track failed operations
+            List<String> failedOperations = new ArrayList<>();
 
             for (int i = 0; i < total; i++) {
                 if (Thread.currentThread().isInterrupted()) break;
@@ -901,6 +903,8 @@ public class MainController {
                 } catch (IOException e) {
                     String operation = isArchive ? "archive" : "delete";
                     logger.error("Failed to {} branch {}", operation, branch.getName(), e);
+                    // Add the branch name to the list of failed operations
+                    failedOperations.add(branch.getName());
                 }
                 final double progress = (double) (i + 1) / total;
                 Platform.runLater(() -> updateProgress(progress));
@@ -925,6 +929,13 @@ public class MainController {
 
                 // Update the branch counter
                 updateBranchCounter();
+
+                // Show a summary alert if there were any failed operations
+                if (!failedOperations.isEmpty()) {
+                    showWarning("warning.operation.failed", 
+                               "warning.failed.operations.message", 
+                               String.valueOf(failedOperations.size()));
+                }
             });
         });
     }
@@ -1160,6 +1171,26 @@ public class MainController {
             alert.setTitle(I18nUtil.getMessage(titleKey));
             alert.setHeaderText(null);
             alert.setContentText(I18nUtil.getMessage(messageKey));
+            alert.showAndWait();
+        });
+    }
+
+    /**
+     * Shows a warning dialog with the specified title and formatted message.
+     * This method creates and displays a warning alert dialog with a message
+     * that is formatted using the provided arguments.
+     * It is called to warn the user about potential issues.
+     *
+     * @param titleKey The key for the dialog title in the resource bundle
+     * @param messageKey The key for the dialog message in the resource bundle
+     * @param args The arguments to use for message formatting
+     */
+    private void showWarning(String titleKey, String messageKey, Object... args) {
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.WARNING);
+            alert.setTitle(I18nUtil.getMessage(titleKey));
+            alert.setHeaderText(null);
+            alert.setContentText(I18nUtil.getMessage(messageKey, args));
             alert.showAndWait();
         });
     }

@@ -29,6 +29,18 @@ public class FilterPanelController {
 
     private UIStateModel uiStateModel;
 
+    private javafx.collections.ObservableList<BranchModel> targetList;
+
+    /**
+     * Sets the target list of branches for filtering operations.
+     * This method provides null safety by using an empty list when null is provided.
+     *
+     * @param branches The list of branches to set as the target list
+     */
+    public void setTargetList(javafx.collections.ObservableList<BranchModel> branches) {
+        this.targetList = (branches != null) ? branches : javafx.collections.FXCollections.emptyObservableList();
+    }
+
     /**
      * Initializes the controller with the UI state model.
      * This method sets up bindings to enable/disable the filter components
