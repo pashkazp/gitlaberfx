@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /**
  * Utility class for creating and managing various dialogs in the application.
@@ -251,7 +252,7 @@ public class DialogHelper {
             // Create deep copies of branches to avoid modifying the original list
             List<BranchModel> branchCopies = branches.stream()
                     .map(BranchModel::new)  // Use copy constructor
-                    .toList();
+                    .collect(Collectors.toList());
 
             DeleteConfirmationController controller = loader.getController();
             controller.initialize(branchCopies, stage, deletionType, projectName);
