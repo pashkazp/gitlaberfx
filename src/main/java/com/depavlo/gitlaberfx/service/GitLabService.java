@@ -297,17 +297,19 @@ public class GitLabService {
             // Step 2: Delete the original branch
             try {
                 deleteBranch(projectId, sourceBranchName);
-            } catch (IOException e) {
+            } catch (IOException deleteException) {
                 // If deletion fails, roll back by deleting the newly created archive branch
-                logger.warn("Failed to delete original branch. Rolling back by deleting archive branch: {}", newBranchName);
+                logger.error("Failed to delete source branch '{}'. Attempting to roll back archive branch creation.", sourceBranchName, deleteException);
                 try {
+                    // Attempt rollback
                     deleteBranch(projectId, newBranchName);
+                    logger.info("Rollback successful: deleted archive branch '{}'", newBranchName);
                 } catch (IOException rollbackException) {
-                    logger.error("Rollback failed. Archive branch {} was created but original branch {} could not be deleted.",
-                            newBranchName, sourceBranchName, rollbackException);
+                    // Log that rollback also failed, this is a critical situation
+                    logger.error("ROLLBACK FAILED! Could not delete archive branch '{}'. Manual cleanup required.", newBranchName, rollbackException);
                 }
-                // Re-throw the original exception
-                throw new IOException("Failed to archive branch: " + e.getMessage(), e);
+                // Always re-throw the ORIGINAL exception to inform the user about the failure
+                throw deleteException;
             }
         }
     }
