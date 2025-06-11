@@ -672,9 +672,8 @@ public class MainController {
 
         if (currentSelection != null && !currentSelection.equals(getNotSelectedItemText())) {
             for (BranchModel branch : archivedBranches) {
-                // Check if this branch's original name (before archiving) matches the current selection
-                String originalName = branch.getName().substring(config.getArchivePrefix().length());
-                if (originalName.equals(currentSelection)) {
+                // Check if this branch's original name matches the current selection
+                if (branch.getOriginalName().equals(currentSelection)) {
                     wasArchived = true;
                     archivedName = branch.getName();
                     break;
@@ -913,7 +912,8 @@ public class MainController {
 
                 // For archived branches: update their names with the archive prefix
                 for (BranchModel branch : successfullyArchived) {
-                    branch.setName(config.getArchivePrefix() + branch.getName());
+                    // Use the originalName to avoid adding multiple prefixes
+                    branch.setName(config.getArchivePrefix() + branch.getOriginalName());
                 }
 
                 // For deleted branches: remove them from the model

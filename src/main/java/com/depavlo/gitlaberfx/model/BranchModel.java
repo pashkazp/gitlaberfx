@@ -41,6 +41,9 @@ public class BranchModel {
     /** Property containing the name of the branch. */
     private final StringProperty name;
 
+    /** The original name of the branch (before any archiving). */
+    private final String originalName;
+
     /** Property containing the SHA of the last commit on this branch. */
     private final StringProperty lastCommit;
 
@@ -81,6 +84,7 @@ public class BranchModel {
                   boolean developersCanPush, boolean developersCanMerge, boolean canPush, boolean default_) {
         this.selected = new SimpleBooleanProperty(false);
         this.name = new SimpleStringProperty(name);
+        this.originalName = name; // Store the original name
         this.lastCommit = new SimpleStringProperty(lastCommit);
         this.merged = new SimpleBooleanProperty(merged);
         this.mergedIntoTarget = new SimpleBooleanProperty(false);
@@ -112,6 +116,7 @@ public class BranchModel {
     public BranchModel(BranchModel source) {
         this.selected = new SimpleBooleanProperty(source.isSelected());
         this.name = new SimpleStringProperty(source.getName());
+        this.originalName = source.getOriginalName(); // Copy the original name
         this.lastCommit = new SimpleStringProperty(source.getLastCommit());
         this.merged = new SimpleBooleanProperty(source.isMerged());
         this.mergedIntoTarget = new SimpleBooleanProperty(source.isMergedIntoTarget());
@@ -181,6 +186,15 @@ public class BranchModel {
      */
     public void setName(String name) {
         this.name.set(name);
+    }
+
+    /**
+     * Returns the original name of this branch (before any archiving).
+     *
+     * @return the original branch name
+     */
+    public String getOriginalName() {
+        return originalName;
     }
 
     /**
