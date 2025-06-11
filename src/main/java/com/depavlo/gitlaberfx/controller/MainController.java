@@ -642,6 +642,71 @@ public class MainController {
     private String getNotSelectedItemText() {
         return I18nUtil.getMessage("app.not.selected");
     }
+
+    /**
+     * Repopulates the target branch combobox after branch operations.
+     * This method:
+     * 1. Saves the current selection in the target branch combobox
+     * 2. Clears and repopulates the combobox with branch names from the model
+     * 3. Restores the selection if the branch still exists, or selects a new archived name if the branch was archived
+     *
+     * @param savedTargetBranchName The previously selected target branch name
+     * @param archivedBranches The list of branches that were archived
+     */
+    private void repopulateTargetBranchComboBox(String savedTargetBranchName, List<BranchModel> archivedBranches) {
+        // Save the current selection
+        String currentSelection = destBranchComboBox.getValue();
+
+        // Check if the current selection was archived
+        boolean wasArchived = false;
+        String archivedName = null;
+
+        if (currentSelection != null && !currentSelection.equals(getNotSelectedItemText())) {
+            for (BranchModel branch : archivedBranches) {
+                // Check if this branch's original name (before archiving) matches the current selection
+                String originalName = branch.getName().substring(config.getArchivePrefix().length());
+                if (originalName.equals(currentSelection)) {
+                    wasArchived = true;
+                    archivedName = branch.getName();
+                    break;
+                }
+            }
+        }
+
+        // Temporarily remove the listener to avoid triggering it during repopulation
+        destBranchComboBox.valueProperty().removeListener(targetBranchListener);
+
+        // Repopulate the combobox
+        List<String> branchNames = new ArrayList<>();
+        branchNames.add(getNotSelectedItemText());
+        if (!uiStateModel.getCurrentProjectBranches().isEmpty()) {
+            branchNames.addAll(uiStateModel.getCurrentProjectBranches().stream()
+                    .map(BranchModel::getName)
+                    .collect(Collectors.toList()));
+        }
+        destBranchComboBox.setItems(FXCollections.observableArrayList(branchNames));
+
+        // Restore the selection
+        if (wasArchived) {
+            // If the current selection was archived, select the new archived name
+            destBranchComboBox.setValue(archivedName);
+            uiStateModel.setCurrentTargetBranchName(archivedName);
+        } else if (currentSelection != null && branchNames.contains(currentSelection)) {
+            // If the current selection still exists, keep it selected
+            destBranchComboBox.setValue(currentSelection);
+        } else if (savedTargetBranchName != null && branchNames.contains(savedTargetBranchName)) {
+            // If there was a saved target branch and it still exists, select it
+            destBranchComboBox.setValue(savedTargetBranchName);
+            uiStateModel.setCurrentTargetBranchName(savedTargetBranchName);
+        } else {
+            // Otherwise, select "Not Selected"
+            destBranchComboBox.setValue(getNotSelectedItemText());
+            uiStateModel.setCurrentTargetBranchName(null);
+        }
+
+        // Reattach the listener
+        destBranchComboBox.valueProperty().addListener(targetBranchListener);
+    }
     //</editor-fold>
 
     //<editor-fold desc="State Restoration for Locale Change">
@@ -806,6 +871,10 @@ public class MainController {
 
         final int total = confirmed.size();
         submitTask(operationDescription, () -> {
+            // Create two lists to track successfully processed branches
+            List<BranchModel> successfullyDeleted = new ArrayList<>();
+            List<BranchModel> successfullyArchived = new ArrayList<>();
+
             for (int i = 0; i < total; i++) {
                 if (Thread.currentThread().isInterrupted()) break;
                 checkPause();
@@ -815,9 +884,11 @@ public class MainController {
                     if (isArchive) {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.archiving.branch", branch.getName())));
                         gitLabService.archiveBranch(uiStateModel.getCurrentProjectId(), branch.getName(), config.getArchivePrefix());
+                        successfullyArchived.add(branch);
                     } else {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.deleting.branch", branch.getName())));
                         gitLabService.deleteBranch(uiStateModel.getCurrentProjectId(), branch.getName());
+                        successfullyDeleted.add(branch);
                     }
                 } catch (IOException e) {
                     String operation = isArchive ? "archive" : "delete";
@@ -827,16 +898,25 @@ public class MainController {
                 Platform.runLater(() -> updateProgress(progress));
             }
 
-            // Instead of reloading all branches, just remove the processed ones
+            // Update the UI in the main thread
             Platform.runLater(() -> {
-                removeDeletedBranchesFromModel(confirmed);
+                // Step 4.1: Update the data model
 
-                // Ensure the target branch is still selected
-                if (uiStateModel.getCurrentTargetBranchName() == null && savedTargetBranchName != null) {
-                    uiStateModel.setCurrentTargetBranchName(savedTargetBranchName);
-                    populateBranchComboBoxFromModel();
-                    destBranchComboBox.setValue(savedTargetBranchName);
+                // For archived branches: update their names with the archive prefix
+                for (BranchModel branch : successfullyArchived) {
+                    branch.setName(config.getArchivePrefix() + branch.getName());
                 }
+
+                // For deleted branches: remove them from the model
+                uiStateModel.getCurrentProjectBranches().removeAll(successfullyDeleted);
+
+                // Step 4.2: Update the UI
+
+                // Repopulate the target branch combobox
+                repopulateTargetBranchComboBox(savedTargetBranchName, successfullyArchived);
+
+                // Update the branch counter
+                updateBranchCounter();
             });
         });
     }
