@@ -29,6 +29,7 @@ import com.depavlo.gitlaberfx.controller.DatePickerController;
 import com.depavlo.gitlaberfx.controller.DeleteConfirmationController;
 import com.depavlo.gitlaberfx.controller.SettingsController;
 import com.depavlo.gitlaberfx.model.BranchModel;
+import com.depavlo.gitlaberfx.model.OperationConfirmationResult;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
@@ -202,32 +203,34 @@ public class DialogHelper {
     }
 
     /**
-     * Shows a confirmation dialog for deleting branches (backward compatibility method).
+     * Shows a confirmation dialog for deleting or archiving branches (backward compatibility method).
      * This method is provided for backward compatibility with code that doesn't provide
      * deletion type and project name.
      * 
      * @param parentStage The parent stage
-     * @param branches The list of branches to potentially delete
-     * @return The list of branches selected for deletion, or null if the dialog was cancelled or an error occurred
+     * @param branches The list of branches to potentially delete or archive
+     * @return The OperationConfirmationResult containing the list of branches selected and whether to archive them,
+     *         or null if the dialog was cancelled or an error occurred
      */
-    public static List<BranchModel> showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches) {
+    public static OperationConfirmationResult showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches) {
         return showDeleteConfirmationDialog(parentStage, branches, 
                                           I18nUtil.getMessage("main.delete.selected"), 
                                           "");
     }
 
     /**
-     * Shows a confirmation dialog for deleting branches.
-     * This dialog displays a list of branches and allows the user to confirm which ones to delete.
-     * This version of the method includes information about the deletion type and project name.
+     * Shows a confirmation dialog for deleting or archiving branches.
+     * This dialog displays a list of branches and allows the user to confirm which ones to delete or archive.
+     * This version of the method includes information about the operation type and project name.
      * 
      * @param parentStage The parent stage
-     * @param branches The list of branches to potentially delete
-     * @param deletionType The type of deletion operation (e.g., "Deleting selected branches")
-     * @param projectName The name of the project from which branches will be deleted
-     * @return The list of branches selected for deletion, or null if the dialog was cancelled or an error occurred
+     * @param branches The list of branches to potentially delete or archive
+     * @param deletionType The type of operation (e.g., "Deleting selected branches")
+     * @param projectName The name of the project from which branches will be processed
+     * @return The OperationConfirmationResult containing the list of branches selected and whether to archive them,
+     *         or null if the dialog was cancelled or an error occurred
      */
-    public static List<BranchModel> showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches, 
+    public static OperationConfirmationResult showDeleteConfirmationDialog(Stage parentStage, List<BranchModel> branches, 
                                                                 String deletionType, String projectName) {
         logger.debug("showDeleteConfirmationDialog: parentStage={}, branches.size={}, deletionType={}, projectName={}", 
                 parentStage != null ? "not null" : "null", 

@@ -259,6 +259,60 @@ public class GitLabService {
     }
 
     /**
+     * Archives a branch in a GitLab project by creating a new branch with the archive prefix
+     * and then deleting the original branch. This operation is atomic - if any step fails,
+     * the entire operation is rolled back.
+     *
+     * @param projectId the ID of the GitLab project
+     * @param sourceBranchName the name of the branch to archive
+     * @param archivePrefix the prefix to use for the archived branch
+     * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be archived
+     */
+    public void archiveBranch(String projectId, String sourceBranchName, String archivePrefix) throws IOException {
+        logger.info("Archiving branch {} from project {} with prefix {}", sourceBranchName, projectId, archivePrefix);
+
+        // Form the new branch name
+        String newBranchName = archivePrefix + sourceBranchName;
+
+        // Step 1: Create the new (archive) branch
+        HttpUrl createUrl = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
+                .addPathSegments("api/v4/projects")
+                .addPathSegment(projectId)
+                .addPathSegments("repository/branches")
+                .addQueryParameter("branch", newBranchName)
+                .addQueryParameter("ref", sourceBranchName)
+                .build();
+
+        Request createRequest = new Request.Builder()
+                .url(createUrl)
+                .post(RequestBody.create(new byte[0], null))
+                .header(PRIVATE_TOKEN, config.getApiKey())
+                .build();
+
+        try (Response createResponse = httpClient.newCall(createRequest).execute()) {
+            if (!createResponse.isSuccessful()) {
+                throw new IOException("Failed to create archive branch: " + createResponse);
+            }
+
+            // Step 2: Delete the original branch
+            try {
+                deleteBranch(projectId, sourceBranchName);
+            } catch (IOException e) {
+                // If deletion fails, roll back by deleting the newly created archive branch
+                logger.warn("Failed to delete original branch. Rolling back by deleting archive branch: {}", newBranchName);
+                try {
+                    deleteBranch(projectId, newBranchName);
+                } catch (IOException rollbackException) {
+                    logger.error("Rollback failed. Archive branch {} was created but original branch {} could not be deleted.",
+                            newBranchName, sourceBranchName, rollbackException);
+                }
+                // Re-throw the original exception
+                throw new IOException("Failed to archive branch: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    /**
      * Deletes a branch from a GitLab project.
      *
      * @param projectId the ID of the GitLab project

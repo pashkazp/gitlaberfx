@@ -62,6 +62,9 @@ public class AppConfig {
     /** The locale code for the application's user interface language. */
     private String locale;
 
+    /** The prefix for archived branches. */
+    private String archivePrefix = "archive/";
+
     /**
      * Constructs a new empty AppConfig instance.
      * This constructor creates a configuration object with null values for all properties.
@@ -110,6 +113,7 @@ public class AppConfig {
                 config.setGitlabUrl(properties.getProperty("gitlabUrl"));
                 config.setApiKey(properties.getProperty("apiKey"));
                 config.setLocale(properties.getProperty("locale", "en_US"));
+                config.setArchivePrefix(properties.getProperty("archivePrefix", "archive/"));
 
                 return config;
             }
@@ -135,6 +139,7 @@ public class AppConfig {
             if (gitlabUrl != null) properties.setProperty("gitlabUrl", gitlabUrl);
             if (apiKey != null) properties.setProperty("apiKey", apiKey);
             if (locale != null) properties.setProperty("locale", locale);
+            if (archivePrefix != null) properties.setProperty("archivePrefix", archivePrefix);
 
             try (FileOutputStream fos = new FileOutputStream(new File(CONFIG_FILE))) {
                 properties.store(fos, "GitLaberFX Configuration");
@@ -210,5 +215,23 @@ public class AppConfig {
      */
     public void setLocale(String locale) {
         this.locale = locale;
+    }
+
+    /**
+     * Gets the prefix for archived branches.
+     *
+     * @return the prefix for archived branches
+     */
+    public String getArchivePrefix() {
+        return archivePrefix;
+    }
+
+    /**
+     * Sets the prefix for archived branches.
+     *
+     * @param archivePrefix the prefix for archived branches to set
+     */
+    public void setArchivePrefix(String archivePrefix) {
+        this.archivePrefix = archivePrefix;
     }
 }

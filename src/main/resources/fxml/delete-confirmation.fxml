@@ -36,7 +36,8 @@
 
     <HBox spacing="10">
         <HBox spacing="10" HBox.hgrow="ALWAYS">
-            <Button defaultButton="true" onAction="#confirm" style="-fx-base: #ff0000;" text="%delete.confirmation.delete.selected" />
+            <CheckBox fx:id="archiveCheckBox" text="%delete.confirmation.archive.instead" />
+            <Button fx:id="confirmButton" defaultButton="true" onAction="#confirm" style="-fx-base: #ff0000;" text="%delete.confirmation.delete.selected" />
             <Button cancelButton="true" onAction="#cancel" text="%date.picker.cancel" />
         </HBox>
         <Label fx:id="branchCounterLabel" alignment="CENTER_RIGHT" style="-fx-padding: 5;" text="0/0" />

@@ -24,10 +24,13 @@
 package com.depavlo.gitlaberfx.controller;
 
 import com.depavlo.gitlaberfx.model.BranchModel;
+import com.depavlo.gitlaberfx.model.OperationConfirmationResult;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
@@ -106,7 +109,7 @@ public class DeleteConfirmationController {
     /** The stage that contains the delete confirmation dialog. */
     private Stage stage;
 
-    /** The list of branches that are selected for deletion. */
+    /** The list of branches that are selected for operation (deletion or archiving). */
     private List<BranchModel> selectedBranches;
 
     /** The type of deletion operation. */
@@ -118,6 +121,17 @@ public class DeleteConfirmationController {
     /** Label that displays the deletion type and project name. */
     @FXML
     private Label deletionInfoLabel;
+
+    /** Checkbox for selecting archive option instead of delete. */
+    @FXML
+    private CheckBox archiveCheckBox;
+
+    /** Button for confirming the operation (delete or archive). */
+    @FXML
+    private Button confirmButton;
+
+    /** Flag indicating whether to archive branches instead of deleting them. */
+    private boolean archive = false;
 
     /**
      * Initializes the controller with the list of branches and the stage (backward compatibility method).
@@ -216,6 +230,31 @@ public class DeleteConfirmationController {
 
         // Initialize branch counter
         updateBranchCounter();
+
+        // Set up archive checkbox listener
+        if (archiveCheckBox != null) {
+            archiveCheckBox.selectedProperty().addListener((observable, oldValue, newValue) -> {
+                archive = newValue;
+                updateConfirmButtonText();
+            });
+        }
+    }
+
+    /**
+     * Updates the text on the confirm button based on the archive checkbox state.
+     * If the archive checkbox is selected, the button text changes to "Archive selected".
+     * Otherwise, it shows "Delete selected".
+     */
+    private void updateConfirmButtonText() {
+        if (confirmButton != null) {
+            if (archive) {
+                confirmButton.setText(I18nUtil.getMessage("delete.confirmation.archive.selected"));
+                confirmButton.setStyle("-fx-base: #0066cc;"); // Blue for archive
+            } else {
+                confirmButton.setText(I18nUtil.getMessage("delete.confirmation.delete.selected"));
+                confirmButton.setStyle("-fx-base: #ff0000;"); // Red for delete
+            }
+        }
     }
 
     /**
@@ -263,13 +302,13 @@ public class DeleteConfirmationController {
     }
 
     /**
-     * Confirms the branch deletion selection and closes the dialog.
+     * Confirms the branch operation selection and closes the dialog.
      * This method is called when the user clicks the confirm button.
-     * It saves the list of selected branches and closes the dialog.
+     * It saves the list of selected branches and the archive flag, then closes the dialog.
      */
     @FXML
     private void confirm() {
-        logger.debug("Confirming deletion");
+        logger.debug("Confirming operation, archive={}", archive);
         selectedBranches = branchesTableView.getItems().stream()
                 .filter(BranchModel::isSelected)
                 .toList();
@@ -289,15 +328,21 @@ public class DeleteConfirmationController {
     }
 
     /**
-     * Gets the list of branches selected for deletion.
-     * This method is called after the dialog is closed to retrieve the selected branches.
+     * Gets the operation confirmation result containing the selected branches and archive flag.
+     * This method is called after the dialog is closed to retrieve the operation details.
      *
-     * @return The list of selected branches, or null if the operation was cancelled
+     * @return The OperationConfirmationResult containing the selected branches and archive flag,
+     *         or null if the operation was cancelled
      */
-    public List<BranchModel> getSelectedBranches() {
-        logger.debug("getSelectedBranches: selectedBranches.size={}", 
-                selectedBranches != null ? selectedBranches.size() : "null");
-        return selectedBranches;
+    public OperationConfirmationResult getSelectedBranches() {
+        logger.debug("getSelectedBranches: selectedBranches.size={}, archive={}", 
+                selectedBranches != null ? selectedBranches.size() : "null", archive);
+
+        if (selectedBranches == null) {
+            return null;
+        }
+
+        return new OperationConfirmationResult(selectedBranches, archive);
     }
 
     /**

@@ -25,6 +25,7 @@ package com.depavlo.gitlaberfx.controller;
 
 import com.depavlo.gitlaberfx.config.AppConfig;
 import com.depavlo.gitlaberfx.model.BranchModel;
+import com.depavlo.gitlaberfx.model.OperationConfirmationResult;
 import com.depavlo.gitlaberfx.model.UIStateModel;
 import com.depavlo.gitlaberfx.service.GitLabService;
 import com.depavlo.gitlaberfx.service.LocaleChangeService;
@@ -708,7 +709,7 @@ public class MainController {
                 .filter(BranchModel::isSelected)
                 .collect(Collectors.toList());
         if (!toDelete.isEmpty()) {
-            executeBranchDeletion(toDelete, I18nUtil.getMessage("main.status.deleting.selected"));
+            executeBranchOperation(toDelete, I18nUtil.getMessage("main.status.deleting.selected"));
         }
     }
 
@@ -741,7 +742,7 @@ public class MainController {
             if(toDelete.isEmpty()) {
                 showInfo("info.title", "info.no.merged.branches");
             } else {
-                executeBranchDeletion(toDelete, I18nUtil.getMessage("main.status.deleting.merged"));
+                executeBranchOperation(toDelete, I18nUtil.getMessage("main.status.deleting.merged"));
             }
         }
     }
@@ -776,26 +777,29 @@ public class MainController {
             if(toDelete.isEmpty()) {
                 showInfo("info.title", "info.no.unmerged.branches");
             } else {
-                executeBranchDeletion(toDelete, I18nUtil.getMessage("main.status.deleting.unmerged"));
+                executeBranchOperation(toDelete, I18nUtil.getMessage("main.status.deleting.unmerged"));
             }
         }
     }
 
     /**
-     * Executes the branch deletion process.
-     * This method shows a confirmation dialog, then deletes the confirmed branches one by one.
+     * Executes the branch operation process (deletion or archiving).
+     * This method shows a confirmation dialog, then processes the confirmed branches one by one.
      * It updates the progress bar and status message during the operation.
-     * After all branches are deleted, it removes the deleted branches from the model
+     * After all branches are processed, it removes the processed branches from the model
      * while preserving the target branch selection and merge markers.
      *
-     * @param branches The list of branches to delete
+     * @param branches The list of branches to process
      * @param operationDescription A description of the operation for the status message
      */
-    private void executeBranchDeletion(List<BranchModel> branches, String operationDescription) {
-        List<BranchModel> confirmed = DialogHelper.showDeleteConfirmationDialog(stage, branches, 
+    private void executeBranchOperation(List<BranchModel> branches, String operationDescription) {
+        OperationConfirmationResult result = DialogHelper.showDeleteConfirmationDialog(stage, branches, 
                                                                               operationDescription, 
                                                                               uiStateModel.getCurrentProjectName());
-        if (confirmed == null || confirmed.isEmpty()) return;
+        if (result == null || result.getConfirmedBranches().isEmpty()) return;
+
+        List<BranchModel> confirmed = result.getConfirmedBranches();
+        boolean isArchive = result.isArchive();
 
         // Save the current target branch name
         final String savedTargetBranchName = uiStateModel.getCurrentTargetBranchName();
@@ -808,16 +812,22 @@ public class MainController {
 
                 BranchModel branch = confirmed.get(i);
                 try {
-                    Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.deleting.branch", branch.getName())));
-                    gitLabService.deleteBranch(uiStateModel.getCurrentProjectId(), branch.getName());
+                    if (isArchive) {
+                        Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.archiving.branch", branch.getName())));
+                        gitLabService.archiveBranch(uiStateModel.getCurrentProjectId(), branch.getName(), config.getArchivePrefix());
+                    } else {
+                        Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.deleting.branch", branch.getName())));
+                        gitLabService.deleteBranch(uiStateModel.getCurrentProjectId(), branch.getName());
+                    }
                 } catch (IOException e) {
-                    logger.error("Failed to delete branch {}", branch.getName(), e);
+                    String operation = isArchive ? "archive" : "delete";
+                    logger.error("Failed to {} branch {}", operation, branch.getName(), e);
                 }
                 final double progress = (double) (i + 1) / total;
                 Platform.runLater(() -> updateProgress(progress));
             }
 
-            // Instead of reloading all branches, just remove the deleted ones
+            // Instead of reloading all branches, just remove the processed ones
             Platform.runLater(() -> {
                 removeDeletedBranchesFromModel(confirmed);
 

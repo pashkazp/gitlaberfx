@@ -70,6 +70,10 @@ public class SettingsController {
     @FXML
     private ComboBox<String> languageComboBox;
 
+    /** Text field for entering the archive prefix. */
+    @FXML
+    private TextField archivePrefixField;
+
     /** The application configuration that will be updated with the new settings. */
     private AppConfig config;
 
@@ -111,6 +115,7 @@ public class SettingsController {
 
         gitlabUrlField.setText(config.getGitlabUrl());
         apiKeyField.setText(config.getApiKey());
+        archivePrefixField.setText(config.getArchivePrefix());
 
         initializeLocales();
 
@@ -325,6 +330,7 @@ public class SettingsController {
     private void save() {
         config.setGitlabUrl(gitlabUrlField.getText());
         config.setApiKey(apiKeyField.getText());
+        config.setArchivePrefix(archivePrefixField.getText());
 
         String selectedLanguage = languageComboBox.getSelectionModel().getSelectedItem();
         boolean localeChanged = false;
