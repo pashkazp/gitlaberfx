@@ -620,6 +620,11 @@ public class MainController {
             destBranchComboBox.setDisable(isBusy);
             branchesTableView.setDisable(isBusy);
 
+            // Disable filter panel when busy
+            if (filterPanelController != null) {
+                filterPanelController.setDisabled(isBusy);
+            }
+
             playButton.setDisable(true);
             pauseButton.setDisable(!isBusy);
             stopButton.setDisable(!isBusy);

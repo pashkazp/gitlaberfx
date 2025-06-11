@@ -83,6 +83,32 @@ public class FilterPanelController {
     }
 
     /**
+     * Sets the disabled state of all filter panel components.
+     * This method is used to disable the filter panel when the application is busy.
+     *
+     * @param disabled true to disable the components, false to enable them
+     */
+    public void setDisabled(boolean disabled) {
+        // Unbind the disable property to allow manual setting
+        filterTextField.disableProperty().unbind();
+        includeButton.disableProperty().unbind();
+        excludeButton.disableProperty().unbind();
+
+        // Set the disabled state
+        filterTextField.setDisable(disabled);
+        includeButton.setDisable(disabled);
+        excludeButton.setDisable(disabled);
+
+        // If not disabled, rebind to the noBranches binding
+        if (!disabled) {
+            BooleanBinding noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
+            filterTextField.disableProperty().bind(noBranches);
+            includeButton.disableProperty().bind(noBranches);
+            excludeButton.disableProperty().bind(noBranches);
+        }
+    }
+
+    /**
      * Handles the action when the include button is clicked.
      * This method gets the filter text, creates a regex pattern from it,
      * and sets the selected property to true for all branches whose names match the pattern.
