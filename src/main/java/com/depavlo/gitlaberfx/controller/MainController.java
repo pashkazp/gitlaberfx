@@ -180,6 +180,7 @@ public class MainController {
         // Initialize the filter panel controller with the UI state model
         if (filterPanelController != null) {
             filterPanelController.initialize(uiStateModel);
+            filterPanelController.setTargetList(branchesTableView.getItems());
         }
     }
 

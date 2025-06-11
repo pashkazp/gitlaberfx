@@ -1,4 +1,26 @@
-package com.depavlo.gitlaberfx.controller;
+/*
+ * MIT License
+ *
+ * Copyright (c) 2025 Pavlo Dehtiarov
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */package com.depavlo.gitlaberfx.controller;
 
 import com.depavlo.gitlaberfx.model.BranchModel;
 import com.depavlo.gitlaberfx.model.UIStateModel;
@@ -77,19 +99,15 @@ public class FilterPanelController {
             // Create a regex pattern from the filter text
             java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(filterText);
 
-            // Find the parent TableView in the scene graph
-            javafx.scene.Node node = filterTextField.getScene().lookup("#branchesTableView");
-            if (node instanceof TableView) {
-                // If we found a TableView, use its items as the dataset
-                @SuppressWarnings("unchecked")
-                TableView<BranchModel> tableView = (TableView<BranchModel>) node;
-                for (BranchModel branch : tableView.getItems()) {
+            // Use the target list directly
+            if (targetList != null && !targetList.isEmpty()) {
+                for (BranchModel branch : targetList) {
                     if (pattern.matcher(branch.getName()).matches() && !branch.isProtected()) {
                         branch.setSelected(true);
                     }
                 }
             } else {
-                // If we couldn't find a TableView, use the UIStateModel's dataset
+                // Fallback to UIStateModel's dataset if targetList is not set
                 for (BranchModel branch : uiStateModel.getCurrentProjectBranches()) {
                     if (pattern.matcher(branch.getName()).matches() && !branch.isProtected()) {
                         branch.setSelected(true);
@@ -118,19 +136,15 @@ public class FilterPanelController {
             // Create a regex pattern from the filter text
             java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(filterText);
 
-            // Find the parent TableView in the scene graph
-            javafx.scene.Node node = filterTextField.getScene().lookup("#branchesTableView");
-            if (node instanceof TableView) {
-                // If we found a TableView, use its items as the dataset
-                @SuppressWarnings("unchecked")
-                TableView<BranchModel> tableView = (TableView<BranchModel>) node;
-                for (BranchModel branch : tableView.getItems()) {
+            // Use the target list directly
+            if (targetList != null && !targetList.isEmpty()) {
+                for (BranchModel branch : targetList) {
                     if (pattern.matcher(branch.getName()).matches() && !branch.isProtected()) {
                         branch.setSelected(false);
                     }
                 }
             } else {
-                // If we couldn't find a TableView, use the UIStateModel's dataset
+                // Fallback to UIStateModel's dataset if targetList is not set
                 for (BranchModel branch : uiStateModel.getCurrentProjectBranches()) {
                     if (pattern.matcher(branch.getName()).matches() && !branch.isProtected()) {
                         branch.setSelected(false);
