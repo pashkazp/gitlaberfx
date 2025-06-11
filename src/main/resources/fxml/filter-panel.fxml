@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox spacing="5" alignment="CENTER_LEFT" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.FilterPanelController">
+    <padding>
+        <Insets bottom="5" left="0" right="0" top="5" />
+    </padding>
+    
+    <Label text="%filter.panel.title" />
+    <TextField fx:id="filterTextField" HBox.hgrow="ALWAYS" promptText=".*" />
+    <Button fx:id="includeButton" onAction="#includeMatching" text="+" style="-fx-min-width: 30; -fx-min-height: 25;" />
+    <Button fx:id="excludeButton" onAction="#excludeMatching" text="-" style="-fx-min-width: 30; -fx-min-height: 25;" />
+</HBox>

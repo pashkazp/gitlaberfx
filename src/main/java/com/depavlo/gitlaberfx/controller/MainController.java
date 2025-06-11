@@ -154,6 +154,9 @@ public class MainController {
                          deselectAllButton, invertSelectionButton, deleteSelectedButton, 
                          mainDelMergedButton, mainDelUnmergedButton;
 
+    /** Controller for the filter panel. */
+    @FXML private FilterPanelController filterPanelController;
+
     /**
      * Initializes the controller with the application configuration and stage.
      * This method is called after the FXML has been loaded.
@@ -445,6 +448,9 @@ public class MainController {
                     populateBranchComboBoxFromModel();
                     destBranchComboBox.valueProperty().addListener(targetBranchListener);
 
+                    // Pass branches to the filter panel controller
+                    filterPanelController.setTargetList(uiStateModel.getCurrentProjectBranches());
+
                     completionFuture.complete(null);
                 });
             } catch (IOException e) {
@@ -527,6 +533,9 @@ public class MainController {
         uiStateModel.setCurrentProjectName(null);
         uiStateModel.setCurrentTargetBranchName(null);
         populateBranchComboBoxFromModel();
+
+        // Clear the filter panel
+        filterPanelController.setTargetList(FXCollections.emptyObservableList());
     }
 
     /**

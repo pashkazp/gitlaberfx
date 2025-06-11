@@ -104,6 +104,25 @@ public class BranchModel {
     }
 
     /**
+     * Copy constructor for creating a deep copy of a BranchModel.
+     * This is used when creating a copy of a branch list for the confirmation dialog.
+     *
+     * @param source The BranchModel to copy
+     */
+    public BranchModel(BranchModel source) {
+        this.selected = new SimpleBooleanProperty(source.isSelected());
+        this.name = new SimpleStringProperty(source.getName());
+        this.lastCommit = new SimpleStringProperty(source.getLastCommit());
+        this.merged = new SimpleBooleanProperty(source.isMerged());
+        this.mergedIntoTarget = new SimpleBooleanProperty(source.isMergedIntoTarget());
+        this.protected_ = new SimpleBooleanProperty(source.isProtected());
+        this.developersCanPush = new SimpleBooleanProperty(source.isDevelopersCanPush());
+        this.developersCanMerge = new SimpleBooleanProperty(source.isDevelopersCanMerge());
+        this.canPush = new SimpleBooleanProperty(source.isCanPush());
+        this.default_ = new SimpleBooleanProperty(source.isDefault());
+    }
+
+    /**
      * Returns whether this branch is selected in the UI.
      *
      * @return true if the branch is selected, false otherwise

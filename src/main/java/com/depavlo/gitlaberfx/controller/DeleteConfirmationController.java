@@ -130,6 +130,10 @@ public class DeleteConfirmationController {
     @FXML
     private Button confirmButton;
 
+    /** Controller for the filter panel. */
+    @FXML
+    private FilterPanelController filterPanelController;
+
     /** Flag indicating whether to archive branches instead of deleting them. */
     private boolean archive = false;
 
@@ -224,6 +228,9 @@ public class DeleteConfirmationController {
         branches.sort((b1, b2) -> String.CASE_INSENSITIVE_ORDER.compare(b1.getName(), b2.getName()));
         ObservableList<BranchModel> data = FXCollections.observableArrayList(branches);
         branchesTableView.setItems(data);
+
+        // Pass branches to the filter panel controller
+        filterPanelController.setTargetList(data);
 
         // Add listeners to branch selection changes
         addBranchSelectionListeners(data);

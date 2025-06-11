@@ -248,8 +248,13 @@ public class DialogHelper {
             stage.setTitle(I18nUtil.getMessage("dialog.delete.confirmation"));
             stage.setScene(scene);
 
+            // Create deep copies of branches to avoid modifying the original list
+            List<BranchModel> branchCopies = branches.stream()
+                    .map(BranchModel::new)  // Use copy constructor
+                    .toList();
+
             DeleteConfirmationController controller = loader.getController();
-            controller.initialize(branches, stage, deletionType, projectName);
+            controller.initialize(branchCopies, stage, deletionType, projectName);
 
             stage.showAndWait();
             return controller.getSelectedBranches();
