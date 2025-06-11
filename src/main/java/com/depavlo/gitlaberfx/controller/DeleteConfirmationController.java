@@ -25,6 +25,7 @@ package com.depavlo.gitlaberfx.controller;
 
 import com.depavlo.gitlaberfx.model.BranchModel;
 import com.depavlo.gitlaberfx.model.OperationConfirmationResult;
+import com.depavlo.gitlaberfx.model.UIStateModel;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -131,7 +132,11 @@ public class DeleteConfirmationController {
     private Button confirmButton;
 
     /** Flag indicating whether to archive branches instead of deleting them. */
-    private boolean archive = false;
+    private boolean archive = true;
+
+    /** Controller for the filter panel. */
+    @FXML
+    private FilterPanelController filterPanelController;
 
     /**
      * Initializes the controller with the list of branches and the stage (backward compatibility method).
@@ -237,6 +242,12 @@ public class DeleteConfirmationController {
                 archive = newValue;
                 updateConfirmButtonText();
             });
+        }
+
+        // Initialize the filter panel controller with the table items
+        if (filterPanelController != null) {
+            filterPanelController.initialize(new UIStateModel());
+            filterPanelController.setTargetList(branchesTableView.getItems());
         }
     }
 
