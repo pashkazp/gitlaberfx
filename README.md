@@ -1,77 +1,77 @@
-# GitLaberFX: Менеджер гілок для GitLab
+# GitLaberFX: Branch Manager for GitLab
 
-**GitLaberFX** — це десктопний додаток з відкритим вихідним кодом, створений для розробників та тімлідів для ефективного управління репозиторіями в GitLab. Він надає потужні інструменти для масового очищення та організації гілок, що допомагає підтримувати порядок у проєктах та спрощує робочі процеси.
+**GitLaberFX** is an open-source desktop application created for developers and team leads to effectively manage repositories in GitLab. It provides powerful tools for bulk cleaning and organizing branches, helping to maintain order in projects and simplify workflows.
 
-## ✨ Ключові можливості
+## ✨ Key Features
 
-- **Огляд проєктів та гілок:** Легко переглядайте всі доступні вам проєкти та їхні гілки.
+- **Projects and Branches Overview:** Easily browse all projects and branches available to you.
 
-- **Аналіз змердженості:** Автоматично перевіряйте, які гілки вже були влиті в обрану вами цільову гілку (наприклад, `master` або `develop`).
+- **Merge Analysis:** Automatically check which branches have already been merged into your target branch (e.g., `master` or `develop`).
 
-- **Безпечна архівація:** Замість безповоротного видалення, переносьте застарілі гілки в архів (наприклад, `archive/feature/task-123`), зберігаючи їхню історію. Префікс архіву можна налаштувати.
+- **Safe Archiving:** Instead of irreversible deletion, move outdated branches to an archive (e.g., `archive/feature/task-123`), preserving their history. The archive prefix can be customized.
 
-- **Гнучке видалення:** Повністю видаляйте непотрібні гілки.
+- **Flexible Deletion:** Completely remove unnecessary branches.
 
-- **Потужна фільтрація:** Використовуйте **регулярні вирази (RegExp)** для миттєвого масового вибору або виключення гілок за маскою (наприклад, `feature/*`, `hotfix-*`).
+- **Powerful Filtering:** Use **regular expressions (RegExp)** for instant bulk selection or exclusion of branches by mask (e.g., `feature/*`, `hotfix-*`).
 
-- **Пакетні операції:** Виконуйте операції (видалення/архівація) для:
+- **Batch Operations:** Perform operations (deletion/archiving) for:
 
-   - Гілок, обраних вручну.
+   - Manually selected branches.
 
-   - Старих змерджених гілок (старіших за вказану дату).
+   - Old merged branches (older than a specified date).
 
-   - Старих незмерджених гілок.
+   - Old unmerged branches.
 
-- **Інтерактивний UI:** Інтерфейс миттєво реагує на ваші дії, оновлюючи стан локально, без зайвих запитів до сервера.
+- **Interactive UI:** The interface instantly responds to your actions, updating the state locally without unnecessary server requests.
 
-- **Багатомовність:** Підтримка англійської та української мов з можливістю динамічного перемикання.
-
-
-## 🚀 Початок роботи
-
-### Передумови
-
-- **Java 17** або новіша версія.
+- **Multilingual Support:** English and Ukrainian languages with dynamic switching capability.
 
 
-### Запуск
+## 🚀 Getting Started
 
-Проєкт можна запустити двома способами:
+### Prerequisites
 
-#### З вихідного коду через Maven
+- **Java 17** or newer version.
 
-- **Звичайний запуск:** `mvn clean antrun:run@run-without-debug`
-- **Запуск з відлагодженням:** `mvn clean antrun:run@run-with-debug`
 
-#### З готового дистрибутиву
+### Launch
 
-1. Створіть дистрибутив командою: `mvn clean package -Ppackage-app`
-2. Розпакуйте отриманий архів `target/gitlaberfx-1.0.zip`
-3. Запустіть програму:
+The project can be launched in two ways:
+
+#### From source code via Maven
+
+- **Normal launch:** `mvn clean antrun:run@run-without-debug`
+- **Launch with debugging:** `mvn clean antrun:run@run-with-debug`
+
+#### From ready-made distribution
+
+1. Create a distribution with the command: `mvn clean package -Ppackage-app`
+2. Unpack the resulting archive `target/gitlaberfx-1.0.zip`
+3. Launch the program:
    - **Windows:** `bin/gitlaberfx.bat`
    - **Linux/macOS:** `bin/gitlaberfx`
 
 
-### Перше налаштування
+### First Setup
 
-При першому запуску перейдіть до меню `Файл > Налаштування` та вкажіть:
+On first launch, go to the `File > Settings` menu and specify:
 
-1. **URL вашого GitLab** (напр., `https://gitlab.com`).
+1. **Your GitLab URL** (e.g., `https://gitlab.com`).
 
-2. **Ваш персональний API-ключ** з правами доступу `api`.
-
-
-Натисніть **"Тестувати з'єднання"**, щоб перевірити налаштування, та збережіть їх. Після цього програма готова до роботи.
-
-## 📜 Документація
-
-Документація проєкту доступна в директорії `src/main/docs/`:
-
-- **Посібник користувача** — детальний опис усіх функцій та сценаріїв використання.
-
-- **Технічне завдання** — опис функціональних та технічних вимог до проєкту.
-
-- **Технічна документація** — глибокий огляд архітектури, патернів та ключових компонентів для розробників.
+2. **Your personal API key** with `api` access rights.
 
 
-Сподіваємось, GitLaberFX стане вашим надійним помічником у роботі з GitLab!
+Click **"Test Connection"** to verify the settings, and save them. After this, the program is ready to use.
+
+## 📜 Documentation
+
+Project documentation is available in the `src/main/docs/` directory:
+
+- **User Guide** — detailed description of all functions and use cases.
+
+- **Technical Requirements** — description of functional and technical requirements for the project.
+
+- **Technical Documentation** — in-depth overview of architecture, patterns, and key components for developers.
+
+
+We hope GitLaberFX will become your reliable assistant in working with GitLab!
