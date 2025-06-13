@@ -24,12 +24,15 @@
 module com.depavlo.gitlaberfx {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.base;
+    requires javafx.graphics;
 
     requires org.controlsfx.controls;
     requires net.synedra.validatorfx;
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.bootstrapfx.core;
     requires org.slf4j;
+    requires ch.qos.logback.classic;
     requires com.fasterxml.jackson.databind;
     requires okhttp3;
 
