@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<HBox xmlns="http://javafx.com/javafx"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.depavlo.gitlaberfx.controller.DateSelectorController"
+      spacing="20"
+      alignment="CENTER">
+
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+
+    <!-- Left side: Text fields and OK button -->
+    <VBox spacing="10">
+        <!-- Date After field -->
+        <HBox spacing="5" alignment="CENTER_LEFT">
+            <TextField fx:id="dateAfterField" prefWidth="150"/>
+        </HBox>
+
+        <!-- Date Before field -->
+        <HBox spacing="5" alignment="CENTER_LEFT">
+            <TextField fx:id="dateBeforeField" prefWidth="150"/>
+        </HBox>
+
+        <!-- OK button -->
+        <HBox alignment="CENTER_RIGHT" spacing="10">
+            <Button text="%date.selector.ok" onAction="#confirm" defaultButton="true" prefWidth="100"/>
+        </HBox>
+    </VBox>
+
+    <!-- Right side: Date picker -->
+    <DatePicker fx:id="datePicker" prefHeight="150"/>
+
+</HBox>
