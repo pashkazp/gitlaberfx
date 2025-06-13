@@ -45,6 +45,7 @@
     </HBox>
 
     <fx:include fx:id="filterPanel" source="filter-panel.fxml" />
+    <fx:include fx:id="dateFilterPanel" source="date-filter-panel.fxml" />
 
     <TableView fx:id="branchesTableView" prefHeight="400.0" prefWidth="532.0" VBox.vgrow="ALWAYS">
         <columns>

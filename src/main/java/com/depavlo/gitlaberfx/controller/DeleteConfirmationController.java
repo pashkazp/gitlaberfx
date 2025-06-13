@@ -138,6 +138,10 @@ public class DeleteConfirmationController {
     @FXML
     private FilterPanelController filterPanelController;
 
+    /** Controller for the date filter panel. */
+    @FXML
+    private DateFilterPanelController dateFilterPanelController;
+
     /**
      * Initializes the controller with the list of branches and the stage (backward compatibility method).
      * This method is provided for backward compatibility with code that doesn't provide
@@ -248,6 +252,11 @@ public class DeleteConfirmationController {
         if (filterPanelController != null) {
             filterPanelController.initialize(new UIStateModel());
             filterPanelController.setTargetList(branchesTableView.getItems());
+        }
+
+        if (dateFilterPanelController != null) {
+            dateFilterPanelController.initialize(new UIStateModel());
+            dateFilterPanelController.setBranches(branchesTableView.getItems());
         }
     }
 

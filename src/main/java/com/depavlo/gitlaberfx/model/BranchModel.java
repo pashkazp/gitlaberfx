@@ -41,7 +41,7 @@ public class BranchModel {
     /** Property containing the name of the branch. */
     private final StringProperty name;
 
-    /** Property containing the SHA of the last commit on this branch. */
+    /** Property containing the date of the last commit on this branch in ISO 8601 format. */
     private final StringProperty lastCommit;
 
     /** Property indicating whether this branch is merged. */
@@ -69,7 +69,7 @@ public class BranchModel {
      * Constructs a new BranchModel with all properties.
      *
      * @param name               The name of the branch
-     * @param lastCommit         The SHA of the last commit on this branch
+     * @param lastCommit         The date of the last commit on this branch in ISO 8601 format
      * @param merged             Whether this branch is merged
      * @param protected_         Whether this branch is protected in GitLab
      * @param developersCanPush  Whether developers can push to this branch
@@ -96,7 +96,7 @@ public class BranchModel {
      * This constructor is provided for backward compatibility.
      *
      * @param name       The name of the branch
-     * @param lastCommit The SHA of the last commit on this branch
+     * @param lastCommit The date of the last commit on this branch in ISO 8601 format
      * @param merged     Whether this branch is merged
      */
     public BranchModel(String name, String lastCommit, boolean merged) {
@@ -165,16 +165,16 @@ public class BranchModel {
     }
 
     /**
-     * Returns the SHA of the last commit on this branch.
+     * Returns the date of the last commit on this branch in ISO 8601 format.
      *
-     * @return the last commit SHA
+     * @return the last commit date
      */
     public String getLastCommit() {
         return lastCommit.get();
     }
 
     /**
-     * Returns the property representing the last commit SHA of this branch.
+     * Returns the property representing the last commit date of this branch.
      * This can be used for binding to UI components.
      *
      * @return the last commit property
@@ -184,9 +184,9 @@ public class BranchModel {
     }
 
     /**
-     * Sets the SHA of the last commit on this branch.
+     * Sets the date of the last commit on this branch in ISO 8601 format.
      *
-     * @param lastCommit the new last commit SHA
+     * @param lastCommit the new last commit date
      */
     public void setLastCommit(String lastCommit) {
         this.lastCommit.set(lastCommit);

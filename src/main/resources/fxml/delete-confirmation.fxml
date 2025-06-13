@@ -20,6 +20,7 @@
     </HBox>
 
     <fx:include fx:id="filterPanel" source="filter-panel.fxml" />
+    <fx:include fx:id="dateFilterPanel" source="date-filter-panel.fxml" />
 
     <TableView fx:id="branchesTableView" VBox.vgrow="ALWAYS">
         <columns>

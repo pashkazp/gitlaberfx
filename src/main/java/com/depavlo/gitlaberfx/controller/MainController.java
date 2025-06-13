@@ -156,6 +156,7 @@ public class MainController {
 
     /** Controller for the filter panel. */
     @FXML private FilterPanelController filterPanelController;
+    @FXML private DateFilterPanelController dateFilterPanelController;
 
     /**
      * Initializes the controller with the application configuration and stage.
@@ -181,6 +182,10 @@ public class MainController {
         if (filterPanelController != null) {
             filterPanelController.initialize(uiStateModel);
             filterPanelController.setTargetList(branchesTableView.getItems());
+        }
+
+        if (dateFilterPanelController != null) {
+            dateFilterPanelController.setBranches(branchesTableView.getItems());
         }
     }
 
@@ -623,6 +628,11 @@ public class MainController {
             // Disable filter panel when busy
             if (filterPanelController != null) {
                 filterPanelController.setDisabled(isBusy);
+            }
+
+            if (dateFilterPanelController != null) {
+                dateFilterPanelController.setDisabled(isBusy);
+                dateFilterPanelController.setBranches(isBusy ? null : branchesTableView.getItems());
             }
 
             playButton.setDisable(true);
