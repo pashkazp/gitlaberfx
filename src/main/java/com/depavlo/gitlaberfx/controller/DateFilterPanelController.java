@@ -142,7 +142,7 @@ public class DateFilterPanelController {
         excludeDateFilerButton.setDisable(disabled);
 
         if (!disabled) {
-            BooleanBinding noBranches = Bindings.isEmpty(this.branches);
+            noBranches = Bindings.isEmpty(this.branches);
             includeDateFilerButton.disableProperty().bind(noBranches);
             excludeDateFilerButton.disableProperty().bind(noBranches);
         }

@@ -52,6 +52,9 @@ public class RegexpFilterPanelController {
 
     private javafx.collections.ObservableList<BranchModel> targetList;
 
+    /** Binding that is true when there are no branches. */
+    private BooleanBinding noBranches;
+    
     /**
      * Sets the target list of branches for filtering operations.
      * This method provides null safety by using an empty list when null is provided.
@@ -73,7 +76,7 @@ public class RegexpFilterPanelController {
         this.uiStateModel = uiStateModel;
 
         // Create a binding that is true when there are no branches
-        BooleanBinding noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
+        noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
 
         // Bind the disable property of the components to the noBranches binding
         filterTextField.editableProperty().bind(noBranches.not());
@@ -100,7 +103,7 @@ public class RegexpFilterPanelController {
 
         // If not disabled, rebind to the noBranches binding
         if (!disabled) {
-            BooleanBinding noBranches = Bindings.isEmpty(this.targetList);
+            noBranches = Bindings.isEmpty(this.targetList);
             filterTextField.editableProperty().bind(noBranches.not());
             includeButton.disableProperty().bind(noBranches);
             excludeButton.disableProperty().bind(noBranches);
