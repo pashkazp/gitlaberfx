@@ -251,11 +251,13 @@ public class DeleteConfirmationController {
         if (regexpFilterPanelController != null) {
             regexpFilterPanelController.initialize(new UIStateModel());
             regexpFilterPanelController.setTargetList(branchesTableView.getItems());
+            regexpFilterPanelController.setDisabled(false); // Explicitly enable the controls
         }
 
         if (dateFilterPanelController != null) {
             dateFilterPanelController.initialize(new UIStateModel());
             dateFilterPanelController.setBranches(branchesTableView.getItems());
+            dateFilterPanelController.setDisabled(false); // Explicitly enable the controls
         }
     }
 
