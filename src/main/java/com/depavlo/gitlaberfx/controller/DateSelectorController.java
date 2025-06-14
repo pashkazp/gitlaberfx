@@ -29,8 +29,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.DateCell;
 import javafx.scene.control.DatePicker;
-import javafx.scene.control.TextField;
-import javafx.scene.input.KeyEvent;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -40,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
@@ -52,6 +49,7 @@ import java.util.ResourceBundle;
 public class DateSelectorController {
     /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(DateSelectorController.class);
+    public static final String DATE_SELECTOR_TITLE = "date.selector.title";
 
     /** The date picker for the "date after" value. */
     @FXML
@@ -149,11 +147,9 @@ public class DateSelectorController {
         LocalDate dateAfter = dateAfterPicker.getValue();
         LocalDate dateBefore = dateBeforePicker.getValue();
 
-        boolean valid = true;
 
         // Check if "date after" is before "date before"
         if (dateAfter != null && dateBefore != null && dateAfter.isAfter(dateBefore)) {
-            valid = false;
             // Provide visual feedback
             dateAfterPicker.setStyle("-fx-background-color: #FF5555;");
             dateBeforePicker.setStyle("-fx-background-color: #FF5555;");
@@ -195,25 +191,6 @@ public class DateSelectorController {
         logger.debug("Cancelling date selection");
         result = new DateSelectorResult(null, null, true, CompletionType.CANCEL);
         stage.close();
-    }
-
-    /**
-     * Parses a date string into a LocalDate.
-     *
-     * @param dateStr The date string to parse
-     * @return The parsed date, or null if the string is empty or invalid
-     */
-    private LocalDate parseDate(String dateStr) {
-        if (dateStr == null || dateStr.isEmpty()) {
-            return null;
-        }
-
-        try {
-            return LocalDate.parse(dateStr, dateFormatter);
-        } catch (DateTimeParseException e) {
-            logger.warn("Failed to parse date: {}", dateStr, e);
-            return null;
-        }
     }
 
     /**
@@ -320,14 +297,6 @@ public class DateSelectorController {
             return validated;
         }
 
-        /**
-         * Gets the completion type.
-         *
-         * @return The completion type (OK or CANCEL)
-         */
-        public CompletionType getCompletionType() {
-            return completionType;
-        }
     }
 
     /**
@@ -365,7 +334,7 @@ public class DateSelectorController {
          */
         public Builder() {
             // Default values - use localized title
-            this.title = com.depavlo.gitlaberfx.util.I18nUtil.getMessage("date.selector.title");
+            this.title = com.depavlo.gitlaberfx.util.I18nUtil.getMessage(DATE_SELECTOR_TITLE);
             // Always use the current locale from I18nUtil
             this.locale = com.depavlo.gitlaberfx.util.I18nUtil.getCurrentLocale();
         }
@@ -378,7 +347,7 @@ public class DateSelectorController {
          * @return This builder instance for method chaining
          */
         public Builder title(String title) {
-            String localizedTitle = com.depavlo.gitlaberfx.util.I18nUtil.getMessage("date.selector.title");
+            String localizedTitle = com.depavlo.gitlaberfx.util.I18nUtil.getMessage(DATE_SELECTOR_TITLE);
             if (!title.equals(localizedTitle)) {
                 logger.warn("Custom title '{}' provided. Consider using the localized title '{}' from the resource bundle instead.", 
                            title, localizedTitle);
@@ -480,7 +449,7 @@ public class DateSelectorController {
                 // Create the stage
                 Stage stage = new Stage();
                 // Always use the localized title from the resource bundle
-                stage.setTitle(com.depavlo.gitlaberfx.util.I18nUtil.getMessage("date.selector.title"));
+                stage.setTitle(com.depavlo.gitlaberfx.util.I18nUtil.getMessage(DATE_SELECTOR_TITLE));
                 stage.setScene(new Scene(root));
                 stage.setResizable(true);
 
