@@ -632,7 +632,6 @@ public class MainController {
 
             if (dateFilterPanelController != null) {
                 dateFilterPanelController.setDisabled(isBusy);
-                dateFilterPanelController.setBranches(isBusy ? null : branchesTableView.getItems());
             }
 
             playButton.setDisable(true);

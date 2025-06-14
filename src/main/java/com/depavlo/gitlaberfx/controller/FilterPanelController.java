@@ -77,7 +77,7 @@ public class FilterPanelController {
         BooleanBinding noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
 
         // Bind the disable property of the components to the noBranches binding
-        filterTextField.disableProperty().bind(noBranches);
+        filterTextField.editableProperty().bind(noBranches);
         includeButton.disableProperty().bind(noBranches);
         excludeButton.disableProperty().bind(noBranches);
     }
@@ -90,19 +90,19 @@ public class FilterPanelController {
      */
     public void setDisabled(boolean disabled) {
         // Unbind the disable property to allow manual setting
-        filterTextField.disableProperty().unbind();
+        filterTextField.editableProperty().unbind();
         includeButton.disableProperty().unbind();
         excludeButton.disableProperty().unbind();
 
         // Set the disabled state
-        filterTextField.setDisable(disabled);
+        filterTextField.setEditable(disabled);
         includeButton.setDisable(disabled);
         excludeButton.setDisable(disabled);
 
         // If not disabled, rebind to the noBranches binding
         if (!disabled) {
             BooleanBinding noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
-            filterTextField.disableProperty().bind(noBranches);
+            filterTextField.editableProperty().bind(noBranches);
             includeButton.disableProperty().bind(noBranches);
             excludeButton.disableProperty().bind(noBranches);
         }

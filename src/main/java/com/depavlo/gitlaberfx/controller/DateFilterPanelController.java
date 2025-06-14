@@ -109,7 +109,8 @@ public class DateFilterPanelController {
         noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
 
         // Bind the disable property of the components to the noBranches binding
-        datePickerButton.disableProperty().bind(noBranches);
+        includeButton.disableProperty().bind(noBranches);
+        excludeButton.disableProperty().bind(noBranches);
 
         // The include and exclude buttons should be disabled if there are no branches
         // or if there are no date criteria
@@ -133,14 +134,18 @@ public class DateFilterPanelController {
      */
     public void setDisabled(boolean disabled) {
         // Unbind the disable property to allow manual setting
-        datePickerButton.disableProperty().unbind();
         includeButton.disableProperty().unbind();
         excludeButton.disableProperty().unbind();
 
         // Set the disabled state
-        datePickerButton.setDisable(disabled);
         includeButton.setDisable(disabled);
         excludeButton.setDisable(disabled);
+
+        if (!disabled) {
+            BooleanBinding noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
+            includeButton.disableProperty().bind(noBranches);
+            excludeButton.disableProperty().bind(noBranches);
+        }
     }
 
     /**
@@ -158,7 +163,7 @@ public class DateFilterPanelController {
                 .dateBefore(dateBefore)
                 .build();
 
-        if (result != null && "OK".equals(result.getCompletionType()) && result.isValidated()) {
+        if (result != null && result.isOk() && result.isValidated()) {
             dateAfter = result.getDateAfter();
             dateBefore = result.getDateBefore();
             updateDateRangeTextField();
