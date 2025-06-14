@@ -100,7 +100,7 @@ public class RegexpFilterPanelController {
 
         // If not disabled, rebind to the noBranches binding
         if (!disabled) {
-            BooleanBinding noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
+            BooleanBinding noBranches = Bindings.isEmpty(this.targetList);
             filterTextField.editableProperty().bind(noBranches.not());
             includeButton.disableProperty().bind(noBranches);
             excludeButton.disableProperty().bind(noBranches);
