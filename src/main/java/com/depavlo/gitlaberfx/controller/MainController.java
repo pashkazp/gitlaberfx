@@ -155,7 +155,8 @@ public class MainController {
                          mainDelMergedButton, mainDelUnmergedButton;
 
     /** Controller for the filter panel. */
-    @FXML private FilterPanelController filterPanelController;
+    @FXML private RegexpFilterPanelController regexpFilterPanelController;
+    @FXML private DateFilterPanelController dateFilterPanelController;
 
     /**
      * Initializes the controller with the application configuration and stage.
@@ -178,9 +179,14 @@ public class MainController {
         setupTooltips(); // Set tooltips for UI elements
 
         // Initialize the filter panel controller with the UI state model
-        if (filterPanelController != null) {
-            filterPanelController.initialize(uiStateModel);
-            filterPanelController.setTargetList(branchesTableView.getItems());
+        if (regexpFilterPanelController != null) {
+            regexpFilterPanelController.initialize(uiStateModel);
+            regexpFilterPanelController.setTargetList(branchesTableView.getItems());
+        }
+
+        if (dateFilterPanelController != null) {
+            dateFilterPanelController.initialize(uiStateModel);
+            dateFilterPanelController.setBranches(branchesTableView.getItems());
         }
     }
 
@@ -621,8 +627,12 @@ public class MainController {
             branchesTableView.setDisable(isBusy);
 
             // Disable filter panel when busy
-            if (filterPanelController != null) {
-                filterPanelController.setDisabled(isBusy);
+            if (regexpFilterPanelController != null) {
+                regexpFilterPanelController.setDisabled(isBusy);
+            }
+
+            if (dateFilterPanelController != null) {
+                dateFilterPanelController.setDisabled(isBusy);
             }
 
             playButton.setDisable(true);

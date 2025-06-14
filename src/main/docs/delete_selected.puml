@@ -4,7 +4,7 @@ title Процес видалення обраних гілок (з архіва
 
 actor Користувач as User
 participant "MainController" as Controller
-participant "FilterPanel" as Filter
+participant "RegexpFilterPanel" as Filter
 participant "DialogHelper" as Helper
 participant "DeleteConfirmationController" as Dialog
 participant "UIStateModel" as Model

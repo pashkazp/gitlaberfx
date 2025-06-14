@@ -10,8 +10,8 @@ System_Ext(gitlab_api, "GitLab API")
 
 Container_Boundary(app, "Десктопний додаток") {
 
-    Component(main_controller, "MainController", "JavaFX Controller", "Керує головним вікном. Включає в себе FilterPanel. Обробляє події та оркеструє операції (видалення/архівація).")
-    Component(confirmation_controller, "DeleteConfirmationController", "JavaFX Controller", "Керує діалогом підтвердження. Включає в себе FilterPanel. Повертає вибір користувача (видалити/архівувати).")
+    Component(main_controller, "MainController", "JavaFX Controller", "Керує головним вікном. Включає в себе regexpFilterPanel. Обробляє події та оркеструє операції (видалення/архівація).")
+    Component(confirmation_controller, "DeleteConfirmationController", "JavaFX Controller", "Керує діалогом підтвердження. Включає в себе regexpFilterPanel. Повертає вибір користувача (видалити/архівувати).")
     Component(filter_panel, "FilterPanelController", "Reusable UI Component", "Надає UI та логіку для фільтрації списків гілок за RegExp маскою.")
 
     Component(ui_state_model, "UIStateModel", "Model", "Централізована модель стану UI. Відстежує зміни в іменах гілок для реактивного оновлення.")
