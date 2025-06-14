@@ -10,14 +10,16 @@ System_Ext(gitlab_api, "GitLab API")
 
 Container_Boundary(app, "Десктопний додаток") {
 
-    Component(main_controller, "MainController", "JavaFX Controller", "Керує головним вікном. Включає в себе regexpFilterPanel. Обробляє події та оркеструє операції (видалення/архівація).")
+    Component(main_controller, "MainController", "JavaFX Controller", "Керує головним вікном. Включає в себе regexpFilterPanel та dateFilterPanel. Обробляє події та оркеструє операції (видалення/архівація).")
     Component(confirmation_controller, "DeleteConfirmationController", "JavaFX Controller", "Керує діалогом підтвердження. Включає в себе regexpFilterPanel. Повертає вибір користувача (видалити/архівувати).")
     Component(filter_panel, "FilterPanelController", "Reusable UI Component", "Надає UI та логіку для фільтрації списків гілок за RegExp маскою.")
+    Component(date_filter_panel, "DateFilterPanelController", "Reusable UI Component", "Надає UI та логіку для фільтрації списків гілок за датою останнього коміту.")
+    Component(date_selector, "DateSelectorController", "JavaFX Controller", "Керує діалогом вибору діапазону дат. Використовує патерн Builder для гнучкого створення.")
 
     Component(ui_state_model, "UIStateModel", "Model", "Централізована модель стану UI. Відстежує зміни в іменах гілок для реактивного оновлення.")
     Component(domain_models, "Data Models", "POJO / JavaFX Beans", "Класи даних (BranchModel з originalName, OperationConfirmationResult).")
 
-    Component(gitlab_service, "GitLabService", "Service", "Інкапсулює всю логіку взаємодії з GitLab API. Реалізує атомарний метод archiveBranch з відкатом.")
+    Component(gitlab_service, "GitLabService", "Service", "Інкапсулює всю логіку взаємодії з GitLab API. Реалізує атомарний метод archiveBranch з відкатом та покращену обробку помилок у методі deleteBranch.")
     Component(dialog_helper, "DialogHelper", "Utility", "Створює та налаштовує діалогові вікна, включаючи вікно підтвердження.")
     Component(config_component, "AppConfig", "Component", "Керує конфігурацією додатку, включаючи archivePrefix.")
 
@@ -26,6 +28,9 @@ Container_Boundary(app, "Десктопний додаток") {
 
     Rel(main_controller, filter_panel, "Використовує та надає дані")
     Rel(confirmation_controller, filter_panel, "Використовує та надає дані")
+
+    Rel(main_controller, date_filter_panel, "Використовує та надає дані")
+    Rel(main_controller, date_selector, "Використовує для вибору дат")
 
     Rel(main_controller, dialog_helper, "Викликає для показу діалогів")
     Rel(dialog_helper, confirmation_controller, "Створює та налаштовує")

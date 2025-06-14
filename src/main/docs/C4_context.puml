@@ -8,7 +8,7 @@ title System Context Diagram for GitLaberFX
 Person(user, "Розробник / Тімлід", "Користувач, який бажає керувати гілками у своїх проектах GitLab.")
 System_Ext(gitlab, "GitLab Platform", "Платформа для хостингу Git-репозиторіїв та управління життєвим циклом розробки.")
 
-System(gitlaberfx, "GitLaberFX", "Десктопний додаток для масового управління, фільтрації та архівації гілок у GitLab.")
+System(gitlaberfx, "GitLaberFX", "Десктопний додаток для масового управління, фільтрації за регулярними виразами та датою, архівації з відкатом та надійної обробки помилок для гілок у GitLab.")
 
 Rel(user, gitlaberfx, "Використовує", "GUI")
 Rel(gitlaberfx, gitlab, "Читає дані, видаляє та створює гілки через", "GitLab API (HTTPS)")

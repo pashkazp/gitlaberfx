@@ -5,6 +5,7 @@ title Процес видалення змерджених гілок (з арх
 actor Користувач as User
 participant "MainController" as Controller
 participant "DialogHelper" as Helper
+participant "DateSelectorController" as DateSelector
 participant "DeleteConfirmationController" as Dialog
 participant "UIStateModel" as Model
 participant "GitLabService" as Service
@@ -20,11 +21,21 @@ end box
 
 box "II. Ініціація та підтвердження" #LightGoldenRodYellow
     User -> Controller: Натискає "Видалити змерджені"
-    Controller -> UI: Відкриває діалог вибору дати
-    UI -> User: Обирає дату
-    User -> Controller: Повертає дату
+    Controller -> Helper: Відкриває діалог вибору дати
+    Helper -> DateSelector: Створює та налаштовує діалог
+    DateSelector --> User: Показує діалог з полями "Після" та "До"
+    User -> DateSelector: Обирає дату або діапазон дат
+    User -> DateSelector: Натискає "OK"
+    DateSelector --> Helper: Повертає DateSelectorResult
+    Helper --> Controller: Повертає обрану дату або діапазон
 
     Controller -> Model: **Фільтрує гілки за датою та статусом `isMergedIntoTarget`**
+    note right
+        Умови фільтрації:
+        1. `branch.isMergedIntoTarget() == true`
+        2. Якщо вказано "Після": `branch.getLastCommit()` >= обраної дати
+        3. Якщо вказано "До": `branch.getLastCommit()` <= обраної дати
+    end note
 
     Controller -> Helper: showDeleteConfirmationDialog(відфільтрований_список)
     Helper -> Dialog: Створює діалог з **копією** списку
@@ -38,6 +49,11 @@ box "II. Ініціація та підтвердження" #LightGoldenRodYell
     loop для кожної гілки з підтвердженого списку
         Controller -> Service: **deleteBranch(id, branch.getName())**
         Service -> GitLab: **DELETE API request**
+        note right
+            Покращена обробка помилок:
+            Детальне логування помилок
+            та чітка ідентифікація причин збоїв.
+        end note
         Controller -> Model: Збирає список успішно видалених гілок
     end
 end box

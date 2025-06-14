@@ -5,6 +5,7 @@ title Процес видалення/архівації старих незме
 actor Користувач as User
 participant "MainController" as Controller
 participant "DialogHelper" as Helper
+participant "DateSelectorController" as DateSelector
 participant "DeleteConfirmationController" as DialogController
 participant "FilterPanelController" as Filter
 participant "UIStateModel" as Model
@@ -23,15 +24,19 @@ end box
 box "II. Ініціація та підтвердження" #LightGoldenRodYellow
     User -> Controller: Натискає "Видалити не змерджені"
     Controller -> Helper: Відкриває діалог вибору дати
-    Helper --> User: Показує календар
-    User -> Helper: Обирає дату
-    Helper --> Controller: Повертає обрану дату
+    Helper -> DateSelector: Створює та налаштовує діалог
+    DateSelector --> User: Показує діалог з полями "Після" та "До"
+    User -> DateSelector: Обирає дату або діапазон дат
+    User -> DateSelector: Натискає "OK"
+    DateSelector --> Helper: Повертає DateSelectorResult
+    Helper --> Controller: Повертає обрану дату або діапазон
 
     Controller -> Model: **Фільтрує список currentProjectBranches**
     note right
         Умови фільтрації:
         1. `branch.isMergedIntoTarget() == false`
-        2. `branch.getLastCommit()` < обраної дати
+        2. Якщо вказано "Після": `branch.getLastCommit()` >= обраної дати
+        3. Якщо вказано "До": `branch.getLastCommit()` <= обраної дати
     end note
 
     Controller -> Helper: showDeleteConfirmationDialog(список_гілок, архівувати_за_замовчуванням)
@@ -61,10 +66,22 @@ box "III. Виконання та оновлення UI" #LightGreen
         alt якщо isArchive == true
             Controller -> Service: **archiveBranch(id, branchName, prefix)**
             Service -> GitLab: **POST (Create) + DELETE API requests**
+            note right
+                Покращена обробка помилок:
+                Якщо створення архівної гілки успішне,
+                але видалення оригінальної не вдалося,
+                система автоматично відкочує зміни,
+                видаляючи створену архівну гілку.
+            end note
             Controller -> Model: Додає гілку до списку `successfullyArchived`
         else
             Controller -> Service: **deleteBranch(id, branchName)**
             Service -> GitLab: **DELETE API request**
+            note right
+                Покращена обробка помилок:
+                Детальне логування помилок
+                та чітка ідентифікація причин збоїв.
+            end note
             Controller -> Model: Додає гілку до списку `successfullyDeleted`
         end
     end

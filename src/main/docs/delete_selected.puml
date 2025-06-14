@@ -4,7 +4,8 @@ title Процес видалення обраних гілок (з архіва
 
 actor Користувач as User
 participant "MainController" as Controller
-participant "RegexpFilterPanel" as Filter
+participant "RegexpFilterPanel" as RegexpFilter
+participant "DateFilterPanel" as DateFilter
 participant "DialogHelper" as Helper
 participant "DeleteConfirmationController" as Dialog
 participant "UIStateModel" as Model
@@ -17,11 +18,21 @@ box "I. Підготовка та вибір" #LightCyan
     User -> UI: Обирає проєкт та цільову гілку
     Controller -> Service: Завантажує та аналізує гілки
     Controller -> Model: Оновлює currentProjectBranches
-    Controller -> Filter: **setTargetList(список_гілок)**
+    Controller -> RegexpFilter: **setTargetList(список_гілок)**
+    Controller -> DateFilter: **setTargetList(список_гілок)**
 
-    User -> Filter: Вводить маску (напр., "archive/.*")
-    User -> Filter: Натискає "+" або "-"
-    Filter -> Model: **Масово змінює .setSelected() для гілок**
+    alt Фільтрація за регулярним виразом
+        User -> RegexpFilter: Вводить маску (напр., "archive/.*")
+        User -> RegexpFilter: Натискає "+" або "-"
+        RegexpFilter -> Model: **Масово змінює .setSelected() для гілок**
+    else Фільтрація за датою
+        User -> DateFilter: Відкриває діалог вибору дати
+        DateFilter --> User: Показує діалог з полями "Після" та "До"
+        User -> DateFilter: Обирає дату або діапазон дат
+        User -> DateFilter: Натискає "+" або "-"
+        DateFilter -> Model: **Масово змінює .setSelected() для гілок за датою**
+    end
+
     User -> UI: Вручну коригує вибір у TableView
 end box
 
@@ -30,7 +41,7 @@ box "II. Підтвердження та операція" #LightGoldenRodYellow
     Controller -> Model: Фільтрує список за `isSelected == true`
     Controller -> Helper: showDeleteConfirmationDialog(список)
     Helper -> Dialog: Створює діалог з **копією** списку
-    Dialog -> Filter: **setTargetList(копія_списку)**
+    Dialog -> RegexpFilter: **setTargetList(копія_списку)**
 
     User -> Dialog: Додатково фільтрує список у діалозі
     User -> Dialog: **Встановлює ☑ Архівувати**
@@ -42,6 +53,13 @@ box "II. Підтвердження та операція" #LightGoldenRodYellow
     loop для кожної гілки з підтвердженого списку
         Controller -> Service: **archiveBranch(id, branch.getOriginalName())**
         Service -> GitLab: **POST (Create) + DELETE (Delete)**
+        note right
+            Покращена обробка помилок:
+            Якщо створення архівної гілки успішне,
+            але видалення оригінальної не вдалося,
+            система автоматично відкочує зміни,
+            видаляючи створену архівну гілку.
+        end note
         Controller -> Model: Збирає список успішно заархівованих гілок
     end
 end box

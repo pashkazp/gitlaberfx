@@ -14,6 +14,8 @@
 
 - **Powerful Filtering:** Use **regular expressions (RegExp)** for instant bulk selection or exclusion of branches by mask (e.g., `feature/*`, `hotfix-*`).
 
+- **Advanced Date Filtering:** Filter branches based on their last commit date using "before" and "after" criteria, allowing for precise selection of branches based on their age.
+
 - **Batch Operations:** Perform operations (deletion/archiving) for:
 
    - Manually selected branches.
@@ -21,6 +23,8 @@
    - Old merged branches (older than a specified date).
 
    - Old unmerged branches.
+
+- **Robust Error Handling:** Ensures data integrity with automatic rollback mechanisms for failed operations, preventing partial state changes that could lead to inconsistencies.
 
 - **Interactive UI:** The interface instantly responds to your actions, updating the state locally without unnecessary server requests.
 
