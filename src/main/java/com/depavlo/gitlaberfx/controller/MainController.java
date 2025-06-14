@@ -808,6 +808,10 @@ public class MainController {
      * that are merged into the target branch, not protected, and older than the cutoff date.
      * It then initiates the deletion process for these branches.
      * It is triggered by the "Delete Merged" button.
+     * 
+     * The method includes robust error handling for date parsing to ensure that branches
+     * with invalid date formats are gracefully ignored rather than causing the entire
+     * operation to fail.
      */
     @FXML
     private void deleteMerged() {
@@ -823,7 +827,8 @@ public class MainController {
                     .filter(b -> {
                         try {
                             return LocalDate.parse(b.getLastCommit().substring(0, 10), DateTimeFormatter.ISO_LOCAL_DATE).isBefore(cutoffDate);
-                        } catch (DateTimeParseException e) {
+                        } catch (DateTimeParseException | StringIndexOutOfBoundsException e) {
+                            logger.warn("Could not parse date for branch '{}': {}", b.getName(), b.getLastCommit());
                             return false;
                         }
                     }).collect(Collectors.toList());
@@ -843,6 +848,10 @@ public class MainController {
      * and older than the cutoff date.
      * It then initiates the deletion process for these branches.
      * It is triggered by the "Delete Unmerged" button.
+     * 
+     * The method includes robust error handling for date parsing to ensure that branches
+     * with invalid date formats are gracefully ignored rather than causing the entire
+     * operation to fail.
      */
     @FXML
     private void deleteUnmerged() {
@@ -858,7 +867,8 @@ public class MainController {
                     .filter(b -> {
                         try {
                             return LocalDate.parse(b.getLastCommit().substring(0, 10), DateTimeFormatter.ISO_LOCAL_DATE).isBefore(cutoffDate);
-                        } catch (DateTimeParseException e) {
+                        } catch (DateTimeParseException | StringIndexOutOfBoundsException e) {
+                            logger.warn("Could not parse date for branch '{}': {}", b.getName(), b.getLastCommit());
                             return false;
                         }
                     }).collect(Collectors.toList());
