@@ -364,18 +364,25 @@ public class DateSelectorController {
          * Creates a new builder instance.
          */
         public Builder() {
-            // Default values
-            this.title = "Date Selector";
-            this.locale = Locale.getDefault();
+            // Default values - use localized title
+            this.title = com.depavlo.gitlaberfx.util.I18nUtil.getMessage("date.selector.title");
+            // Always use the current locale from I18nUtil
+            this.locale = com.depavlo.gitlaberfx.util.I18nUtil.getCurrentLocale();
         }
 
         /**
          * Sets the title of the dialog.
+         * Note: It's recommended to use the localized title from the resource bundle instead.
          *
          * @param title The title to set
          * @return This builder instance for method chaining
          */
         public Builder title(String title) {
+            String localizedTitle = com.depavlo.gitlaberfx.util.I18nUtil.getMessage("date.selector.title");
+            if (!title.equals(localizedTitle)) {
+                logger.warn("Custom title '{}' provided. Consider using the localized title '{}' from the resource bundle instead.", 
+                           title, localizedTitle);
+            }
             this.title = title;
             return this;
         }
@@ -437,12 +444,19 @@ public class DateSelectorController {
 
         /**
          * Sets the locale for the dialog.
+         * Note: This method is deprecated. The dialog will always use the current locale from I18nUtil.
          *
-         * @param locale The locale to use
+         * @param locale The locale to use (ignored, current locale from I18nUtil is used instead)
          * @return This builder instance for method chaining
          */
         public Builder locale(Locale locale) {
-            this.locale = locale;
+            // Always use the current locale from I18nUtil, regardless of what's passed in
+            Locale currentLocale = com.depavlo.gitlaberfx.util.I18nUtil.getCurrentLocale();
+            if (!locale.equals(currentLocale)) {
+                logger.warn("Ignoring provided locale {}. Using current locale {} from I18nUtil instead.", 
+                           locale, currentLocale);
+            }
+            this.locale = currentLocale;
             return this;
         }
 
@@ -453,8 +467,10 @@ public class DateSelectorController {
          */
         public DateSelectorResult build() {
             try {
+                // Always use the current locale from I18nUtil
+                Locale currentLocale = com.depavlo.gitlaberfx.util.I18nUtil.getCurrentLocale();
                 // Load the FXML file
-                ResourceBundle bundle = ResourceBundle.getBundle("i18n.messages", locale);
+                ResourceBundle bundle = ResourceBundle.getBundle("i18n.messages", currentLocale);
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/date-selector.fxml"), bundle);
                 Parent root = loader.load();
 
@@ -463,9 +479,10 @@ public class DateSelectorController {
 
                 // Create the stage
                 Stage stage = new Stage();
-                stage.setTitle(title);
+                // Always use the localized title from the resource bundle
+                stage.setTitle(com.depavlo.gitlaberfx.util.I18nUtil.getMessage("date.selector.title"));
                 stage.setScene(new Scene(root));
-                stage.setResizable(false);
+                stage.setResizable(true);
 
                 // Set modality and owner
                 stage.initModality(Modality.APPLICATION_MODAL);

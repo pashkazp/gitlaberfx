@@ -12,14 +12,16 @@
 
     <!-- Date Range Selection -->
     <GridPane hgap="10" vgap="10">
-        <Label prefWidth="100.0" text="%date.selector.after" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-        <DatePicker fx:id="dateAfterPicker" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+        <Label alignment="CENTER_RIGHT" text="%date.selector.after" GridPane.columnIndex="0" GridPane.rowIndex="0" />
+        <DatePicker fx:id="dateAfterPicker" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="0" />
 
-        <Label prefWidth="100.0" text="%date.selector.before" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-        <DatePicker fx:id="dateBeforePicker" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+        <Label alignment="CENTER_RIGHT" text="%date.selector.before" GridPane.columnIndex="0" GridPane.rowIndex="1" />
+        <DatePicker fx:id="dateBeforePicker" maxWidth="Infinity" GridPane.columnIndex="1" GridPane.rowIndex="1" />
       <columnConstraints>
-         <ColumnConstraints />
-         <ColumnConstraints />
+         <!-- Label column: min width based on content, won't grow -->
+         <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" />
+         <!-- DatePicker column: will grow to fill available space -->
+         <ColumnConstraints hgrow="ALWAYS" minWidth="150" prefWidth="200" />
       </columnConstraints>
       <rowConstraints>
          <RowConstraints />
