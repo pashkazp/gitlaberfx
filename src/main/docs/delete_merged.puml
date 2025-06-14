@@ -5,8 +5,10 @@ title Процес видалення змерджених гілок (з арх
 actor Користувач as User
 participant "MainController" as Controller
 participant "DialogHelper" as Helper
-participant "DateSelectorController" as DateSelector
+participant "DatePickerController" as DatePicker
 participant "DeleteConfirmationController" as Dialog
+participant "RegexpFilterPanelController" as RegexpFilter
+participant "DateFilterPanelController" as DateFilter
 participant "UIStateModel" as Model
 participant "GitLabService" as Service
 participant "JavaFX UI" as UI
@@ -22,43 +24,52 @@ end box
 box "II. Ініціація та підтвердження" #LightGoldenRodYellow
     User -> Controller: Натискає "Видалити змерджені"
     Controller -> Helper: Відкриває діалог вибору дати
-    Helper -> DateSelector: Створює та налаштовує діалог
-    DateSelector --> User: Показує діалог з полями "Після" та "До"
-    User -> DateSelector: Обирає дату або діапазон дат
-    User -> DateSelector: Натискає "OK"
-    DateSelector --> Helper: Повертає DateSelectorResult
-    Helper --> Controller: Повертає обрану дату або діапазон
+    Helper -> DatePicker: Створює та налаштовує діалог
+    DatePicker --> User: Показує діалог з календарем
+    User -> DatePicker: Обирає дату
+    User -> DatePicker: Натискає "OK"
+    DatePicker --> Helper: Повертає LocalDate
+    Helper --> Controller: Повертає обрану дату
 
     Controller -> Model: **Фільтрує гілки за датою та статусом `isMergedIntoTarget`**
     note right
         Умови фільтрації:
         1. `branch.isMergedIntoTarget() == true`
-        2. Якщо вказано "Після": `branch.getLastCommit()` >= обраної дати
-        3. Якщо вказано "До": `branch.getLastCommit()` <= обраної дати
+        2. `branch.isProtected() == false`
+        3. Дата останнього коміту < обраної дати
     end note
 
-    Controller -> Helper: showDeleteConfirmationDialog(відфільтрований_список)
+    Controller -> Helper: showDeleteConfirmationDialog(відфільтрований_список, "Видалення змерджених гілок", projectName)
     Helper -> Dialog: Створює діалог з **копією** списку
+    Dialog -> RegexpFilter: **setTargetList(копія_списку)**
+    Dialog -> DateFilter: **setTargetList(копія_списку)**
 
-    User -> Dialog: **Знімає вибір з деяких гілок або використовує фільтр**
-    User -> Dialog: **Залишає ☐ Архівувати** (виконуємо видалення)
-    User -> Dialog: Натискає "Видалити"
-    Dialog --> Controller: Повертає OperationConfirmationResult (з прапорцем `archive=false`)
+    User -> Dialog: **Додатково фільтрує список у діалозі**
+    User -> Dialog: **Встановлює ☐ Архівувати або ☑ Архівувати**
+    User -> Dialog: Натискає "Видалити" або "Архівувати"
+    Dialog --> Controller: Повертає OperationConfirmationResult (з прапорцем `archive`)
 
     Controller -> Controller: Запускає **executeBranchOperation()**
     loop для кожної гілки з підтвердженого списку
-        Controller -> Service: **deleteBranch(id, branch.getName())**
-        Service -> GitLab: **DELETE API request**
+        alt якщо archive == false
+            Controller -> Service: **deleteBranch(id, branch.getName())**
+            Service -> GitLab: **DELETE API request**
+            Controller -> Model: Додає гілку до списку `successfullyDeleted`
+        else
+            Controller -> Service: **archiveBranch(id, branch.getName(), prefix)**
+            Service -> GitLab: **POST (Create) + DELETE API requests**
+            Controller -> Model: Додає гілку до списку `successfullyArchived`
+        end
         note right
             Покращена обробка помилок:
             Детальне логування помилок
             та чітка ідентифікація причин збоїв.
         end note
-        Controller -> Model: Збирає список успішно видалених гілок
     end
 end box
 
 box "III. Елегантне оновлення UI" #LightGreen
+    Controller -> Model: **successfullyArchived.forEach(b -> b.setName(...))**
     Controller -> Model: **uiStateModel.getCurrentProjectBranches().removeAll(successfullyDeleted)**
     note right
         **Ефект:**

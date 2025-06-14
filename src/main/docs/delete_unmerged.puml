@@ -5,9 +5,10 @@ title Процес видалення/архівації старих незме
 actor Користувач as User
 participant "MainController" as Controller
 participant "DialogHelper" as Helper
-participant "DateSelectorController" as DateSelector
-participant "DeleteConfirmationController" as DialogController
-participant "FilterPanelController" as Filter
+participant "DatePickerController" as DatePicker
+participant "DeleteConfirmationController" as Dialog
+participant "RegexpFilterPanelController" as RegexpFilter
+participant "DateFilterPanelController" as DateFilter
 participant "UIStateModel" as Model
 participant "GitLabService" as Service
 participant "JavaFX UI" as UI
@@ -16,7 +17,6 @@ autonumber "<b>[0]"
 
 box "I. Підготовка" #LightCyan
     User -> UI: Обирає проєкт та цільову гілку
-    Controller -> Model: Стан UI оновлюється
     Controller -> Controller: Запускається rescanMerged()
     note right: UI показує позначки '✔' для змерджених гілок
 end box
@@ -24,80 +24,63 @@ end box
 box "II. Ініціація та підтвердження" #LightGoldenRodYellow
     User -> Controller: Натискає "Видалити не змерджені"
     Controller -> Helper: Відкриває діалог вибору дати
-    Helper -> DateSelector: Створює та налаштовує діалог
-    DateSelector --> User: Показує діалог з полями "Після" та "До"
-    User -> DateSelector: Обирає дату або діапазон дат
-    User -> DateSelector: Натискає "OK"
-    DateSelector --> Helper: Повертає DateSelectorResult
-    Helper --> Controller: Повертає обрану дату або діапазон
+    Helper -> DatePicker: Створює та налаштовує діалог
+    DatePicker --> User: Показує діалог з календарем
+    User -> DatePicker: Обирає дату
+    User -> DatePicker: Натискає "OK"
+    DatePicker --> Helper: Повертає LocalDate
+    Helper --> Controller: Повертає обрану дату
 
-    Controller -> Model: **Фільтрує список currentProjectBranches**
+    Controller -> Model: **Фільтрує гілки за датою та статусом `isMergedIntoTarget`**
     note right
         Умови фільтрації:
         1. `branch.isMergedIntoTarget() == false`
-        2. Якщо вказано "Після": `branch.getLastCommit()` >= обраної дати
-        3. Якщо вказано "До": `branch.getLastCommit()` <= обраної дати
+        2. `branch.isProtected() == false`
+        3. `!branch.getName().equals(targetBranch)`
+        4. Дата останнього коміту < обраної дати
     end note
 
-    Controller -> Helper: showDeleteConfirmationDialog(список_гілок, архівувати_за_замовчуванням)
-    Helper -> DialogController: Створює вікно, передає **копію** списку
-    DialogController -> Filter: **setTargetList(копія_списку)**
-    note right: Панель фільтрації тепер працює\nз даними всередині діалогу.
+    Controller -> Helper: showDeleteConfirmationDialog(відфільтрований_список, "Видалення незмерджених гілок", projectName)
+    Helper -> Dialog: Створює діалог з **копією** списку
+    Dialog -> RegexpFilter: **setTargetList(копія_списку)**
+    Dialog -> DateFilter: **setTargetList(копія_списку)**
 
-    User -> Filter: Вводить маску (напр. `archive/*`) та натискає "-"
-    Filter -> DialogController: Оновлює стан "вибрано" у гілок в діалозі
+    User -> Dialog: **Додатково фільтрує список у діалозі**
+    User -> Dialog: **Встановлює ☐ Архівувати або ☑ Архівувати**
+    User -> Dialog: Натискає "Видалити" або "Архівувати"
+    Dialog --> Controller: Повертає OperationConfirmationResult (з прапорцем `archive`)
 
-    User -> DialogController: Встановлює прапорець "☑ Архівувати"
-    DialogController -> UI: Кнопка змінює назву на "Архівувати"
-
-    User -> DialogController: Натискає "Архівувати"
-    DialogController --> Helper: Повертає OperationConfirmationResult (фінальний список, isArchive=true)
-    Helper --> Controller: Повертає результат
+    Controller -> Controller: Запускає **executeBranchOperation()**
+    loop для кожної гілки з підтвердженого списку
+        alt якщо archive == false
+            Controller -> Service: **deleteBranch(id, branch.getName())**
+            Service -> GitLab: **DELETE API request**
+            Controller -> Model: Додає гілку до списку `successfullyDeleted`
+        else
+            Controller -> Service: **archiveBranch(id, branch.getName(), prefix)**
+            Service -> GitLab: **POST (Create) + DELETE API requests**
+            Controller -> Model: Додає гілку до списку `successfullyArchived`
+        end
+        note right
+            Покращена обробка помилок:
+            Детальне логування помилок
+            та чітка ідентифікація причин збоїв.
+        end note
+    end
 end box
 
-box "III. Виконання та оновлення UI" #LightGreen
-    Controller -> Controller: Запускає executeBranchOperation()
+box "III. Елегантне оновлення UI" #LightGreen
+    Controller -> Model: **successfullyArchived.forEach(b -> b.setName(...))**
+    Controller -> Model: **uiStateModel.getCurrentProjectBranches().removeAll(successfullyDeleted)**
     note right
-        Задача виконується у фоновому потоці.
-        Основний UI блокується через isBusy.
+        **Ефект:**
+        Замість повного перезавантаження,
+        видаляються лише потрібні елементи з моделі.
+        Вибір цільової гілки та позначки '✔' **зберігаються**.
     end note
 
-    loop для кожної гілки з фінального списку
-        alt якщо isArchive == true
-            Controller -> Service: **archiveBranch(id, branchName, prefix)**
-            Service -> GitLab: **POST (Create) + DELETE API requests**
-            note right
-                Покращена обробка помилок:
-                Якщо створення архівної гілки успішне,
-                але видалення оригінальної не вдалося,
-                система автоматично відкочує зміни,
-                видаляючи створену архівну гілку.
-            end note
-            Controller -> Model: Додає гілку до списку `successfullyArchived`
-        else
-            Controller -> Service: **deleteBranch(id, branchName)**
-            Service -> GitLab: **DELETE API request**
-            note right
-                Покращена обробка помилок:
-                Детальне логування помилок
-                та чітка ідентифікація причин збоїв.
-            end note
-            Controller -> Model: Додає гілку до списку `successfullyDeleted`
-        end
-    end
-
-    Controller -> Controller: **Оновлює UI в головному потоці (Platform.runLater)**
-
-    Controller -> Model: Оновлює імена в `successfullyArchived` (`branch.setName(...)`)
-    Controller -> Model: Видаляє гілки зі списку `successfullyDeleted`
-    note right
-        `TableView` миттєво реагує на ці зміни\nзавдяки `ObservableList` з екстрактором.
-    end note
-
-    Controller -> Controller: Викликає `repopulateTargetBranchComboBox()`
-    note right
-        `ComboBox` цільової гілки оновлюється,\nзберігаючи вибір, навіть якщо цільова\nгілка була щойно заархівована.
-    end note
+    Model -> UI: ObservableList автоматично оновлює TableView
+    Controller -> Controller: **repopulateTargetBranchComboBox()**
 
     Controller -> UI: Додаток готовий до подальшої роботи
 end box

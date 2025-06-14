@@ -4,8 +4,8 @@ title Процес видалення обраних гілок (з архіва
 
 actor Користувач as User
 participant "MainController" as Controller
-participant "RegexpFilterPanel" as RegexpFilter
-participant "DateFilterPanel" as DateFilter
+participant "RegexpFilterPanelController" as RegexpFilter
+participant "DateFilterPanelController" as DateFilter
 participant "DialogHelper" as Helper
 participant "DeleteConfirmationController" as Dialog
 participant "UIStateModel" as Model
@@ -19,16 +19,14 @@ box "I. Підготовка та вибір" #LightCyan
     Controller -> Service: Завантажує та аналізує гілки
     Controller -> Model: Оновлює currentProjectBranches
     Controller -> RegexpFilter: **setTargetList(список_гілок)**
-    Controller -> DateFilter: **setTargetList(список_гілок)**
+    Controller -> DateFilter: **setBranches(список_гілок)**
 
     alt Фільтрація за регулярним виразом
         User -> RegexpFilter: Вводить маску (напр., "archive/.*")
         User -> RegexpFilter: Натискає "+" або "-"
         RegexpFilter -> Model: **Масово змінює .setSelected() для гілок**
     else Фільтрація за датою
-        User -> DateFilter: Відкриває діалог вибору дати
-        DateFilter --> User: Показує діалог з полями "Після" та "До"
-        User -> DateFilter: Обирає дату або діапазон дат
+        User -> DateFilter: Вводить дати "Після" та/або "До"
         User -> DateFilter: Натискає "+" або "-"
         DateFilter -> Model: **Масово змінює .setSelected() для гілок за датою**
     end
@@ -39,42 +37,48 @@ end box
 box "II. Підтвердження та операція" #LightGoldenRodYellow
     User -> Controller: Натискає "Видалити вибрані"
     Controller -> Model: Фільтрує список за `isSelected == true`
-    Controller -> Helper: showDeleteConfirmationDialog(список)
+    Controller -> Helper: showDeleteConfirmationDialog(список, "Видалення обраних гілок", projectName)
     Helper -> Dialog: Створює діалог з **копією** списку
     Dialog -> RegexpFilter: **setTargetList(копія_списку)**
+    Dialog -> DateFilter: **setTargetList(копія_списку)**
 
-    User -> Dialog: Додатково фільтрує список у діалозі
-    User -> Dialog: **Встановлює ☑ Архівувати**
-    User -> Dialog: Натискає "Архівувати"
-    Dialog --> Controller: Повертає OperationConfirmationResult (з прапорцем `archive=true`)
+    User -> Dialog: **Додатково фільтрує список у діалозі**
+    User -> Dialog: **Встановлює ☐ Архівувати або ☑ Архівувати**
+    User -> Dialog: Натискає "Видалити" або "Архівувати"
+    Dialog --> Controller: Повертає OperationConfirmationResult (з прапорцем `archive`)
 
     Controller -> Controller: Запускає **executeBranchOperation()**
     note right: UI блокується через `isBusy`
     loop для кожної гілки з підтвердженого списку
-        Controller -> Service: **archiveBranch(id, branch.getOriginalName())**
-        Service -> GitLab: **POST (Create) + DELETE (Delete)**
+        alt якщо archive == false
+            Controller -> Service: **deleteBranch(id, branch.getName())**
+            Service -> GitLab: **DELETE API request**
+            Controller -> Model: Додає гілку до списку `successfullyDeleted`
+        else
+            Controller -> Service: **archiveBranch(id, branch.getName(), prefix)**
+            Service -> GitLab: **POST (Create) + DELETE API requests**
+            Controller -> Model: Додає гілку до списку `successfullyArchived`
+        end
         note right
             Покращена обробка помилок:
-            Якщо створення архівної гілки успішне,
-            але видалення оригінальної не вдалося,
-            система автоматично відкочує зміни,
-            видаляючи створену архівну гілку.
+            Детальне логування помилок
+            та чітка ідентифікація причин збоїв.
         end note
-        Controller -> Model: Збирає список успішно заархівованих гілок
     end
 end box
 
 box "III. Елегантне оновлення UI" #LightGreen
     Controller -> Model: **successfullyArchived.forEach(b -> b.setName(...))**
+    Controller -> Model: **uiStateModel.getCurrentProjectBranches().removeAll(successfullyDeleted)**
     note right
-        **Ключовий момент:**
-        Змінюється лише `nameProperty` в існуючих об'єктах моделі.
-        ObservableList з екстрактором реагує на цю зміну.
+        **Ефект:**
+        Замість повного перезавантаження,
+        видаляються лише потрібні елементи з моделі.
+        Вибір цільової гілки та позначки '✔' **зберігаються**.
     end note
 
-    Model -> UI: **TableView автоматично оновлює імена гілок**
+    Model -> UI: ObservableList автоматично оновлює TableView
     Controller -> Controller: **repopulateTargetBranchComboBox()**
-    note right: ComboBox перемальовується з новими іменами, вибір зберігається.
 
     Controller -> UI: Додаток готовий до подальшої роботи
 end box
