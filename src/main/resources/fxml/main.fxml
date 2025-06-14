@@ -45,7 +45,7 @@
     </HBox>
 
     <HBox spacing="10">
-        <fx:include fx:id="filterPanel" source="filter-panel.fxml" HBox.hgrow="ALWAYS" />
+        <fx:include fx:id="regexpFilterPanel" source="regexp-filter-panel.fxml" HBox.hgrow="ALWAYS" />
         <fx:include fx:id="dateFilterPanel" source="date-filter-panel.fxml" />
     </HBox>
 

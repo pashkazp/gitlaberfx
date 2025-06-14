@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<HBox alignment="CENTER_LEFT" spacing="5" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.FilterPanelController">
+<HBox alignment="CENTER_LEFT" spacing="5" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.depavlo.gitlaberfx.controller.RegexpFilterPanelController">
     <padding>
         <Insets bottom="5" left="0" right="0" top="5" />
     </padding>

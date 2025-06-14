@@ -40,7 +40,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.CheckBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.geometry.Pos;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,7 +135,7 @@ public class DeleteConfirmationController {
 
     /** Controller for the filter panel. */
     @FXML
-    private FilterPanelController filterPanelController;
+    private RegexpFilterPanelController regexpFilterPanelController;
 
     /** Controller for the date filter panel. */
     @FXML
@@ -249,9 +248,9 @@ public class DeleteConfirmationController {
         }
 
         // Initialize the filter panel controller with the table items
-        if (filterPanelController != null) {
-            filterPanelController.initialize(new UIStateModel());
-            filterPanelController.setTargetList(branchesTableView.getItems());
+        if (regexpFilterPanelController != null) {
+            regexpFilterPanelController.initialize(new UIStateModel());
+            regexpFilterPanelController.setTargetList(branchesTableView.getItems());
         }
 
         if (dateFilterPanelController != null) {

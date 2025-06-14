@@ -62,11 +62,11 @@ public class DateFilterPanelController {
 
     /** Button to include branches matching the date criteria. */
     @FXML
-    private Button includeButton;
+    private Button includeDateFilerButton;
 
     /** Button to exclude branches matching the date criteria. */
     @FXML
-    private Button excludeButton;
+    private Button excludeDateFilerButton;
 
     /** The UI state model containing branch data. */
     private UIStateModel uiStateModel;
@@ -109,8 +109,8 @@ public class DateFilterPanelController {
         noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
 
         // Bind the disable property of the components to the noBranches binding
-        includeButton.disableProperty().bind(noBranches);
-        excludeButton.disableProperty().bind(noBranches);
+        includeDateFilerButton.disableProperty().bind(noBranches);
+        excludeDateFilerButton.disableProperty().bind(noBranches);
 
         // The include and exclude buttons should be disabled if there are no branches
         // or if there are no date criteria
@@ -122,8 +122,8 @@ public class DateFilterPanelController {
      *
      * @param branches the list of branches
      */
-    public void setBranches(List<BranchModel> branches) {
-        this.branches = branches != null ? FXCollections.observableArrayList(branches) : FXCollections.emptyObservableList();
+    public void setBranches(javafx.collections.ObservableList<BranchModel> branches) {
+        this.branches = (branches != null) ? branches : javafx.collections.FXCollections.emptyObservableList();
     }
 
     /**
@@ -134,17 +134,17 @@ public class DateFilterPanelController {
      */
     public void setDisabled(boolean disabled) {
         // Unbind the disable property to allow manual setting
-        includeButton.disableProperty().unbind();
-        excludeButton.disableProperty().unbind();
+        includeDateFilerButton.disableProperty().unbind();
+        excludeDateFilerButton.disableProperty().unbind();
 
         // Set the disabled state
-        includeButton.setDisable(disabled);
-        excludeButton.setDisable(disabled);
+        includeDateFilerButton.setDisable(disabled);
+        excludeDateFilerButton.setDisable(disabled);
 
         if (!disabled) {
             BooleanBinding noBranches = Bindings.isEmpty(uiStateModel.getCurrentProjectBranches());
-            includeButton.disableProperty().bind(noBranches);
-            excludeButton.disableProperty().bind(noBranches);
+            includeDateFilerButton.disableProperty().bind(noBranches);
+            excludeDateFilerButton.disableProperty().bind(noBranches);
         }
     }
 
@@ -178,9 +178,9 @@ public class DateFilterPanelController {
         if (dateAfter == null && dateBefore == null) {
             dateRangeTextField.setText("");
         } else if (dateAfter != null && dateBefore == null) {
-            dateRangeTextField.setText(dateAfter.format(dateFormatter) + " →");
+            dateRangeTextField.setText("→ " + dateAfter.format(dateFormatter)  );
         } else if (dateAfter == null && dateBefore != null) {
-            dateRangeTextField.setText("← " + dateBefore.format(dateFormatter));
+            dateRangeTextField.setText(dateBefore.format(dateFormatter) + " ←");
         } else {
             dateRangeTextField.setText("→ " + dateAfter.format(dateFormatter) + " - " + dateBefore.format(dateFormatter) + " ←");
         }
@@ -194,17 +194,17 @@ public class DateFilterPanelController {
         boolean hasDateCriteria = dateAfter != null || dateBefore != null;
 
         // Unbind the disable property to allow manual setting
-        includeButton.disableProperty().unbind();
-        excludeButton.disableProperty().unbind();
+        includeDateFilerButton.disableProperty().unbind();
+        excludeDateFilerButton.disableProperty().unbind();
 
         if (noBranches != null) {
             // If noBranches is available, bind the disable property to a combination of noBranches and !hasDateCriteria
-            includeButton.disableProperty().bind(noBranches.or(Bindings.createBooleanBinding(() -> !hasDateCriteria)));
-            excludeButton.disableProperty().bind(noBranches.or(Bindings.createBooleanBinding(() -> !hasDateCriteria)));
+            includeDateFilerButton.disableProperty().bind(noBranches.or(Bindings.createBooleanBinding(() -> !hasDateCriteria)));
+            excludeDateFilerButton.disableProperty().bind(noBranches.or(Bindings.createBooleanBinding(() -> !hasDateCriteria)));
         } else {
             // If noBranches is not available, just use hasDateCriteria
-            includeButton.setDisable(!hasDateCriteria);
-            excludeButton.setDisable(!hasDateCriteria);
+            includeDateFilerButton.setDisable(!hasDateCriteria);
+            excludeDateFilerButton.setDisable(!hasDateCriteria);
         }
     }
 
@@ -212,7 +212,7 @@ public class DateFilterPanelController {
      * Includes branches matching the date criteria.
      */
     @FXML
-    private void includeMatching() {
+    private void includeDateFilerMatching() {
         logger.debug("Including branches matching date criteria");
         if (branches == null) {
             logger.warn("Branch list is null");
@@ -230,7 +230,7 @@ public class DateFilterPanelController {
      * Excludes branches matching the date criteria.
      */
     @FXML
-    private void excludeMatching() {
+    private void excludeDateFilerMatching() {
         logger.debug("Excluding branches matching date criteria");
         if (branches == null) {
             logger.warn("Branch list is null");
