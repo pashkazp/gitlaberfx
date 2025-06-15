@@ -79,3 +79,4 @@ Project documentation is available in the `src/main/docs/` directory:
 
 
 We hope GitLaberFX will become your reliable assistant in working with GitLab!
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pashkazp/gitlaberfx)
