@@ -934,11 +934,20 @@ public class MainController {
                 try {
                     if (isArchive) {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.archiving.branch", branch.getName())));
-                        gitLabService.archiveBranch(uiStateModel.getCurrentProjectId(), branch.getName(), config.getArchivePrefix(), branch.getLastCommitSha());
+                        gitLabService.archiveBranch(
+                            uiStateModel.getCurrentProjectId(), 
+                            uiStateModel.getCurrentProjectName(),
+                            branch.getName(), 
+                            config.getArchivePrefix(), branch.getLastCommitSha()
+                        );
                         successfullyArchived.add(branch);
                     } else {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.deleting.branch", branch.getName())));
-                        gitLabService.deleteBranch(uiStateModel.getCurrentProjectId(), branch.getName(), branch.getLastCommitSha());
+                        gitLabService.deleteBranch(
+                            uiStateModel.getCurrentProjectId(), 
+                            uiStateModel.getCurrentProjectName(),
+                            branch.getName(), branch.getLastCommitSha()
+                        );
                         successfullyDeleted.add(branch);
                     }
                 } catch (IOException e) {

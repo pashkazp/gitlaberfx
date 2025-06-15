@@ -265,14 +265,15 @@ public class GitLabService {
      * the entire operation is rolled back.
      *
      * @param projectId the ID of the GitLab project
+     * @param projectName the name of the GitLab project
      * @param sourceBranchName the name of the branch to archive
      * @param archivePrefix the prefix to use for the archived branch
      * @param lastCommitSha SHA of the last commit in the branch
      * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be archived
      */
-    public void archiveBranch(String projectId, String sourceBranchName, String archivePrefix, String lastCommitSha) throws IOException {
-        logger.info("Attempt to archive this branch {} (SHA: {}) from project {} with prefix {}", 
-                    sourceBranchName, lastCommitSha, projectId, archivePrefix);
+    public void archiveBranch(String projectId, String projectName, String sourceBranchName, String archivePrefix, String lastCommitSha) throws IOException {
+        logger.info("Attempt to archive branch {} (SHA: {}) from project {} ({}) with prefix {}", 
+                    sourceBranchName, lastCommitSha, projectName, projectId, archivePrefix);
 
         // Form the new branch name
         String newBranchName = archivePrefix + sourceBranchName;
@@ -296,31 +297,46 @@ public class GitLabService {
             if (!createResponse.isSuccessful()) {
                 throw new IOException("Failed to create archive branch: " + createResponse);
             }
-            logger.info("Successfully created archive branch {} from source branch {} (SHA: {})", 
-                       newBranchName, sourceBranchName, lastCommitSha);
+            logger.info("Successfully created archive branch {} from source branch {} (SHA: {}) in project {} ({})", 
+                       newBranchName, sourceBranchName, lastCommitSha, projectName, projectId);
 
             // Step 2: Delete the original branch
             try {
-                deleteBranch(projectId, sourceBranchName, lastCommitSha);
-                logger.info("Successfully archived branch {} (SHA: {}) to {}", 
-                           sourceBranchName, lastCommitSha, newBranchName);
+                deleteBranch(projectId, projectName, sourceBranchName, lastCommitSha);
+                logger.info("Successfully archived branch {} (SHA: {}) to {} in project {} ({})", 
+                           sourceBranchName, lastCommitSha, newBranchName, projectName, projectId);
             } catch (IOException deleteException) {
                 // If deletion fails, roll back by deleting the newly created archive branch
-                logger.error("Failed to delete source branch '{}' (SHA: {}). Attempting to roll back archive branch creation.", 
-                            sourceBranchName, lastCommitSha, deleteException);
+                logger.error("Failed to delete source branch '{}' (SHA: {}) in project {} ({}). Attempting to roll back archive branch creation.", 
+                            sourceBranchName, lastCommitSha, projectName, projectId, deleteException);
                 try {
                     // Attempt rollback
-                    deleteBranch(projectId, newBranchName, "unknown");
-                    logger.info("Rollback successful: deleted archive branch '{}'", newBranchName);
+                    deleteBranch(projectId, projectName, newBranchName, "unknown");
+                    logger.info("Rollback successful: deleted archive branch '{}' from project {} ({})", newBranchName, projectName, projectId);
                 } catch (IOException rollbackException) {
                     // Log that rollback also failed, this is a critical situation
-                    logger.error("ROLLBACK FAILED! Could not delete archive branch '{}'. Manual cleanup required.", 
-                                newBranchName, rollbackException);
+                    logger.error("ROLLBACK FAILED! Could not delete archive branch '{}' from project {} ({}). Manual cleanup required.", 
+                                newBranchName, projectName, projectId, rollbackException);
                 }
                 // Always re-throw the ORIGINAL exception to inform the user about the failure
                 throw deleteException;
             }
         }
+    }
+
+    /**
+     * Archives a branch in a GitLab project by creating a new branch with the archive prefix
+     * and then deleting the original branch. This operation is atomic - if any step fails,
+     * the entire operation is rolled back.
+     *
+     * @param projectId the ID of the GitLab project
+     * @param sourceBranchName the name of the branch to archive
+     * @param archivePrefix the prefix to use for the archived branch
+     * @param lastCommitSha SHA of the last commit in the branch
+     * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be archived
+     */
+    public void archiveBranch(String projectId, String sourceBranchName, String archivePrefix, String lastCommitSha) throws IOException {
+        archiveBranch(projectId, "Unknown Project", sourceBranchName, archivePrefix, lastCommitSha);
     }
 
     /**
@@ -335,19 +351,20 @@ public class GitLabService {
      * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be archived
      */
     public void archiveBranch(String projectId, String sourceBranchName, String archivePrefix) throws IOException {
-        archiveBranch(projectId, sourceBranchName, archivePrefix, "unknown");
+        archiveBranch(projectId, "Unknown Project", sourceBranchName, archivePrefix, "unknown");
     }
 
     /**
      * Deletes a branch from a GitLab project.
      *
      * @param projectId the ID of the GitLab project
+     * @param projectName the name of the GitLab project
      * @param branchName the name of the branch to delete
      * @param lastCommitSha SHA of the last commit in the branch
      * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be deleted
      */
-    public void deleteBranch(String projectId, String branchName, String lastCommitSha) throws IOException {
-        logger.info("Attempt to delete this branch {} (SHA: {}) from project {}", branchName, lastCommitSha, projectId);
+    public void deleteBranch(String projectId, String projectName, String branchName, String lastCommitSha) throws IOException {
+        logger.info("Attempt to delete this branch {} (SHA: {}) from project {} ({})", branchName, lastCommitSha, projectName, projectId);
         HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
                 .addPathSegments("api/v4/projects")
                 .addPathSegment(projectId)
@@ -364,8 +381,20 @@ public class GitLabService {
             if (!response.isSuccessful()) {
                 throw new IOException("Failed to delete branch: " + response);
             }
-            logger.info("Successfully deleted branch {} (SHA: {}) from project {}", branchName, lastCommitSha, projectId);
+            logger.info("Successfully deleted branch {} (SHA: {}) from project {} ({})", branchName, lastCommitSha, projectName, projectId);
         }
+    }
+
+    /**
+     * Deletes a branch from a GitLab project.
+     *
+     * @param projectId the ID of the GitLab project
+     * @param branchName the name of the branch to delete
+     * @param lastCommitSha SHA of the last commit in the branch
+     * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be deleted
+     */
+    public void deleteBranch(String projectId, String branchName, String lastCommitSha) throws IOException {
+        deleteBranch(projectId, "Unknown Project", branchName, lastCommitSha);
     }
 
     /**
