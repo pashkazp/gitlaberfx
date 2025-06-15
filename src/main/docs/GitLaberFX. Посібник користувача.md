@@ -53,6 +53,12 @@
 
 Якщо ви використовуєте готовий дистрибутив:
 
+Створіть дистрибутив командою:
+
+    mvn clean package -Ppackage-app
+
+Розпакуйте отриманий архів: target/gitlaberfx-*.zip
+
 - **Windows:** 
   Запустіть файл `bin/gitlaberfx.bat`
 
