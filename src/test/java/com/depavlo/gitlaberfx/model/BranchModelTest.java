@@ -33,17 +33,18 @@ class BranchModelTest {
 
     @Test
     void testConstructor() {
-        BranchModel branch = new BranchModel("test-branch", "2024-01-01", true);
+        BranchModel branch = new BranchModel("test-branch", "2024-01-01", "abc123", true);
 
         assertEquals("test-branch", branch.getName());
         assertEquals("2024-01-01", branch.getLastCommit());
+        assertEquals("abc123", branch.getLastCommitSha());
         assertTrue(branch.isMerged());
         assertFalse(branch.isSelected());
     }
 
     @Test
     void testProperties() {
-        BranchModel branch = new BranchModel("test-branch", "2024-01-01", true);
+        BranchModel branch = new BranchModel("test-branch", "2024-01-01", "abc123", true);
 
         // Перевірка властивостей
         StringProperty nameProperty = branch.nameProperty();

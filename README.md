@@ -6,7 +6,7 @@
 
 - **Projects and Branches Overview:** Easily browse all projects and branches available to you.
 
-- **Merge Analysis:** Automatically check which branches have already been merged into your target branch (e.g., `master` or `develop`).
+- **Reliable Merge Analysis:** Accurately determine which branches have been merged into your target branch (e.g., `master` or `develop`) by checking if the last commit of the source branch exists in the target branch history.
 
 - **Safe Archiving:** Instead of irreversible deletion, move outdated branches to an archive (e.g., `archive/feature/task-123`), preserving their history. The archive prefix can be customized.
 
@@ -24,7 +24,7 @@
 
    - Old unmerged branches.
 
-- **Robust Error Handling:** Ensures data integrity with automatic rollback mechanisms for failed operations, preventing partial state changes that could lead to inconsistencies.
+- **Robust Error Handling:** Ensures data integrity with automatic rollback mechanisms for failed operations, preventing partial state changes that could lead to inconsistencies. Enhanced logging of branch commit information improves traceability and aids in recovery if needed.
 
 - **Interactive UI:** The interface instantly responds to your actions, updating the state locally without unnecessary server requests.
 

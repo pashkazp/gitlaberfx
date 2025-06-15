@@ -51,18 +51,19 @@ box "II. Підтвердження та операція" #LightGoldenRodYellow
     note right: UI блокується через `isBusy`
     loop для кожної гілки з підтвердженого списку
         alt якщо archive == false
-            Controller -> Service: **deleteBranch(id, branch.getName())**
+            Controller -> Service: **deleteBranch(id, projectName, branch.getName(), branch.getLastCommitSha())**
             Service -> GitLab: **DELETE API request**
             Controller -> Model: Додає гілку до списку `successfullyDeleted`
         else
-            Controller -> Service: **archiveBranch(id, branch.getName(), prefix)**
+            Controller -> Service: **archiveBranch(id, projectName, branch.getName(), prefix, branch.getLastCommitSha())**
             Service -> GitLab: **POST (Create) + DELETE API requests**
             Controller -> Model: Додає гілку до списку `successfullyArchived`
         end
         note right
             Покращена обробка помилок:
-            Детальне логування помилок
-            та чітка ідентифікація причин збоїв.
+            Детальне логування помилок з SHA коміту
+            для покращення відстежуваності та
+            чітка ідентифікація причин збоїв.
         end note
     end
 end box
