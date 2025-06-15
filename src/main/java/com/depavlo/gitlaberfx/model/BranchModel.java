@@ -44,6 +44,9 @@ public class BranchModel {
     /** Property containing the date of the last commit on this branch in ISO 8601 format. */
     private final StringProperty lastCommit;
 
+    /** SHA of the last commit on this branch. */
+    private final String lastCommitSha;
+
     /** Property indicating whether this branch is merged. */
     private final BooleanProperty merged;
 
@@ -70,6 +73,7 @@ public class BranchModel {
      *
      * @param name               The name of the branch
      * @param lastCommit         The date of the last commit on this branch in ISO 8601 format
+     * @param lastCommitSha      The SHA of the last commit on this branch
      * @param merged             Whether this branch is merged
      * @param protected_         Whether this branch is protected in GitLab
      * @param developersCanPush  Whether developers can push to this branch
@@ -77,11 +81,12 @@ public class BranchModel {
      * @param canPush            Whether the current user can push to this branch
      * @param default_           Whether this is the default branch of the repository
      */
-    public BranchModel(String name, String lastCommit, boolean merged, boolean protected_, 
+    public BranchModel(String name, String lastCommit, String lastCommitSha, boolean merged, boolean protected_, 
                   boolean developersCanPush, boolean developersCanMerge, boolean canPush, boolean default_) {
         this.selected = new SimpleBooleanProperty(false);
         this.name = new SimpleStringProperty(name);
         this.lastCommit = new SimpleStringProperty(lastCommit);
+        this.lastCommitSha = lastCommitSha;
         this.merged = new SimpleBooleanProperty(merged);
         this.mergedIntoTarget = new SimpleBooleanProperty(false);
         this.protected_ = new SimpleBooleanProperty(protected_);
@@ -95,12 +100,13 @@ public class BranchModel {
      * Constructs a new BranchModel with basic properties, setting all other properties to false.
      * This constructor is provided for backward compatibility.
      *
-     * @param name       The name of the branch
-     * @param lastCommit The date of the last commit on this branch in ISO 8601 format
-     * @param merged     Whether this branch is merged
+     * @param name         The name of the branch
+     * @param lastCommit   The date of the last commit on this branch in ISO 8601 format
+     * @param lastCommitSha The SHA of the last commit on this branch
+     * @param merged       Whether this branch is merged
      */
-    public BranchModel(String name, String lastCommit, boolean merged) {
-        this(name, lastCommit, merged, false, false, false, false, false);
+    public BranchModel(String name, String lastCommit, String lastCommitSha, boolean merged) {
+        this(name, lastCommit, lastCommitSha, merged, false, false, false, false, false);
     }
 
     /**
@@ -190,6 +196,15 @@ public class BranchModel {
      */
     public void setLastCommit(String lastCommit) {
         this.lastCommit.set(lastCommit);
+    }
+
+    /**
+     * Returns the SHA of the last commit on this branch.
+     *
+     * @return the SHA of the last commit
+     */
+    public String getLastCommitSha() {
+        return lastCommitSha;
     }
 
     /**

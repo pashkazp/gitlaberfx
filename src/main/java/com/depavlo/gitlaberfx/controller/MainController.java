@@ -357,7 +357,17 @@ public class MainController {
                     setTooltip(null);
                 } else {
                     setText(item ? "✔" : " ");
-                    setTooltip(new Tooltip(I18nUtil.getMessage(tooltipKey)));
+
+                    // Special tooltips for mergeToDestColumn
+                    if (propertyName.equals("mergedIntoTarget")) {
+                        if (item) {
+                            setTooltip(new Tooltip(I18nUtil.getMessage("column.tooltip.merged.into.target.true")));
+                        } else {
+                            setTooltip(new Tooltip(I18nUtil.getMessage("column.tooltip.merged.into.target.false")));
+                        }
+                    } else {
+                        setTooltip(new Tooltip(I18nUtil.getMessage(tooltipKey)));
+                    }
                 }
                 setAlignment(javafx.geometry.Pos.CENTER);
             }
@@ -521,7 +531,12 @@ public class MainController {
                 }
 
                 try {
-                    boolean isMerged = gitLabService.isCommitInMainBranch(uiStateModel.getCurrentProjectId(), branch.getName(), targetBranchName);
+                    // Use the new method with SHA commit
+                    boolean isMerged = gitLabService.isCommitInBranch(
+                        uiStateModel.getCurrentProjectId(), 
+                        branch.getLastCommitSha(), 
+                        targetBranchName
+                    );
                     Platform.runLater(() -> branch.setMergedIntoTarget(isMerged));
                 } catch (IOException e) {
                     logger.error("Error checking merge status for branch {}", branch.getName(), e);
@@ -919,11 +934,20 @@ public class MainController {
                 try {
                     if (isArchive) {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.archiving.branch", branch.getName())));
-                        gitLabService.archiveBranch(uiStateModel.getCurrentProjectId(), branch.getName(), config.getArchivePrefix());
+                        gitLabService.archiveBranch(
+                            uiStateModel.getCurrentProjectId(), 
+                            uiStateModel.getCurrentProjectName(),
+                            branch.getName(), 
+                            config.getArchivePrefix(), branch.getLastCommitSha()
+                        );
                         successfullyArchived.add(branch);
                     } else {
                         Platform.runLater(() -> uiStateModel.setStatusMessage(I18nUtil.getMessage("main.status.deleting.branch", branch.getName())));
-                        gitLabService.deleteBranch(uiStateModel.getCurrentProjectId(), branch.getName());
+                        gitLabService.deleteBranch(
+                            uiStateModel.getCurrentProjectId(), 
+                            uiStateModel.getCurrentProjectName(),
+                            branch.getName(), branch.getLastCommitSha()
+                        );
                         successfullyDeleted.add(branch);
                     }
                 } catch (IOException e) {
