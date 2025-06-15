@@ -242,13 +242,14 @@ public class GitLabService {
                 for (JsonNode branchNode : jsonArray) {
                     String branchName = branchNode.get("name").asText();
                     String lastCommitDate = branchNode.get("commit").get("committed_date").asText();
+                    String lastCommitSha = branchNode.get("commit").get("id").asText();
                     boolean isProtected = branchNode.has("protected") && branchNode.get("protected").asBoolean();
                     boolean developersCanPush = branchNode.has("developers_can_push") && branchNode.get("developers_can_push").asBoolean();
                     boolean developersCanMerge = branchNode.has("developers_can_merge") && branchNode.get("developers_can_merge").asBoolean();
                     boolean canPush = branchNode.has("can_push") && branchNode.get("can_push").asBoolean();
                     boolean isDefault = branchNode.has("default") && branchNode.get("default").asBoolean();
                     boolean isMerged = branchNode.has("merged") && branchNode.get("merged").asBoolean();
-                    branches.add(new BranchModel(branchName, lastCommitDate, isMerged, isProtected,
+                    branches.add(new BranchModel(branchName, lastCommitDate, lastCommitSha, isMerged, isProtected,
                                                developersCanPush, developersCanMerge, canPush, isDefault));
                 }
                 if (jsonArray.size() < perPage) break;
@@ -266,10 +267,12 @@ public class GitLabService {
      * @param projectId the ID of the GitLab project
      * @param sourceBranchName the name of the branch to archive
      * @param archivePrefix the prefix to use for the archived branch
+     * @param lastCommitSha SHA of the last commit in the branch
      * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be archived
      */
-    public void archiveBranch(String projectId, String sourceBranchName, String archivePrefix) throws IOException {
-        logger.info("Archiving branch {} from project {} with prefix {}", sourceBranchName, projectId, archivePrefix);
+    public void archiveBranch(String projectId, String sourceBranchName, String archivePrefix, String lastCommitSha) throws IOException {
+        logger.info("Archiving branch {} (SHA: {}) from project {} with prefix {}", 
+                    sourceBranchName, lastCommitSha, projectId, archivePrefix);
 
         // Form the new branch name
         String newBranchName = archivePrefix + sourceBranchName;
@@ -293,20 +296,26 @@ public class GitLabService {
             if (!createResponse.isSuccessful()) {
                 throw new IOException("Failed to create archive branch: " + createResponse);
             }
+            logger.info("Successfully created archive branch {} from source branch {} (SHA: {})", 
+                       newBranchName, sourceBranchName, lastCommitSha);
 
             // Step 2: Delete the original branch
             try {
-                deleteBranch(projectId, sourceBranchName);
+                deleteBranch(projectId, sourceBranchName, lastCommitSha);
+                logger.info("Successfully archived branch {} (SHA: {}) to {}", 
+                           sourceBranchName, lastCommitSha, newBranchName);
             } catch (IOException deleteException) {
                 // If deletion fails, roll back by deleting the newly created archive branch
-                logger.error("Failed to delete source branch '{}'. Attempting to roll back archive branch creation.", sourceBranchName, deleteException);
+                logger.error("Failed to delete source branch '{}' (SHA: {}). Attempting to roll back archive branch creation.", 
+                            sourceBranchName, lastCommitSha, deleteException);
                 try {
                     // Attempt rollback
-                    deleteBranch(projectId, newBranchName);
+                    deleteBranch(projectId, newBranchName, "unknown");
                     logger.info("Rollback successful: deleted archive branch '{}'", newBranchName);
                 } catch (IOException rollbackException) {
                     // Log that rollback also failed, this is a critical situation
-                    logger.error("ROLLBACK FAILED! Could not delete archive branch '{}'. Manual cleanup required.", newBranchName, rollbackException);
+                    logger.error("ROLLBACK FAILED! Could not delete archive branch '{}'. Manual cleanup required.", 
+                                newBranchName, rollbackException);
                 }
                 // Always re-throw the ORIGINAL exception to inform the user about the failure
                 throw deleteException;
@@ -315,14 +324,30 @@ public class GitLabService {
     }
 
     /**
+     * Archives a branch in a GitLab project by creating a new branch with the archive prefix
+     * and then deleting the original branch. This operation is atomic - if any step fails,
+     * the entire operation is rolled back.
+     * Overloaded method for backward compatibility.
+     *
+     * @param projectId the ID of the GitLab project
+     * @param sourceBranchName the name of the branch to archive
+     * @param archivePrefix the prefix to use for the archived branch
+     * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be archived
+     */
+    public void archiveBranch(String projectId, String sourceBranchName, String archivePrefix) throws IOException {
+        archiveBranch(projectId, sourceBranchName, archivePrefix, "unknown");
+    }
+
+    /**
      * Deletes a branch from a GitLab project.
      *
      * @param projectId the ID of the GitLab project
      * @param branchName the name of the branch to delete
+     * @param lastCommitSha SHA of the last commit in the branch
      * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be deleted
      */
-    public void deleteBranch(String projectId, String branchName) throws IOException {
-        logger.info("Deleting branch {} from project {}", branchName, projectId);
+    public void deleteBranch(String projectId, String branchName, String lastCommitSha) throws IOException {
+        logger.info("Deleting branch {} (SHA: {}) from project {}", branchName, lastCommitSha, projectId);
         HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
                 .addPathSegments("api/v4/projects")
                 .addPathSegment(projectId)
@@ -339,60 +364,44 @@ public class GitLabService {
             if (!response.isSuccessful()) {
                 throw new IOException("Failed to delete branch: " + response);
             }
+            logger.info("Successfully deleted branch {} (SHA: {}) from project {}", branchName, lastCommitSha, projectId);
         }
+    }
+
+    /**
+     * Deletes a branch from a GitLab project.
+     * Overloaded method for backward compatibility.
+     *
+     * @param projectId the ID of the GitLab project
+     * @param branchName the name of the branch to delete
+     * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be deleted
+     */
+    public void deleteBranch(String projectId, String branchName) throws IOException {
+        deleteBranch(projectId, branchName, "unknown");
     }
 
 
     /**
-     * Checks if a branch is merged into another branch by comparing their commit SHAs.
-     * This method determines if all commits from the source branch are already in the target branch.
+     * Checks if a commit is present in a branch.
+     * This method determines if the specified commit is part of the target branch's history.
      *
      * @param projectId the ID of the GitLab project
-     * @param branchName the name of the source branch to check
-     * @param mainBranch the name of the target branch to check against
-     * @return true if the source branch is merged into the target branch, false otherwise
+     * @param commitSha the SHA of the commit to check
+     * @param targetBranchName the name of the target branch to check against
+     * @return true if the commit is present in the target branch, false otherwise
      * @throws IOException if there is an error communicating with the GitLab API
      */
-    public boolean isCommitInMainBranch(String projectId, String branchName, String mainBranch) throws IOException {
-        logger.debug("Checking if branch {} is merged into {}", branchName, mainBranch);
+    public boolean isCommitInBranch(String projectId, String commitSha, String targetBranchName) throws IOException {
+        logger.debug("Checking if commit {} is in branch {}", commitSha, targetBranchName);
 
-        if (branchName.equals(mainBranch)) {
-            logger.debug("Source branch and target branch are the same, returning false");
-            return false;
-        }
-
-        String sourceBranchSha = getBranchLastCommitSha(projectId, branchName);
-        if (sourceBranchSha == null) {
-            logger.error("Failed to get SHA for branch {}", branchName);
-            return false;
-        }
-
-        String mergeBaseSha = getMergeBaseSha(projectId, branchName, mainBranch);
-        if (mergeBaseSha == null) {
-            logger.error("Failed to get merge base SHA between {} and {}", branchName, mainBranch);
-            return false;
-        }
-
-        boolean isMerged = sourceBranchSha.equals(mergeBaseSha);
-        logger.debug("Branch {} is {} into {}", branchName, isMerged ? "merged" : "not merged", mainBranch);
-        return isMerged;
-    }
-
-    /**
-     * Gets the SHA of the last commit on a branch.
-     *
-     * @param projectId the ID of the GitLab project
-     * @param branchName the name of the branch
-     * @return the SHA of the last commit on the branch, or null if there was an error
-     */
-    private String getBranchLastCommitSha(String projectId, String branchName) {
-        logger.debug("Getting SHA for branch {}", branchName);
         HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
                 .addPathSegments("api/v4/projects")
                 .addPathSegment(projectId)
-                .addPathSegments("repository/branches")
-                .addEncodedPathSegment(encodePathSegment(branchName))
+                .addPathSegments("repository/commits")
+                .addPathSegment(commitSha)
+                .addPathSegments("refs")
                 .build();
+
         Request request = new Request.Builder()
                 .url(url)
                 .header(PRIVATE_TOKEN, config.getApiKey())
@@ -400,56 +409,26 @@ public class GitLabService {
 
         try (Response response = httpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                logger.error("Failed to get branch {}: {}", branchName, response);
-                return null;
+                logger.error("Failed to check if commit is in branch: {}", response);
+                return false;
             }
-            JsonNode branchNode = objectMapper.readTree(response.body().string());
-            return branchNode.get("commit").get("id").asText();
-        } catch (IOException e) {
-            logger.error("Error getting SHA for branch {}", branchName, e);
-            return null;
-        }
-    }
 
-    /**
-     * Gets the merge base SHA between two branches.
-     * The merge base is the common ancestor commit of the two branches.
-     *
-     * @param projectId the ID of the GitLab project
-     * @param sourceBranch the name of the source branch
-     * @param targetBranch the name of the target branch
-     * @return the SHA of the merge base commit, or null if there was an error
-     */
-    private String getMergeBaseSha(String projectId, String sourceBranch, String targetBranch) {
-        logger.debug("Getting merge base SHA between {} and {}", sourceBranch, targetBranch);
-
-        HttpUrl.Builder urlBuilder = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
-                .addPathSegments("api/v4/projects")
-                .addPathSegment(projectId)
-                .addPathSegments("repository/merge_base");
-
-        // The key fix: manually construct the query string to handle array-like parameters `refs[]` correctly,
-        // then set it as pre-encoded. This avoids OkHttp encoding the `[]` characters in the parameter name.
-        String encodedQuery = "refs[]=" + encodePathSegment(sourceBranch)
-                            + "&refs[]=" + encodePathSegment(targetBranch);
-
-        urlBuilder.encodedQuery(encodedQuery);
-
-        Request request = new Request.Builder()
-                .url(urlBuilder.build())
-                .header(PRIVATE_TOKEN, config.getApiKey())
-                .build();
-
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                logger.error("Failed to get merge base: {}", response);
-                return null;
+            JsonNode refsArray = objectMapper.readTree(response.body().string());
+            if (!refsArray.isArray()) {
+                return false;
             }
-            JsonNode mergeBaseNode = objectMapper.readTree(response.body().string());
-            return mergeBaseNode.get("id").asText();
+
+            for (JsonNode refNode : refsArray) {
+                if (refNode.has("type") && refNode.get("type").asText().equals("branch") &&
+                    refNode.has("name") && refNode.get("name").asText().equals(targetBranchName)) {
+                    return true;
+                }
+            }
+
+            return false;
         } catch (IOException e) {
-            logger.error("Error getting merge base SHA", e);
-            return null;
+            logger.error("Error checking if commit is in branch", e);
+            return false;
         }
     }
 

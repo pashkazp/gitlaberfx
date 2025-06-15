@@ -74,8 +74,8 @@ class DialogHelperTest {
     void testShowDeleteConfirmationDialog() {
         // Create test data
         List<BranchModel> branches = List.of(
-            new BranchModel("branch1", "2024-01-01", true),
-            new BranchModel("branch2", "2024-01-02", false)
+            new BranchModel("branch1", "2024-01-01", "abc123", true),
+            new BranchModel("branch2", "2024-01-02", "def456", false)
         );
 
         // Test that the method exists and has the expected signature

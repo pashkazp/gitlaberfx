@@ -17,9 +17,9 @@ Container_Boundary(app, "Десктопний додаток") {
     Component(date_selector, "DateSelectorController", "JavaFX Controller", "Керує діалогом вибору діапазону дат. Використовує патерн Builder для гнучкого створення.")
 
     Component(ui_state_model, "UIStateModel", "Model", "Централізована модель стану UI. Відстежує зміни в іменах гілок для реактивного оновлення.")
-    Component(domain_models, "Data Models", "POJO / JavaFX Beans", "Класи даних (BranchModel з originalName, OperationConfirmationResult).")
+    Component(domain_models, "Data Models", "POJO / JavaFX Beans", "Класи даних (BranchModel з originalName, lastCommitSha, OperationConfirmationResult).")
 
-    Component(gitlab_service, "GitLabService", "Service", "Інкапсулює всю логіку взаємодії з GitLab API. Реалізує атомарний метод archiveBranch з відкатом та покращену обробку помилок у методі deleteBranch.")
+    Component(gitlab_service, "GitLabService", "Service", "Інкапсулює всю логіку взаємодії з GitLab API. Реалізує атомарний метод archiveBranch з відкатом, покращену обробку помилок у методі deleteBranch та розширене логування SHA коміту для покращення відстежуваності.")
     Component(dialog_helper, "DialogHelper", "Utility", "Створює та налаштовує діалогові вікна, включаючи вікно підтвердження.")
     Component(config_component, "AppConfig", "Component", "Керує конфігурацією додатку, включаючи archivePrefix.")
 
