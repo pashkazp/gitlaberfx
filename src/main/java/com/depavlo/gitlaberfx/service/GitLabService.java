@@ -271,7 +271,7 @@ public class GitLabService {
      * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be archived
      */
     public void archiveBranch(String projectId, String sourceBranchName, String archivePrefix, String lastCommitSha) throws IOException {
-        logger.info("Archiving branch {} (SHA: {}) from project {} with prefix {}", 
+        logger.info("Attempt to archive this branch {} (SHA: {}) from project {} with prefix {}", 
                     sourceBranchName, lastCommitSha, projectId, archivePrefix);
 
         // Form the new branch name
@@ -347,7 +347,7 @@ public class GitLabService {
      * @throws IOException if there is an error communicating with the GitLab API or the branch cannot be deleted
      */
     public void deleteBranch(String projectId, String branchName, String lastCommitSha) throws IOException {
-        logger.info("Deleting branch {} (SHA: {}) from project {}", branchName, lastCommitSha, projectId);
+        logger.info("Attempt to delete this branch {} (SHA: {}) from project {}", branchName, lastCommitSha, projectId);
         HttpUrl url = Objects.requireNonNull(HttpUrl.parse(config.getGitlabUrl())).newBuilder()
                 .addPathSegments("api/v4/projects")
                 .addPathSegment(projectId)
