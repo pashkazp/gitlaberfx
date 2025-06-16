@@ -2,6 +2,8 @@
 
 **GitLaberFX** is an open-source desktop application created for developers and team leads to effectively manage repositories in GitLab. It provides powerful tools for bulk cleaning and organizing branches, helping to maintain order in projects and simplify workflows.
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pashkazp/gitlaberfx)
+
 ## ✨ Key Features
 
 - **Projects and Branches Overview:** Easily browse all projects and branches available to you.
@@ -79,4 +81,3 @@ Project documentation is available in the `src/main/docs/` directory:
 
 
 We hope GitLaberFX will become your reliable assistant in working with GitLab!
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/pashkazp/gitlaberfx)
