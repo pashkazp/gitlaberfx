@@ -41,13 +41,19 @@
 
 - **Звичайний запуск:** 
   ```
-  mvn clean antrun:run@run-without-debug
+  mvn clean package antrun:run@run-without-debug
   ```
 
 - **Запуск з відлагодженням:** 
   ```
-  mvn clean antrun:run@run-with-debug
+  mvn clean package antrun:run@run-with-debug
   ```
+
+##### Після попередьої збірки без перебирання
+
+- **Звичайний запуск:** `mvn antrun:run@run-without-debug`
+- **Запуск з відлагодженням:** `mvn antrun:run@run-with-debug`
+
 
 #### 2.2.2. Запуск з дистрибутиву
 

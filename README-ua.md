@@ -44,8 +44,13 @@
 
 #### З вихідного коду через Maven
 
-- **Звичайний запуск:** `mvn clean antrun:run@run-without-debug`
-- **Запуск з відлагодженням:** `mvn clean antrun:run@run-with-debug`
+- **Звичайний запуск:** `mvn clean package antrun:run@run-without-debug`
+- **Запуск з відлагодженням:** `mvn clean package antrun:run@run-with-debug`
+
+#### Після попередьої збірки без перебирання
+
+- **Звичайний запуск:** `mvn antrun:run@run-without-debug`
+- **Запуск з відлагодженням:** `mvn antrun:run@run-with-debug`
 
 #### З готового дистрибутиву
 
