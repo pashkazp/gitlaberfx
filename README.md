@@ -46,8 +46,14 @@ The project can be launched in two ways:
 
 #### From source code via Maven
 
-- **Normal launch:** `mvn clean antrun:run@run-without-debug`
-- **Launch with debugging:** `mvn clean antrun:run@run-with-debug`
+- **Normal launch:** `mvn clean package antrun:run@run-without-debug`
+- **Launch with debugging:** `mvn clean package antrun:run@run-with-debug`
+
+#### After pre-assembly without bulkhead
+
+- **Normal Startup:** `mvn antrun:run@run-without-debug`
+- **Startup with debugging:** `mvn antrun:run@run-with-debug`
+
 
 #### From ready-made distribution
 
